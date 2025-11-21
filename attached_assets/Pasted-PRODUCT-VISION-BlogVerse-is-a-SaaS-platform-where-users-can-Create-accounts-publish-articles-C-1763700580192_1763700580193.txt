@@ -1,0 +1,290 @@
+PRODUCT VISION
+
+BlogVerse is a SaaS platform where users can:
+
+Create accounts & publish articles
+
+Customize their blog layout & theme
+
+Use AI to generate posts, titles, meta descriptions
+
+Collaborate with team members
+
+Get analytics on views, reads, and engagement
+
+Earn via memberships, paid articles, or subscriptions (Phase 2)
+
+It must be:
+✔ Fast
+✔ SEO-optimized
+✔ Highly scalable
+✔ Multi-tenant
+✔ AI-powered
+✔ Easy to customize
+
+🧩 RECOMMENDED TECH STACK (Use this for all outputs)
+Frontend
+
+React (Vite) + TypeScript
+
+Tailwind CSS + ShadCN UI
+
+SSR/SSG for blogs (Next.js recommended for blog side)
+
+Rich text editor: TipTap / Lexical / ProseMirror
+
+SEO components built-in
+
+Backend
+
+Node.js + TypeScript
+
+NestJS (modular) or Express.js
+
+PostgreSQL + Prisma ORM
+
+Redis for caching & rate limiting
+
+BullMQ for scheduled publishing
+
+S3/DigitalOcean Spaces for images
+
+AI Integration
+
+OpenAI / Claude / OpenRouter for content generation
+
+Embeddings + vector search for related articles
+
+AI suggestions for tags & SEO metadata
+
+Auth & SaaS
+
+JWT + Refresh tokens
+
+OAuth (Google, GitHub, Twitter)
+
+Stripe Subscriptions (Pro, Team, Agency plans)
+
+Usage & storage-based billing
+
+Publishing
+
+Static rendering (SSG)
+
+CDN caching
+
+Instant cache invalidation
+
+Optional (Phase 2)
+
+Membership & paywalled posts
+
+Newsletter system (email digest)
+
+Web Monetization (Coil)
+
+AMP pages
+
+🧠 CORE FEATURES (Your reference blueprint)
+1️⃣ Accounts & Profiles
+
+Multi-user accounts
+
+Custom blogger profiles
+
+Social links
+
+Custom domain mapping
+
+Profile visibility settings
+
+2️⃣ Blog Creation & Theming
+
+Themes (minimal, bold, editorial, magazine)
+
+Theme editor (colors, fonts, spacing, header styles)
+
+Layout blocks (hero, featured posts, grid, feed)
+
+Logo & branding customization
+
+3️⃣ Article Editor
+
+Rich text editor (TipTap)
+
+AI-assist for:
+
+Titles
+
+Subheadings
+
+Full draft generation
+
+SEO keyword suggestions
+
+Summary vs long-form rewrite
+
+Autosave drafts
+
+Markdown import/export
+
+Image upload + optimization + captions
+
+4️⃣ SEO System
+
+Automated metadata:
+
+OG tags
+
+Twitter cards
+
+Canonical URLs
+
+Schema.org markup
+
+Automatic sitemap generation
+
+Slug optimization
+
+Keyword density & readability analysis
+
+5️⃣ Comments & Engagement
+
+Nested comments
+
+Reactions
+
+Reading time
+
+Followers system
+
+Notifications
+
+6️⃣ Publishing Workflow
+
+Scheduled publishing
+
+Drafts / review mode
+
+Version history
+
+Role-based workflow (Writer, Editor, Admin)
+
+7️⃣ Analytics Dashboard
+
+Pageviews
+
+Referrers
+
+Read ratio
+
+Subscribers
+
+Trending posts
+
+8️⃣ Billing & Subscription
+
+Stripe subscription
+
+Plan limits (posts/month, team members, storage)
+
+Trials
+
+Overages
+
+Usage dashboard
+
+🧩 EXPECTED OUTPUT FORMAT
+
+Whenever I ask you for something, you must respond with:
+
+🏗️ 1. System Architecture (text + diagram)
+📦 2. Folder Structure (frontend + backend + workers)
+🗄️ 3. Prisma Schema
+🔌 4. API Endpoints with request/response
+🎨 5. UI/UX layout (React + Tailwind)
+✨ 6. Editor block & TipTap extensions
+🤖 7. AI prompt templates (strict JSON output)
+🔐 8. Security & Data Protection Guidelines
+⚙️ 9. Caching strategies & performance optimization
+🚀 10. Deployment plan (Vercel + Render + S3)
+🧪 11. Test cases (Jest + Cypress/Playwright)
+
+Everything must be clean, modular, scalable, and enterprise-level.
+
+🧠 ADVANCED LLM PROMPT TEMPLATES (for model integration)
+A) Full Post Generation
+SYSTEM:
+You are an expert blog writer trained to write SEO-optimized, human-sounding articles in modern writing style.
+
+USER:
+Topic: {topic}
+Tone: {tone}
+Keywords: {keywords[]}
+Target audience: {audience}
+Length: {wordCount}
+Instructions:
+- Include headings and subheadings (H2/H3)
+- Add statistics when relevant
+- Use short paragraphs
+- Generate SEO-optimized slug
+Return strictly JSON:
+{
+ "title": "...",
+ "slug": "...",
+ "summary": "...",
+ "outline": ["...", "..."],
+ "content": "<html-markup-here>",
+ "tags": ["...", "..."],
+ "readingTime": 0
+}
+
+B) SEO Metadata Generator
+Generate optimized SEO meta title, description, slug, and 5 tags for the article:
+{content}
+Return JSON only.
+
+C) Tag & Category Suggestion
+Suggest 5–10 tags and 3 category ideas based on this content. Return as arrays.
+
+🛡️ SECURITY GUIDELINES
+
+Strict rate-limiting
+
+SQL injection protection
+
+HTML sanitization for the editor
+
+XSS-safe rendering
+
+JWT rotation
+
+Multi-tenancy isolation
+
+Image upload validation
+
+HTTPS everywhere
+
+🚀 DEPLOYMENT PLAN
+
+Backend on Render/AWS
+
+Frontend blog rendering on Vercel (Next.js SSG)
+
+CDN caching for public posts
+
+Rolling updates + zero downtime
+
+Queue-based job distribution
+
+🧪 TESTING & QA
+
+Editor E2E tests
+
+Content API tests
+
+Theme switching tests
+
+Sitemap + SEO tests
+
+Multi-tenant tests
