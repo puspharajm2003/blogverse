@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3 } from "lucide-react";
+import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star } from "lucide-react";
 import heroImage from "@assets/generated_images/abstract_modern_digital_publishing_hero_background.png";
 
 export default function Landing() {
@@ -153,6 +153,154 @@ export default function Landing() {
                 <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="font-serif text-3xl md:text-5xl font-bold mb-6">Trusted by world-class writers.</h2>
+            <p className="text-lg text-muted-foreground">Join thousands of creators who trust BlogVerse to share their stories.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "BlogVerse completely changed how I publish. The AI tools are subtle but incredibly powerful.",
+                author: "Sarah Jenkins",
+                role: "Tech Journalist",
+                img: "https://i.pravatar.cc/150?u=sarah"
+              },
+              {
+                quote: "Finally, a blogging platform that cares about design as much as I do. It's simply beautiful.",
+                author: "Marcus Chen",
+                role: "Design Lead",
+                img: "https://i.pravatar.cc/150?u=marcus"
+              },
+              {
+                quote: "The SEO features helped me double my traffic in just three months. Highly recommended.",
+                author: "Elena Rodriguez",
+                role: "Travel Blogger",
+                img: "https://i.pravatar.cc/150?u=elena"
+              }
+            ].map((testimonial, i) => (
+              <div key={i} className="bg-muted/20 p-8 rounded-2xl border border-border">
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="h-4 w-4 text-amber-500 fill-amber-500" />
+                  ))}
+                </div>
+                <p className="text-lg mb-6 italic">"{testimonial.quote}"</p>
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full overflow-hidden bg-muted">
+                    <img src={testimonial.img} alt={testimonial.author} className="h-full w-full object-cover" />
+                  </div>
+                  <div>
+                    <div className="font-bold">{testimonial.author}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-muted/30 border-y border-border">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="font-serif text-3xl md:text-5xl font-bold mb-6">Simple, transparent pricing.</h2>
+            <p className="text-lg text-muted-foreground">Start for free, upgrade as you grow.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Starter Plan */}
+            <div className="bg-card p-8 rounded-2xl border border-border flex flex-col">
+              <div className="mb-8">
+                <h3 className="font-serif text-xl font-bold mb-2">Starter</h3>
+                <p className="text-muted-foreground text-sm mb-4">Perfect for hobbyists.</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">$0</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {[
+                  "1 Blog",
+                  "50 AI generations/mo",
+                  "Basic Analytics",
+                  "Community Support"
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center gap-3 text-sm">
+                    <Check className="h-4 w-4 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="outline" className="w-full">Get Started</Button>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="bg-card p-8 rounded-2xl border-2 border-primary relative flex flex-col shadow-xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Most Popular
+              </div>
+              <div className="mb-8">
+                <h3 className="font-serif text-xl font-bold mb-2">Pro</h3>
+                <p className="text-muted-foreground text-sm mb-4">For serious creators.</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">$12</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {[
+                  "Unlimited Blogs",
+                  "Unlimited AI generations",
+                  "Custom Domains",
+                  "Advanced Analytics",
+                  "Newsletter Integration",
+                  "Priority Support"
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center gap-3 text-sm">
+                    <Check className="h-4 w-4 text-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full">Start Free Trial</Button>
+            </div>
+
+            {/* Team Plan */}
+            <div className="bg-card p-8 rounded-2xl border border-border flex flex-col">
+              <div className="mb-8">
+                <h3 className="font-serif text-xl font-bold mb-2">Team</h3>
+                <p className="text-muted-foreground text-sm mb-4">For agencies & teams.</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">$49</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {[
+                  "Everything in Pro",
+                  "5 Team Members",
+                  "Collaboration Tools",
+                  "Approval Workflows",
+                  "API Access",
+                  "Dedicated Manager"
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center gap-3 text-sm">
+                    <Check className="h-4 w-4 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="outline" className="w-full">Contact Sales</Button>
+            </div>
           </div>
         </div>
       </section>
