@@ -1,0 +1,201 @@
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3 } from "lucide-react";
+import heroImage from "@assets/generated_images/abstract_modern_digital_publishing_hero_background.png";
+
+export default function Landing() {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Navbar */}
+      <header className="border-b border-border/40 sticky top-0 z-50 bg-background/80 backdrop-blur-md">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-serif font-bold text-xl">B</span>
+            </div>
+            <span className="font-serif text-xl font-bold tracking-tight">BlogVerse</span>
+          </div>
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+            <a href="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Success Stories</a>
+          </nav>
+          <div className="flex items-center gap-4">
+            <Link href="/login">
+              <Button variant="ghost">Sign in</Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button>Get Started <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative py-20 lg:py-32 overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-sm font-medium text-foreground mb-8 backdrop-blur-sm">
+                <Sparkles className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                <span>AI-Powered Publishing Platform v2.0</span>
+              </div>
+              <h1 className="font-serif text-5xl md:text-7xl font-bold leading-[1.1] mb-6 tracking-tight">
+                Publish your ideas with <span className="italic text-primary/80">intelligence.</span>
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 leading-relaxed max-w-lg">
+                The complete platform for serious writers. Create beautiful blogs, optimize with AI, and monetize your audience from day one.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/dashboard">
+                  <Button size="lg" className="h-12 px-8 text-base">Start Writing for Free</Button>
+                </Link>
+                <Button size="lg" variant="outline" className="h-12 px-8 text-base">View Demo</Button>
+              </div>
+              
+              <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted overflow-hidden">
+                       <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" className="h-full w-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+                <p>Joined by 10,000+ creators</p>
+              </div>
+            </div>
+            <div className="relative lg:h-[600px] w-full rounded-2xl overflow-hidden shadow-2xl border border-border/50 group perspective-1000">
+              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 mix-blend-overlay z-10" />
+              <img 
+                src={heroImage} 
+                alt="Platform Interface" 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              
+              {/* Floating UI Elements */}
+              <div className="absolute top-12 left-12 bg-background/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-border z-20 max-w-xs transform transition-all duration-500 hover:-translate-y-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">SEO Score</span>
+                </div>
+                <div className="flex items-end gap-2">
+                    <span className="text-3xl font-bold font-serif">98</span>
+                    <span className="text-sm text-green-600 mb-1">+12%</span>
+                </div>
+                <div className="h-1.5 w-full bg-muted rounded-full mt-2 overflow-hidden">
+                    <div className="h-full bg-green-500 w-[98%]" />
+                </div>
+              </div>
+
+              <div className="absolute bottom-12 right-12 bg-background/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-border z-20 max-w-xs transform transition-all duration-500 delay-100 hover:-translate-y-2">
+                 <div className="flex items-center gap-3 mb-3">
+                    <Sparkles className="h-4 w-4 text-indigo-500" />
+                    <span className="text-sm font-medium">AI Suggestion</span>
+                 </div>
+                 <p className="text-sm text-muted-foreground">
+                    "Consider adding a section about 'sustainable growth' to improve engagement with your target audience."
+                 </p>
+                 <div className="flex gap-2 mt-3">
+                    <Button size="sm" variant="outline" className="h-7 text-xs w-full">Apply</Button>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section id="features" className="py-24 bg-muted/30 border-y border-border">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="font-serif text-3xl md:text-5xl font-bold mb-6">Everything you need to run a modern publication.</h2>
+            <p className="text-lg text-muted-foreground">Focus on writing. We handle the SEO, design, hosting, and monetization infrastructure.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Sparkles,
+                title: "AI Writing Assistant",
+                desc: "Generate outlines, optimize headlines, and fix grammar with our built-in AI co-pilot trained on top-performing content."
+              },
+              {
+                icon: Globe,
+                title: "SEO Optimized",
+                desc: "Automatic sitemaps, meta tags, schema markup, and performance optimization to rank higher on Google."
+              },
+              {
+                icon: Shield,
+                title: "Membership Built-in",
+                desc: "Turn readers into subscribers. Native support for newsletters, paywalls, and recurring subscriptions."
+              },
+              {
+                icon: Zap,
+                title: "Blazing Fast",
+                desc: "Built on modern edge infrastructure. Your blog loads instantly anywhere in the world."
+              },
+              {
+                icon: Check,
+                title: "Custom Themes",
+                desc: "Choose from our gallery of editorial themes or build your own with our visual theme editor."
+              },
+              {
+                icon: BarChart3, // Note: Need to import if not already
+                title: "Deep Analytics",
+                desc: "Understand your audience with privacy-focused analytics. See what's working and where readers drop off."
+              }
+            ].map((feature, i) => (
+              <div key={i} className="bg-card p-8 rounded-2xl border border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="h-12 w-12 bg-primary/5 rounded-xl flex items-center justify-center mb-6 text-primary">
+                  <feature.icon className="h-6 w-6" />
+                </div>
+                <h3 className="font-serif text-xl font-bold mb-3">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-card border-t border-border py-12 mt-auto">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div className="col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                 <div className="h-6 w-6 bg-primary rounded flex items-center justify-center">
+                  <span className="text-primary-foreground font-serif font-bold text-sm">B</span>
+                </div>
+                <span className="font-serif text-lg font-bold">BlogVerse</span>
+              </div>
+              <p className="text-muted-foreground max-w-xs">
+                The platform for modern publishing. Built for writers, optimized for growth.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-4">Platform</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground">Features</a></li>
+                <li><a href="#" className="hover:text-foreground">Pricing</a></li>
+                <li><a href="#" className="hover:text-foreground">Showcase</a></li>
+                <li><a href="#" className="hover:text-foreground">Roadmap</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground">About</a></li>
+                <li><a href="#" className="hover:text-foreground">Blog</a></li>
+                <li><a href="#" className="hover:text-foreground">Careers</a></li>
+                <li><a href="#" className="hover:text-foreground">Contact</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
+            © 2024 BlogVerse Inc. All rights reserved.
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
