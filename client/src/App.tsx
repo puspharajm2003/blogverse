@@ -8,6 +8,7 @@ import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Editor from "@/pages/Editor";
 import ThemeSettings from "@/pages/ThemeSettings";
+import BlogPreview from "@/pages/BlogPreview";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/editor" component={Editor} />
       <Route path="/settings" component={ThemeSettings} />
+      <Route path="/blog/preview" component={BlogPreview} />
       <Route component={NotFound} />
     </Switch>
   );
