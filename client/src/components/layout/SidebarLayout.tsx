@@ -34,7 +34,7 @@ export function SidebarLayout({ children }: SidebarProps) {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
     { icon: PenTool, label: 'Write', href: '/editor' },
-    { icon: Globe, label: 'My Blog', href: '/blog/preview' },
+    { icon: Globe, label: 'My Blog', href: '/my-blogs' },
     { icon: BarChart3, label: 'Analytics', href: '/analytics' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];

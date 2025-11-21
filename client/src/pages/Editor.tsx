@@ -31,6 +31,34 @@ export default function Editor() {
   const [content, setContent] = useState("<p>Start writing...</p>");
   const [isAiOpen, setIsAiOpen] = useState(false);
 
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+
+  const handleAiGenerate = () => {
+    if (!aiPrompt.trim()) return;
+    
+    setIsGenerating(true);
+    
+    // Simulate AI generation delay
+    setTimeout(() => {
+      const generatedText = `
+        <h3>${aiPrompt}</h3>
+        <p>Here is a draft section based on your prompt. Artificial Intelligence has transformed the way we create content, enabling writers to overcome block and scale their output.</p>
+        <ul>
+          <li>Benefit 1: Faster research and outlining</li>
+          <li>Benefit 2: SEO optimization suggestions</li>
+          <li>Benefit 3: Tone and style consistency</li>
+        </ul>
+        <p>Remember to review and edit this content to ensure it matches your unique voice.</p>
+      `;
+      
+      setContent(prev => prev + generatedText);
+      setIsGenerating(false);
+      setAiPrompt("");
+      setIsAiOpen(false);
+    }, 1500);
+  };
+
   return (
     <SidebarLayout>
       <div className="h-full flex flex-col">
@@ -166,9 +194,25 @@ export default function Editor() {
                 </div>
                 <div className="p-4 border-t border-border">
                     <div className="flex gap-2">
-                        <Input placeholder="Ask AI to write..." className="h-9" />
-                        <Button size="sm" className="h-9 w-9 p-0">
-                            <Send className="h-4 w-4" />
+                        <Input 
+                            placeholder="Ask AI to write..." 
+                            className="h-9" 
+                            value={aiPrompt}
+                            onChange={(e) => setAiPrompt(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
+                            disabled={isGenerating}
+                        />
+                        <Button 
+                            size="sm" 
+                            className="h-9 w-9 p-0"
+                            onClick={handleAiGenerate}
+                            disabled={isGenerating || !aiPrompt.trim()}
+                        >
+                            {isGenerating ? (
+                                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Send className="h-4 w-4" />
+                            )}
                         </Button>
                     </div>
                 </div>

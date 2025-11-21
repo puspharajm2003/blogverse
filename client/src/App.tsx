@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Editor from "@/pages/Editor";
 import ThemeSettings from "@/pages/ThemeSettings";
 import BlogPreview from "@/pages/BlogPreview";
+import MyBlogs from "@/pages/MyBlogs";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/editor" component={Editor} />
       <Route path="/settings" component={ThemeSettings} />
+      <Route path="/my-blogs" component={MyBlogs} />
       <Route path="/blog/preview" component={BlogPreview} />
       <Route component={NotFound} />
     </Switch>

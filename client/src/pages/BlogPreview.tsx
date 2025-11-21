@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, Twitter, Github, Linkedin, ArrowRight } from "lucide-react";
+import { Search, Twitter, Github, Linkedin, ArrowRight, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
 export default function BlogPreview() {
@@ -45,6 +45,19 @@ export default function BlogPreview() {
     <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/10 selection:text-primary">
       {/* Navigation */}
       <header className="border-b border-border sticky top-0 z-40 bg-background/80 backdrop-blur-md">
+        {/* Admin Overlay Bar for Preview Mode */}
+        <div className="bg-primary text-primary-foreground py-2 px-4 text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <span className="bg-primary-foreground/20 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">Preview Mode</span>
+                <span>You are viewing the public version of your blog.</span>
+            </div>
+            <Link href="/my-blogs">
+                <Button size="sm" variant="secondary" className="h-6 text-xs px-3 gap-1">
+                    <ArrowLeft className="h-3 w-3" /> Back to My Blogs
+                </Button>
+            </Link>
+        </div>
+
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
