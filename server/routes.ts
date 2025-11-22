@@ -286,6 +286,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chart Data Route
+  app.get("/api/analytics/chart", authenticateToken, async (req: any, res) => {
+    try {
+      const days = req.query.days ? parseInt(req.query.days) : 7;
+      const chartData = await storage.getChartData(req.userId, days);
+      res.json(chartData);
+    } catch (error) {
+      console.error("Chart data error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

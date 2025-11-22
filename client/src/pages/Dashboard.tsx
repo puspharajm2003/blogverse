@@ -15,13 +15,18 @@ import {
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const data = await api.getDashboardStats();
-        setStats(data);
+        const [statsData, chartDataRes] = await Promise.all([
+          api.getDashboardStats(),
+          api.getChartData(7),
+        ]);
+        setStats(statsData);
+        setChartData(chartDataRes);
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
       } finally {
@@ -35,18 +40,6 @@ export default function Dashboard() {
     const interval = setInterval(fetchDashboardStats, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  // Generate chart data (7 days)
-  const chartData = Array.from({ length: 7 }).map((_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return {
-      name: dayNames[date.getDay()],
-      views: Math.floor(Math.random() * (stats?.totalViews || 5000)) || Math.floor(Math.random() * 3000) + 1000,
-      visitors: Math.floor(Math.random() * (stats?.totalViews || 2500) * 0.7) || Math.floor(Math.random() * 1500) + 500,
-    };
-  });
 
   if (isLoading) {
     return (

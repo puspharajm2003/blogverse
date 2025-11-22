@@ -136,4 +136,9 @@ export const api = {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/analytics/detailed`, { headers }).then((r) => r.json());
   },
+
+  getChartData: (days: number = 7) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/analytics/chart?days=${days}`, { headers }).then((r) => r.json());
+  },
 };
