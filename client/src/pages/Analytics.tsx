@@ -72,14 +72,19 @@ function MetricCard({ title, value, icon, trend, description, color = "bg-primar
 export default function Analytics() {
   const [dateRange, setDateRange] = useState("30d");
   const [analytics, setAnalytics] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const data = await api.getDetailedAnalytics();
-        setAnalytics(data);
+        const [analyticsData, chartDataResponse] = await Promise.all([
+          api.getDetailedAnalytics(),
+          api.getChartData(30)
+        ]);
+        setAnalytics(analyticsData);
+        setChartData(chartDataResponse || []);
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
       } finally {
@@ -91,22 +96,6 @@ export default function Analytics() {
     const interval = setInterval(fetchAnalytics, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  // Generate advanced chart data
-  const advancedTrafficData = Array.from({ length: 30 }).map((_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (29 - i));
-    const totalViews = analytics?.totalViews || 8000;
-    const baseViews = Math.floor(totalViews / 30);
-    
-    return {
-      date: `${date.getMonth() + 1}/${date.getDate()}`,
-      views: Math.floor(baseViews * (0.8 + Math.random() * 0.4)),
-      visitors: Math.floor(baseViews * 0.6 * (0.8 + Math.random() * 0.4)),
-      engaged: Math.floor(baseViews * 0.4 * (0.8 + Math.random() * 0.4)),
-      dateObj: date
-    };
-  });
 
   const engagementData = Array.from({ length: 7 }).map((_, i) => {
     const date = new Date();
@@ -210,14 +199,14 @@ export default function Analytics() {
               />
               <MetricCard
                 title="Avg. Time on Page"
-                value="3m 24s"
+                value={analytics?.avgSessionDuration || "0m 0s"}
                 icon={<Clock className="h-4 w-4 text-purple-500" />}
-                trend={-2.1}
+                trend={3.2}
                 color="bg-purple-500"
               />
               <MetricCard
                 title="Bounce Rate"
-                value={`${analytics?.bounceRate || 32}%`}
+                value={`${Number(analytics?.bounceRate).toFixed(1)}%`}
                 icon={<MousePointer className="h-4 w-4 text-red-500" />}
                 trend={-4.5}
                 color="bg-red-500"
@@ -232,7 +221,7 @@ export default function Analytics() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Traffic Performance</CardTitle>
-                      <CardDescription>Daily pageviews, visitors, and engagement</CardDescription>
+                      <CardDescription>Real-time pageviews and visitors</CardDescription>
                     </div>
                     <TrendingUp className="h-5 w-5 text-green-500" />
                   </div>
@@ -240,7 +229,7 @@ export default function Analytics() {
                 <CardContent className="pl-2">
                   <div className="h-[320px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={advancedTrafficData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <AreaChart data={chartData.length > 0 ? chartData : []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -251,7 +240,7 @@ export default function Analytics() {
                             <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                         <Tooltip 
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
