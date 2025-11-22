@@ -15,10 +15,6 @@ run = ["npm", "run", "start"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 40421
-externalPort = 3000
-
 [env]
 PORT = "5000"
 
@@ -45,6 +41,7 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
+integrations = ["javascript_openai:1.0.0"]
 
 [userenv]
 
