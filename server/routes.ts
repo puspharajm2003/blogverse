@@ -382,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const response = await client.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "meta-llama/llama-3.1-70b-instruct",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }

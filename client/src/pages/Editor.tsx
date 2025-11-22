@@ -429,7 +429,7 @@ export default function Editor() {
                             )}
                         </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Powered by OpenRouter</p>
+                    <p className="text-xs text-muted-foreground mt-2">Powered by Llama 3.1 (OpenRouter)</p>
                 </div>
             </div>
         )}
