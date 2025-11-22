@@ -6,7 +6,15 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// OpenAI client will be initialized lazily when needed
+let openai: OpenAI | null = null;
+
+function getOpenAIClient() {
+  if (!openai && process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
@@ -322,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey || apiKey.length < 20) {
+      if (!apiKey) {
         return res.status(500).json({ 
           error: "OpenAI API key not configured",
           details: "Please provide a valid OpenAI API key in your environment variables. Get one from https://platform.openai.com/api-keys"
@@ -362,7 +370,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        const response = await openai.chat.completions.create({
+        const client = getOpenAIClient();
+        if (!client) {
+          return res.status(500).json({ 
+            error: "OpenAI not available",
+            details: "OpenAI client could not be initialized"
+          });
+        }
+
+        const response = await client.chat.completions.create({
           model: "gpt-5",
           messages: [
             { role: "system", content: systemPrompt },

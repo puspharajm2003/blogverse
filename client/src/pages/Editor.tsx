@@ -74,7 +74,7 @@ export default function Editor() {
         setContent(prev => prev + outlineHtml);
       } else {
         // Full article or section - wrap in paragraphs
-        const formattedText = generatedText.split('\n\n').map(para => `<p>${para.trim()}</p>`).join('');
+        const formattedText = generatedText.split('\n\n').map((para: string) => `<p>${para.trim()}</p>`).join('');
         setContent(prev => prev + formattedText);
       }
       
