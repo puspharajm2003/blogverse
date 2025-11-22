@@ -2,6 +2,8 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and } from "drizzle-orm";
 import { users, blogs, articles, analyticsEvents } from "@shared/schema";
 import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent } from "@shared/schema";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
@@ -34,6 +36,7 @@ export interface IStorage {
   getDashboardStats(userId: string): Promise<{ totalBlogs: number; totalArticles: number; totalViews: number; recentArticles: any[] }>;
   getDetailedAnalytics(userId: string): Promise<any>;
   getChartData(userId: string, days?: number): Promise<any[]>;
+  getOrCreateDemoAccount(): Promise<{ user: any; token: string }>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -269,6 +272,102 @@ export class PostgresStorage implements IStorage {
     }
 
     return chartData;
+  }
+
+  async getOrCreateDemoAccount(): Promise<{ user: any; token: string }> {
+    const demoEmail = "demo@blogverse.io";
+    
+    let demoUser = await this.getUserByEmail(demoEmail);
+    
+    if (!demoUser) {
+      const hashedPassword = await bcrypt.hash("demo123", 10);
+      demoUser = await this.createUser({
+        email: demoEmail,
+        password: hashedPassword,
+        displayName: "Demo Writer",
+      });
+
+      const blog1 = await this.createBlog({
+        userId: demoUser.id,
+        title: "The Future of AI in Content Creation",
+        description: "Exploring how AI is revolutionizing the way we create and consume content",
+        slug: "ai-content-creation",
+        status: "active",
+      });
+
+      const blog2 = await this.createBlog({
+        userId: demoUser.id,
+        title: "Sustainable Living Guide",
+        description: "Tips and tricks for living a more sustainable lifestyle",
+        slug: "sustainable-living",
+        status: "active",
+      });
+
+      const article1 = await this.createArticle({
+        blogId: blog1.id,
+        title: "How AI is Changing Content Creation in 2024",
+        content: "Artificial intelligence has become a game-changer in the content creation industry. From automated copywriting to intelligent design suggestions, AI tools are helping creators work smarter, not harder. In this comprehensive guide, we'll explore the latest AI tools, their applications, and how you can leverage them to improve your content workflow.",
+        excerpt: "Discover how AI tools are revolutionizing content creation and boosting productivity",
+        slug: "ai-changing-content-creation",
+        tags: ["AI", "Content Creation", "Technology"],
+        status: "published",
+        publishedAt: new Date(),
+      });
+
+      const article2 = await this.createArticle({
+        blogId: blog1.id,
+        title: "The Ethics of AI: Responsible AI Development",
+        content: "As AI becomes more prevalent in our daily lives, ethical considerations become increasingly important. This article explores the ethical challenges of AI development, including bias, transparency, and accountability. We'll discuss how developers can create responsible AI systems that benefit society.",
+        excerpt: "Exploring the critical ethical considerations in AI development",
+        slug: "ethics-of-ai",
+        tags: ["AI", "Ethics", "Technology"],
+        status: "published",
+        publishedAt: new Date(),
+      });
+
+      const article3 = await this.createArticle({
+        blogId: blog2.id,
+        title: "10 Simple Ways to Start Living Sustainably Today",
+        content: "Living sustainably doesn't have to be complicated. Here are 10 practical and simple ways you can reduce your environmental footprint starting today: 1. Reduce single-use plastics, 2. Shop locally, 3. Start composting, 4. Use renewable energy, 5. Eat less meat, 6. Conserve water, 7. Use eco-friendly products, 8. Support sustainable brands, 9. Reduce waste, 10. Educate others.",
+        excerpt: "Start your sustainable living journey with these 10 practical tips",
+        slug: "sustainable-living-tips",
+        tags: ["Sustainability", "Lifestyle", "Environment"],
+        status: "published",
+        publishedAt: new Date(),
+      });
+
+      for (let i = 0; i < 150; i++) {
+        await this.recordEvent({
+          articleId: article1.id,
+          eventType: "pageview",
+          sessionId: `session-${Math.random()}`,
+        });
+      }
+
+      for (let i = 0; i < 95; i++) {
+        await this.recordEvent({
+          articleId: article2.id,
+          eventType: "pageview",
+          sessionId: `session-${Math.random()}`,
+        });
+      }
+
+      for (let i = 0; i < 120; i++) {
+        await this.recordEvent({
+          articleId: article3.id,
+          eventType: "pageview",
+          sessionId: `session-${Math.random()}`,
+        });
+      }
+    }
+
+    const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+    const token = jwt.sign({ userId: demoUser.id }, JWT_SECRET, { expiresIn: "7d" });
+
+    return {
+      user: { id: demoUser.id, email: demoUser.email, displayName: demoUser.displayName },
+      token,
+    };
   }
 }
 

@@ -298,6 +298,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo Account Route
+  app.post("/api/auth/demo", async (req, res) => {
+    try {
+      const demoAccount = await storage.getOrCreateDemoAccount();
+      res.json(demoAccount);
+    } catch (error) {
+      console.error("Demo account error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

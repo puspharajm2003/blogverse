@@ -141,4 +141,11 @@ export const api = {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/analytics/chart?days=${days}`, { headers }).then((r) => r.json());
   },
+
+  // Demo
+  getDemo: () =>
+    fetch(`${API_BASE}/api/auth/demo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }).then((r) => r.json()),
 };

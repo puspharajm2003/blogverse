@@ -1,9 +1,29 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star } from "lucide-react";
+import { useState } from "react";
+import { api } from "@/lib/api";
 import heroImage from "@assets/generated_images/abstract_modern_digital_publishing_hero_background.png";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+
+  const handleViewDemo = async () => {
+    setIsLoadingDemo(true);
+    try {
+      const result = await api.getDemo();
+      if (result.token && result.user) {
+        localStorage.setItem("stack_token", result.token);
+        localStorage.setItem("stack_user", JSON.stringify(result.user));
+        setLocation("/dashboard");
+      }
+    } catch (error) {
+      console.error("Failed to load demo:", error);
+    } finally {
+      setIsLoadingDemo(false);
+    }
+  };
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Navbar */}
@@ -50,7 +70,15 @@ export default function Landing() {
                 <Link href="/login">
                   <Button size="lg" className="h-12 px-8 text-base">Start Writing for Free</Button>
                 </Link>
-                <Button size="lg" variant="outline" className="h-12 px-8 text-base">View Demo</Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="h-12 px-8 text-base"
+                  onClick={handleViewDemo}
+                  disabled={isLoadingDemo}
+                >
+                  {isLoadingDemo ? "Loading..." : "View Demo"}
+                </Button>
               </div>
               
               <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground">
