@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { AiChatbot } from "@/components/AiChatbot";
@@ -24,7 +24,8 @@ import {
     Share2,
     Undo2,
     Redo2,
-    AlertCircle
+    AlertCircle,
+    Eye
 } from "lucide-react";
 import {
     Select,
@@ -63,6 +64,35 @@ export default function Editor() {
   const [content, setContent] = useState("<p>Start writing...</p>");
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [blogId, setBlogId] = useState<string | null>(null);
+  const [articleId, setArticleId] = useState<string | null>(null);
+
+  // Initialize blog on mount
+  useEffect(() => {
+    const initializeBlog = async () => {
+      try {
+        const blogs = await api.getBlogs();
+        let targetBlog = blogs[0];
+        
+        if (!targetBlog) {
+          targetBlog = await api.createBlog({
+            title: "My Blog",
+            slug: "my-blog",
+            description: "My personal blog"
+          });
+        }
+        
+        setBlogId(targetBlog.id);
+      } catch (error) {
+        console.error("Failed to initialize blog:", error);
+      }
+    };
+    
+    initializeBlog();
+  }, []);
 
   // Undo/Redo state
   const [history, setHistory] = useState<HistoryEntry[]>([{ title, content }]);
@@ -109,6 +139,49 @@ export default function Editor() {
   const confirmDelete = () => {
     updateContent("<p>Start writing...</p>", "Untitled Draft");
     setShowDeleteConfirm(false);
+  };
+
+  // Handle saving blog article
+  const handleSaveArticle = async () => {
+    if (!blogId) {
+      alert("Blog not initialized. Please refresh the page.");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveStatus("saving");
+
+    try {
+      const slug = title.toLowerCase().replace(/\s+/g, "-").slice(0, 50);
+      
+      if (articleId) {
+        // Update existing article
+        await api.updateArticle(articleId, {
+          title,
+          content,
+          slug,
+        });
+      } else {
+        // Create new article
+        const article = await api.createArticle({
+          blogId,
+          title,
+          content,
+          slug,
+          excerpt: content.replace(/<[^>]*>/g, "").slice(0, 160),
+          status: "draft",
+        });
+        setArticleId(article.id);
+      }
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Failed to save article. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Share to social media
@@ -301,8 +374,22 @@ export default function Editor() {
                     </div>
                 </SheetContent>
             </Sheet>
-            <Button variant="outline" data-testid="button-save">
-                <Save className="h-4 w-4 mr-2" /> Save
+            <Button 
+              variant="outline" 
+              onClick={handleSaveArticle}
+              disabled={isSaving}
+              data-testid="button-save"
+            >
+              <Save className="h-4 w-4 mr-2" /> 
+              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved!" : "Save"}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setShowPreview(true)}
+              data-testid="button-preview"
+            >
+              <Eye className="h-4 w-4" />
             </Button>
             <Button data-testid="button-publish">
                 <Send className="h-4 w-4 mr-2" /> Publish
@@ -360,6 +447,24 @@ export default function Editor() {
             </div>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Preview Modal */}
+        <Sheet open={showPreview} onOpenChange={setShowPreview}>
+          <SheetContent side="right" className="w-full sm:w-[90vw] md:w-[75vw] overflow-y-auto p-0">
+            <SheetHeader className="px-6 py-4 border-b border-border sticky top-0 bg-background z-10">
+              <SheetTitle>Article Preview</SheetTitle>
+            </SheetHeader>
+            <div className="px-6 py-8">
+              <article className="max-w-2xl prose prose-sm dark:prose-invert">
+                <h1 className="text-4xl md:text-5xl font-serif font-bold mb-8">{title}</h1>
+                <div 
+                  className="text-base leading-relaxed text-foreground"
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
+              </article>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </SidebarLayout>
   );

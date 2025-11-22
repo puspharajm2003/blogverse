@@ -26,6 +26,12 @@ interface AiChatbotProps {
   onContentGenerated?: (content: string, type: string) => void;
 }
 
+interface PendingContent {
+  text: string;
+  type: string;
+  messageIndex: number;
+}
+
 export function AiChatbot({ onContentGenerated }: AiChatbotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -34,6 +40,7 @@ export function AiChatbot({ onContentGenerated }: AiChatbotProps) {
   >("section");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pendingContent, setPendingContent] = useState<PendingContent | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Load chat history on mount
@@ -108,10 +115,12 @@ export function AiChatbot({ onContentGenerated }: AiChatbotProps) {
         input
       );
 
-      // Callback to insert content
-      if (onContentGenerated && generationType !== "title" && generationType !== "tags" && generationType !== "meta") {
-        onContentGenerated(response.text, generationType);
-      }
+      // Set pending content for Apply/Re-Generate options
+      setPendingContent({
+        text: response.text || "",
+        type: generationType,
+        messageIndex: messages.length + 1,
+      });
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage: ChatMessage = {
@@ -128,6 +137,37 @@ export function AiChatbot({ onContentGenerated }: AiChatbotProps) {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleApplyContent = () => {
+    if (!pendingContent) return;
+    if (onContentGenerated) {
+      onContentGenerated(pendingContent.text, pendingContent.type);
+    }
+    setPendingContent(null);
+  };
+
+  const handleRegenerate = async () => {
+    if (!pendingContent) return;
+    
+    const topic = messages[pendingContent.messageIndex - 1]?.message || input;
+    setIsLoading(true);
+    
+    try {
+      const response = await api.generateBlogContent(topic, generationType);
+      
+      if (!response.error && response.text) {
+        setPendingContent({
+          text: response.text,
+          type: generationType,
+          messageIndex: messages.length,
+        });
+      }
+    } catch (error) {
+      console.error("Regeneration error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const typeLabels: Record<string, string> = {
@@ -206,7 +246,50 @@ export function AiChatbot({ onContentGenerated }: AiChatbotProps) {
                   <div className="text-sm whitespace-pre-wrap break-words">
                     {msg.message}
                   </div>
-                  {msg.role === "assistant" && (
+                  {msg.role === "assistant" && pendingContent?.messageIndex === idx && (
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="text-xs"
+                        onClick={handleApplyContent}
+                        disabled={isLoading}
+                        data-testid="button-apply-content"
+                      >
+                        ✓ Apply
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={handleRegenerate}
+                        disabled={isLoading}
+                        data-testid="button-regenerate-content"
+                      >
+                        ↻ Re-Generate
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => copyToClipboard(msg.message, `msg-${idx}`)}
+                        data-testid={`button-copy-message-${idx}`}
+                      >
+                        {copiedId === `msg-${idx}` ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                  {msg.role === "assistant" && pendingContent?.messageIndex !== idx && (
                     <Button
                       variant="ghost"
                       size="sm"
