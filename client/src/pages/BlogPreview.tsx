@@ -17,9 +17,11 @@ export default function BlogPreview() {
   useEffect(() => {
     const fetchBlogData = async () => {
       try {
-        // Get blogId from URL query params
-        const params = new URLSearchParams(location.split('?')[1]);
+        // Get blogId from URL query params using window.location
+        const params = new URLSearchParams(window.location.search);
         const blogId = params.get('blogId');
+
+        console.log("BlogId from URL:", blogId);
 
         if (!blogId) {
           setError("No blog selected");
@@ -33,6 +35,9 @@ export default function BlogPreview() {
           api.getArticles(blogId)
         ]);
 
+        console.log("Blog data:", blogData);
+        console.log("Articles data:", articlesData);
+
         setBlog(blogData);
         setArticles(articlesData || []);
       } catch (err) {
@@ -44,7 +49,7 @@ export default function BlogPreview() {
     };
 
     fetchBlogData();
-  }, [location]);
+  }, []);
 
   if (isLoading) {
     return (
