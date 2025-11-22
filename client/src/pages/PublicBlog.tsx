@@ -58,12 +58,15 @@ export default function PublicBlog() {
       setBlogImage(blogData.image || "");
       
       const articlesData = await api.getArticlesByBlogAdmin(blogId);
-      // Show all articles (both draft and published)
+      // Show all articles (both draft and published), remove duplicates
       const allArticles = articlesData || [];
-      setArticles(allArticles);
+      const uniqueArticles = Array.from(
+        new Map(allArticles.map((article: any) => [article.id, article])).values()
+      );
+      setArticles(uniqueArticles);
       
-      if (allArticles.length > 0) {
-        setSelectedArticle(allArticles[0]);
+      if (uniqueArticles.length > 0) {
+        setSelectedArticle(uniqueArticles[0]);
       }
     } catch (error) {
       console.error("Failed to fetch blog data:", error);
@@ -292,13 +295,14 @@ export default function PublicBlog() {
                     </CardDescription>
                   </CardHeader>
                   <Separator />
-                  <CardContent className="pt-6 space-y-4">
-                    <div
-                      className="prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{
-                        __html: selectedArticle.content,
-                      }}
-                    />
+                  <CardContent className="pt-6 space-y-4 max-h-96 overflow-y-auto">
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                      {typeof selectedArticle.content === 'string' && selectedArticle.content ? (
+                        <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
+                      ) : (
+                        <p className="text-muted-foreground">No content available</p>
+                      )}
+                    </div>
                     <Separator className="my-4" />
                     <div className="flex gap-2">
                       <Button
