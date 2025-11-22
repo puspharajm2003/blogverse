@@ -58,11 +58,12 @@ export default function PublicBlog() {
       setBlogImage(blogData.image || "");
       
       const articlesData = await api.getArticlesByBlogAdmin(blogId);
-      const publishedArticles = (articlesData || []).filter((a: any) => a.status === "published");
-      setArticles(publishedArticles);
+      // Show all articles (both draft and published)
+      const allArticles = articlesData || [];
+      setArticles(allArticles);
       
-      if (publishedArticles.length > 0) {
-        setSelectedArticle(publishedArticles[0]);
+      if (allArticles.length > 0) {
+        setSelectedArticle(allArticles[0]);
       }
     } catch (error) {
       console.error("Failed to fetch blog data:", error);
@@ -203,14 +204,14 @@ export default function PublicBlog() {
             {articles.length === 0 ? (
               <Card className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <CardTitle>No Published Articles</CardTitle>
+                <CardTitle>No Articles Yet</CardTitle>
                 <CardDescription>
-                  There are no published articles yet. Publish some articles to display them here.
+                  Write and save articles in the editor to display them here.
                 </CardDescription>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {articles.map((article) => (
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
+                {articles.length > 0 ? articles.map((article) => (
                   <Card
                     key={article.id}
                     className={`cursor-pointer transition-all hover:shadow-md ${
@@ -221,10 +222,15 @@ export default function PublicBlog() {
                     onClick={() => setSelectedArticle(article)}
                   >
                     <CardHeader>
-                      <CardTitle className="font-serif text-xl">
-                        {article.title}
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-4 text-sm mt-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <CardTitle className="font-serif text-xl">
+                          {article.title}
+                        </CardTitle>
+                        <Badge variant={article.status === "published" ? "default" : "outline"}>
+                          {article.status === "published" ? "Published" : "Draft"}
+                        </Badge>
+                      </div>
+                      <CardDescription className="flex items-center gap-4 text-sm mt-2 flex-wrap">
                         <span className="flex items-center gap-1">
                           <Eye className="h-4 w-4" /> 2.4K views
                         </span>
@@ -239,11 +245,19 @@ export default function PublicBlog() {
                     <CardContent>
                       <p className="text-muted-foreground line-clamp-2">
                         {article.excerpt ||
-                          article.content.replace(/<[^>]*>/g, "").slice(0, 160)}
+                          article.content?.replace(/<[^>]*>/g, "").slice(0, 160) || "No description"}
                       </p>
                     </CardContent>
                   </Card>
-                ))}
+                )) : (
+                  <Card className="text-center py-12">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <CardTitle>No Articles Yet</CardTitle>
+                    <CardDescription>
+                      Create and save articles in the editor to display them here
+                    </CardDescription>
+                  </Card>
+                )}
               </div>
             )}
           </div>
@@ -254,18 +268,27 @@ export default function PublicBlog() {
               {selectedArticle ? (
                 <>
                   <CardHeader>
-                    <Badge variant="outline" className="w-fit mb-2">
-                      Published
-                    </Badge>
-                    <CardTitle className="font-serif text-2xl line-clamp-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant={selectedArticle.status === "published" ? "default" : "outline"}>
+                        {selectedArticle.status === "published" ? "Published" : "Draft"}
+                      </Badge>
+                    </div>
+                    <CardTitle className="font-serif text-2xl line-clamp-2 mt-2">
                       {selectedArticle.title}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                      {selectedArticle.publishedAt 
+                        ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                      }
                     </CardDescription>
                   </CardHeader>
                   <Separator />
