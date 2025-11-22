@@ -2,44 +2,78 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, Twitter, Github, Linkedin, ArrowRight, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { Search, Twitter, Github, Linkedin, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 export default function BlogPreview() {
-  const posts = [
-    {
-      title: "The Art of Digital Minimalism in 2024",
-      excerpt: "In a world overflowing with notifications, tabs, and endless feeds, the ability to focus has become a superpower. Digital minimalism isn't just about deleting apps; it's about reclaiming your attention.",
-      date: "Nov 21, 2025",
-      category: "Lifestyle",
-      readTime: "5 min read",
-      image: "https://images.unsplash.com/photo-1499750310159-57f0e1b013b6?auto=format&fit=crop&q=80&w=1000"
-    },
-    {
-      title: "Why React Server Components Change Everything",
-      excerpt: "The shift from client-side rendering to server components represents a fundamental change in how we build web applications. Here's what you need to know.",
-      date: "Nov 18, 2025",
-      category: "Engineering",
-      readTime: "8 min read",
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=1000"
-    },
-    {
-      title: "Building a Personal Brand as a Developer",
-      excerpt: "Your code is your portfolio, but your voice is your brand. Learn how to communicate your value effectively in a crowded market.",
-      date: "Nov 15, 2025",
-      category: "Career",
-      readTime: "6 min read",
-      image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=1000"
-    },
-    {
-      title: "The Future of AI in Creative Workflows",
-      excerpt: "AI isn't replacing creatives; it's augmenting them. Explore how designers and writers are using new tools to push boundaries.",
-      date: "Nov 10, 2025",
-      category: "AI",
-      readTime: "4 min read",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1000"
-    }
-  ];
+  const [location] = useLocation();
+  const [blog, setBlog] = useState<any>(null);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBlogData = async () => {
+      try {
+        // Get blogId from URL query params
+        const params = new URLSearchParams(location.split('?')[1]);
+        const blogId = params.get('blogId');
+
+        if (!blogId) {
+          setError("No blog selected");
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch blog and articles data
+        const [blogData, articlesData] = await Promise.all([
+          api.getBlog(blogId),
+          api.getArticles(blogId)
+        ]);
+
+        setBlog(blogData);
+        setArticles(articlesData || []);
+      } catch (err) {
+        console.error("Failed to load blog:", err);
+        setError("Failed to load blog data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBlogData();
+  }, [location]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading blog...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !blog) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error || "Blog not found"}</p>
+          <Link href="/my-blogs">
+            <Button>Back to My Blogs</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const featuredArticle = articles?.[0];
+  const restArticles = articles?.slice(1) || [];
+
+  const defaultAvatar = blog?.name?.charAt(0).toUpperCase() || "B";
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/10 selection:text-primary">
@@ -61,9 +95,9 @@ export default function BlogPreview() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-serif font-bold text-xl">B</span>
+              <span className="text-primary-foreground font-serif font-bold text-xl">{defaultAvatar}</span>
             </div>
-            <span className="font-serif text-xl font-bold tracking-tight">Jane's Blog</span>
+            <span className="font-serif text-xl font-bold tracking-tight" data-testid="blog-title">{blog?.name || "Untitled Blog"}</span>
           </div>
           
           <div className="hidden md:flex items-center gap-6">
@@ -94,85 +128,91 @@ export default function BlogPreview() {
 
       <main>
         {/* Hero Section */}
-        <section className="py-20 md:py-28 border-b border-border bg-muted/10">
-            <div className="container mx-auto px-4">
-                <div className="max-w-4xl mx-auto text-center">
-                    <Badge variant="secondary" className="mb-6 px-3 py-1 rounded-full text-sm font-medium">
-                        Featured Post
-                    </Badge>
-                    <h1 className="font-serif text-5xl md:text-7xl font-bold leading-tight mb-8 tracking-tight">
-                        The Art of Digital Minimalism in 2024
-                    </h1>
-                    <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl mx-auto">
-                        In a world overflowing with notifications and endless feeds, the ability to focus has become a superpower.
-                    </p>
-                    <div className="flex items-center justify-center gap-4 mb-12">
-                        <Avatar className="h-12 w-12 border-2 border-background">
-                            <AvatarImage src="https://github.com/shadcn.png" />
-                            <AvatarFallback>JD</AvatarFallback>
-                        </Avatar>
-                        <div className="text-left">
-                            <div className="font-bold">Jane Doe</div>
-                            <div className="text-sm text-muted-foreground">Nov 21, 2025 · 5 min read</div>
-                        </div>
-                    </div>
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl aspect-[21/9] group">
-                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
-                        <img 
-                            src="https://images.unsplash.com/photo-1499750310159-57f0e1b013b6?auto=format&fit=crop&q=80&w=2000" 
-                            alt="Hero" 
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
-                        />
-                    </div>
-                </div>
-            </div>
-        </section>
+        {featuredArticle ? (
+          <section className="py-20 md:py-28 border-b border-border bg-muted/10">
+              <div className="container mx-auto px-4">
+                  <div className="max-w-4xl mx-auto text-center">
+                      <Badge variant="secondary" className="mb-6 px-3 py-1 rounded-full text-sm font-medium">
+                          Featured Post
+                      </Badge>
+                      <h1 className="font-serif text-5xl md:text-7xl font-bold leading-tight mb-8 tracking-tight" data-testid="featured-title">
+                          {featuredArticle?.title || "Untitled Article"}
+                      </h1>
+                      <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl mx-auto">
+                          {featuredArticle?.excerpt || featuredArticle?.content?.substring(0, 100) || "Read the featured article to learn more."}
+                      </p>
+                      <div className="flex items-center justify-center gap-4 mb-12">
+                          <Avatar className="h-12 w-12 border-2 border-background">
+                              <AvatarImage src={blog?.author?.avatar} />
+                              <AvatarFallback>{defaultAvatar}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-left">
+                              <div className="font-bold">{blog?.author || blog?.name || "Anonymous"}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {featuredArticle?.createdAt ? new Date(featuredArticle.createdAt).toLocaleDateString() : new Date().toLocaleDateString()} · {Math.ceil((featuredArticle?.content?.split(/\s+/).length || 0) / 200)} min read
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </section>
+        ) : (
+          <section className="py-20 md:py-28 border-b border-border bg-muted/10">
+              <div className="container mx-auto px-4 text-center">
+                  <p className="text-muted-foreground">No articles published yet. Check back soon!</p>
+              </div>
+          </section>
+        )}
 
         {/* Recent Posts Grid */}
-        <section className="py-24">
-            <div className="container mx-auto px-4">
-                <div className="flex items-center justify-between mb-12">
-                    <h2 className="font-serif text-3xl font-bold">Recent Writings</h2>
-                    <div className="relative w-64 hidden md:block">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search articles..." className="pl-9 rounded-full bg-muted/20 border-transparent focus:bg-background focus:border-border transition-all" />
-                    </div>
-                </div>
+        {restArticles.length > 0 && (
+          <section className="py-24">
+              <div className="container mx-auto px-4">
+                  <div className="flex items-center justify-between mb-12">
+                      <h2 className="font-serif text-3xl font-bold">All Articles</h2>
+                      <div className="relative w-64 hidden md:block">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder="Search articles..." className="pl-9 rounded-full bg-muted/20 border-transparent focus:bg-background focus:border-border transition-all" />
+                      </div>
+                  </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-                    {posts.slice(1).map((post, i) => (
-                        <article key={i} className="group cursor-pointer flex flex-col h-full">
-                            <div className="rounded-xl overflow-hidden mb-6 aspect-video bg-muted relative">
-                                <div className="absolute top-4 left-4 z-10">
-                                    <Badge className="bg-background/80 backdrop-blur text-foreground hover:bg-background">{post.category}</Badge>
-                                </div>
-                                <img 
-                                    src={post.image} 
-                                    alt={post.title} 
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                                />
-                            </div>
-                            <div className="flex-1 flex flex-col">
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 uppercase tracking-wider font-medium">
-                                    <span>{post.date}</span>
-                                    <span>•</span>
-                                    <span>{post.readTime}</span>
-                                </div>
-                                <h3 className="font-serif text-2xl font-bold mb-3 group-hover:text-primary transition-colors leading-tight">
-                                    {post.title}
-                                </h3>
-                                <p className="text-muted-foreground leading-relaxed mb-6 flex-1">
-                                    {post.excerpt}
-                                </p>
-                                <div className="flex items-center text-sm font-medium text-primary mt-auto group-hover:translate-x-1 transition-transform duration-300 w-fit">
-                                    Read Article <ArrowRight className="ml-2 h-4 w-4" />
-                                </div>
-                            </div>
-                        </article>
-                    ))}
-                </div>
-            </div>
-        </section>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                      {restArticles.map((article, i) => (
+                          <article key={i} className="group cursor-pointer flex flex-col h-full">
+                              <div className="rounded-xl overflow-hidden mb-6 aspect-video bg-muted relative">
+                                  <div className="absolute top-4 left-4 z-10">
+                                      <Badge className="bg-background/80 backdrop-blur text-foreground hover:bg-background">{article.category || "Article"}</Badge>
+                                  </div>
+                                  {article.image && (
+                                    <img 
+                                        src={article.image} 
+                                        alt={article.title} 
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                    />
+                                  )}
+                              </div>
+                              <div className="flex-1 flex flex-col">
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 uppercase tracking-wider font-medium">
+                                      <span>{article.createdAt ? new Date(article.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+                                      <span>•</span>
+                                      <span>{Math.ceil((article.content?.split(/\s+/).length || 0) / 200)} min read</span>
+                                  </div>
+                                  <h3 className="font-serif text-2xl font-bold mb-3 group-hover:text-primary transition-colors leading-tight" data-testid={`article-title-${i}`}>
+                                      {article.title || "Untitled"}
+                                  </h3>
+                                  <p className="text-muted-foreground leading-relaxed mb-6 flex-1">
+                                      {article.excerpt || article.content?.substring(0, 150) || "No description available"}
+                                  </p>
+                                  <div className="flex items-center text-sm font-medium text-primary mt-auto group-hover:translate-x-1 transition-transform duration-300 w-fit">
+                                      Read Article <ArrowRight className="ml-2 h-4 w-4" />
+                                  </div>
+                              </div>
+                          </article>
+                      ))}
+                  </div>
+              </div>
+          </section>
+        )}
 
         {/* Newsletter Section */}
         <section className="py-24 bg-primary text-primary-foreground">
@@ -204,7 +244,7 @@ export default function BlogPreview() {
       <footer className="py-12 border-t border-border">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-sm text-muted-foreground">
-                © 2025 Jane Doe. All rights reserved.
+                © 2025 {blog?.name || "BlogVerse"}. All rights reserved.
             </div>
             <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
                 <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
