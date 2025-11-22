@@ -605,15 +605,18 @@ export default function Editor() {
               </Button>
             </div>
 
-            {/* Right side - Save Button */}
+            {/* Right side - Publish Button */}
             <Button 
               className="ml-auto gap-2"
-              onClick={handleSaveArticle}
+              onClick={() => {
+                handleSaveArticle();
+                setTimeout(() => window.location.href = '/publish', 500);
+              }}
               disabled={isSaving}
               size="lg"
               data-testid="button-publish-final">
-              <Save className="h-4 w-4" />
-              {saveStatus === "saving" ? "Saving..." : "Save Article"}
+              <Send className="h-4 w-4" />
+              {saveStatus === "saving" ? "Saving..." : "Publish"}
             </Button>
           </div>
         </header>
