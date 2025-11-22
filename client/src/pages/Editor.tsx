@@ -43,34 +43,45 @@ export default function Editor() {
     setIsGenerating(true);
     
     try {
-      const result = await api.generateBlogContent(aiPrompt, generationType);
+      const response = await api.generateBlogContent(aiPrompt, generationType);
       
-      if (result.error) {
-        console.error("AI Error:", result.error);
+      if (response.error) {
+        console.error("AI Error:", response.error);
+        alert(`Error: ${response.error}\n\n${response.details || 'Please check your OpenAI API key and try again.'}`);
+        setIsGenerating(false);
+        return;
+      }
+
+      const generatedText = response.text || "";
+      
+      if (!generatedText) {
+        console.error("No content generated");
+        alert("No content was generated. Please try again.");
         setIsGenerating(false);
         return;
       }
 
       if (generationType === "title") {
-        setTitle(result.text || aiPrompt);
+        setTitle(generatedText);
       } else if (generationType === "tags") {
-        // Tags can be used separately
-        console.log("Generated tags:", result.text);
+        console.log("Generated tags:", generatedText);
+        alert(`Tags:\n${generatedText}`);
       } else if (generationType === "meta") {
-        // SEO meta can be used separately
-        console.log("Generated meta:", result.text);
+        console.log("Generated meta:", generatedText);
+        alert(`SEO Meta Description:\n${generatedText}`);
       } else if (generationType === "outline") {
-        const outllineHtml = `<h2>Article Outline</h2>${result.text}`;
-        setContent(prev => prev + outllineHtml);
+        const outlineHtml = `<h2>Article Outline</h2><p>${generatedText.replace(/\n/g, '</p><p>')}</p>`;
+        setContent(prev => prev + outlineHtml);
       } else {
-        // Full article or section
-        const generatedText = result.text || aiPrompt;
-        setContent(prev => prev + `<p>${generatedText}</p>`);
+        // Full article or section - wrap in paragraphs
+        const formattedText = generatedText.split('\n\n').map(para => `<p>${para.trim()}</p>`).join('');
+        setContent(prev => prev + formattedText);
       }
       
       setAiPrompt("");
     } catch (error) {
       console.error("Failed to generate content:", error);
+      alert("Failed to generate content. Please check your connection and try again.");
     } finally {
       setIsGenerating(false);
     }

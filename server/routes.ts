@@ -321,8 +321,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Prompt and type are required" });
       }
 
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ error: "OpenAI API key not configured" });
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey || apiKey.length < 20) {
+        return res.status(500).json({ 
+          error: "OpenAI API key not configured",
+          details: "Please provide a valid OpenAI API key in your environment variables. Get one from https://platform.openai.com/api-keys"
+        });
       }
 
       let systemPrompt = "";
@@ -357,22 +361,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "Invalid generation type" });
       }
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        max_completion_tokens: type === "full" ? 2000 : type === "outline" ? 1500 : 500,
-      });
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-5",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          max_completion_tokens: type === "full" ? 2000 : type === "outline" ? 1500 : 500,
+        });
 
-      const generatedText = response.choices[0]?.message?.content || "";
+        const generatedText = response.choices[0]?.message?.content || "";
 
-      res.json({
-        text: generatedText,
-        type: type,
-        timestamp: new Date(),
-      });
+        res.json({
+          text: generatedText,
+          type: type,
+          timestamp: new Date(),
+        });
+      } catch (openaiError: any) {
+        console.error("OpenAI API error:", openaiError.message);
+        
+        // Check if it's an API key error
+        if (openaiError.status === 401 || openaiError.code === 'invalid_api_key') {
+          return res.status(401).json({
+            error: "Invalid OpenAI API key",
+            details: "The OpenAI API key provided is invalid or expired. Please update it at https://platform.openai.com/api-keys"
+          });
+        }
+        
+        throw openaiError;
+      }
     } catch (error: any) {
       console.error("AI generation error:", error);
       res.status(500).json({ 
