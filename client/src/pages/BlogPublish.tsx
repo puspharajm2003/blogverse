@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
+import { useLocation } from "wouter";
 import {
   Send,
   Calendar,
@@ -35,6 +36,8 @@ import {
   Edit2,
   MoreHorizontal,
   X,
+  Pencil,
+  PenTool,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +48,7 @@ import {
 import { toast } from "sonner";
 
 export default function BlogPublish() {
+  const [, setLocation] = useLocation();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<string>("");
   const [articles, setArticles] = useState<any[]>([]);
@@ -483,7 +487,30 @@ export default function BlogPublish() {
                             </div>
 
                             {/* Article Actions */}
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                variant="outline"
+                                onClick={() => setLocation(`/editor?articleId=${article.id}`)}
+                                className="gap-2 flex-1"
+                                title="Edit article content"
+                              >
+                                <PenTool className="h-4 w-4" />
+                                Change
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingArticleId(article.id);
+                                  setEditArticleTitle(article.title);
+                                }}
+                                className="gap-2 flex-1"
+                                title="Edit article title"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit
+                              </Button>
+
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button className="flex-1 gap-2 font-semibold h-11">
@@ -491,78 +518,66 @@ export default function BlogPublish() {
                                     Ready to Publish?
                                   </Button>
                                 </DialogTrigger>
-                              <DialogContent className="max-w-md">
-                                <DialogHeader>
-                                  <DialogTitle>Publish Article</DialogTitle>
-                                  <DialogDescription>
-                                    Set the publication date and time for your article
-                                  </DialogDescription>
-                                </DialogHeader>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Publish Article</DialogTitle>
+                                    <DialogDescription>
+                                      Set the publication date and time for your article
+                                    </DialogDescription>
+                                  </DialogHeader>
 
-                                <div className="space-y-6 py-6">
-                                  <div className="space-y-3">
-                                    <label className="text-sm font-semibold">Publish Date</label>
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                                      <Input
-                                        type="date"
-                                        value={publishDate}
-                                        onChange={(e) => setPublishDate(e.target.value)}
-                                        className="flex-1"
-                                      />
+                                  <div className="space-y-6 py-6">
+                                    <div className="space-y-3">
+                                      <label className="text-sm font-semibold">Publish Date</label>
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                                        <Input
+                                          type="date"
+                                          value={publishDate}
+                                          onChange={(e) => setPublishDate(e.target.value)}
+                                          className="flex-1"
+                                        />
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  <div className="space-y-3">
-                                    <label className="text-sm font-semibold">Publish Time</label>
-                                    <div className="flex items-center gap-2">
-                                      <Clock className="h-5 w-5 text-muted-foreground" />
-                                      <Input
-                                        type="time"
-                                        value={publishTime}
-                                        onChange={(e) => setPublishTime(e.target.value)}
-                                        className="flex-1"
-                                      />
+                                    <div className="space-y-3">
+                                      <label className="text-sm font-semibold">Publish Time</label>
+                                      <div className="flex items-center gap-2">
+                                        <Clock className="h-5 w-5 text-muted-foreground" />
+                                        <Input
+                                          type="time"
+                                          value={publishTime}
+                                          onChange={(e) => setPublishTime(e.target.value)}
+                                          className="flex-1"
+                                        />
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <p className="text-sm text-blue-900">
-                                      Your article will be published on{" "}
-                                      <strong>
-                                        {new Date(`${publishDate}T${publishTime}`).toLocaleString()}
-                                      </strong>
-                                    </p>
-                                  </div>
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                      <p className="text-sm text-blue-900">
+                                        Your article will be published on{" "}
+                                        <strong>
+                                          {new Date(`${publishDate}T${publishTime}`).toLocaleString()}
+                                        </strong>
+                                      </p>
+                                    </div>
 
-                                  <div className="flex gap-2">
                                     <Button
                                       onClick={() => handlePublish(article.id)}
                                       disabled={publishingId === article.id}
-                                      className="flex-1 gap-2 font-semibold h-11"
+                                      className="w-full gap-2 font-semibold h-11"
                                     >
                                       {publishingId === article.id ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       ) : (
                                         <Send className="h-4 w-4" />
                                       )}
-                                      {publishingId === article.id ? "Publishing..." : "Publish"}
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        setEditingArticleId(article.id);
-                                        setEditArticleTitle(article.title);
-                                      }}
-                                      className="gap-2"
-                                    >
-                                      <Edit2 className="h-4 w-4" />
-                                      Edit
+                                      {publishingId === article.id ? "Publishing..." : "Publish Now"}
                                     </Button>
                                   </div>
-                                </div>
-                              </DialogContent>
+                                </DialogContent>
                               </Dialog>
+
                               <Button
                                 variant="destructive"
                                 size="icon"
