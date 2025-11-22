@@ -89,7 +89,9 @@ export default function BlogPublish() {
     setIsFetching(true);
     try {
       const data = await api.getArticlesByBlogAdmin(blogId);
-      setArticles(data || []);
+      // Filter out deleted articles
+      const activeArticles = (data || []).filter((a: any) => a.status !== "deleted");
+      setArticles(activeArticles);
     } catch (error) {
       console.error("Failed to fetch articles:", error);
       toast.error("Failed to load articles");
@@ -178,7 +180,10 @@ export default function BlogPublish() {
       const article = articles.find(a => a.id === articleId);
       if (!article) return;
 
-      // Store in trash (localStorage for now)
+      // Update article status to "deleted" in database
+      await api.updateArticle(articleId, { status: "deleted" });
+
+      // Store in trash (localStorage for backup)
       const deletedArticles = JSON.parse(localStorage.getItem("deleted_articles") || "[]");
       deletedArticles.push({
         id: article.id,
@@ -189,7 +194,7 @@ export default function BlogPublish() {
       });
       localStorage.setItem("deleted_articles", JSON.stringify(deletedArticles));
 
-      // Remove from articles
+      // Remove from articles in UI
       setArticles(articles.filter(a => a.id !== articleId));
       setDeletingArticleId(null);
       toast.success("Article moved to trash");
