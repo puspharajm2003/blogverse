@@ -116,18 +116,17 @@ export default function MyBlogs() {
                 </CardContent>
               </Card>
             ))}
-          
-          {/* Create New Placeholder Card */}
-          <div className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center p-6 text-center hover:bg-muted/30 transition-colors cursor-pointer h-full min-h-[300px]">
-            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Plus className="h-6 w-6 text-muted-foreground" />
+            <div className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center p-6 text-center hover:bg-muted/30 transition-colors cursor-pointer min-h-[300px]">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Plus className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium text-lg mb-1">Create another blog</h3>
+              <p className="text-muted-foreground text-sm max-w-[200px]">
+                  Launch a new publication for a different audience.
+              </p>
             </div>
-            <h3 className="font-medium text-lg mb-1">Create another blog</h3>
-            <p className="text-muted-foreground text-sm max-w-[200px]">
-                Launch a new publication for a different audience.
-            </p>
           </div>
-        </div>
+        )}
       </div>
     </SidebarLayout>
   );
