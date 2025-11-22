@@ -6,14 +6,17 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import OpenAI from "openai";
 
-// OpenAI client will be initialized lazily when needed
-let openai: OpenAI | null = null;
+// OpenRouter client will be initialized lazily when needed
+let openrouter: OpenAI | null = null;
 
-function getOpenAIClient() {
-  if (!openai && process.env.OPENAI_API_KEY) {
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenRouterClient() {
+  if (!openrouter && process.env.OPENROUTER_API_KEY) {
+    openrouter = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: "https://openrouter.io/api/v1",
+    });
   }
-  return openai;
+  return openrouter;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
@@ -329,11 +332,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Prompt and type are required" });
       }
 
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ 
-          error: "OpenAI API key not configured",
-          details: "Please provide a valid OpenAI API key in your environment variables. Get one from https://platform.openai.com/api-keys"
+          error: "OpenRouter API key not configured",
+          details: "Please provide a valid OpenRouter API key in your environment variables. Get one from https://openrouter.io/keys"
         });
       }
 
@@ -370,21 +373,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        const client = getOpenAIClient();
+        const client = getOpenRouterClient();
         if (!client) {
           return res.status(500).json({ 
-            error: "OpenAI not available",
-            details: "OpenAI client could not be initialized"
+            error: "OpenRouter not available",
+            details: "OpenRouter client could not be initialized"
           });
         }
 
         const response = await client.chat.completions.create({
-          model: "gpt-5",
+          model: "openai/gpt-4-turbo",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
-          max_completion_tokens: type === "full" ? 2000 : type === "outline" ? 1500 : 500,
+          max_tokens: type === "full" ? 2000 : type === "outline" ? 1500 : 500,
         });
 
         const generatedText = response.choices[0]?.message?.content || "";
@@ -394,18 +397,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: type,
           timestamp: new Date(),
         });
-      } catch (openaiError: any) {
-        console.error("OpenAI API error:", openaiError.message);
+      } catch (openrouterError: any) {
+        console.error("OpenRouter API error:", openrouterError.message);
         
         // Check if it's an API key error
-        if (openaiError.status === 401 || openaiError.code === 'invalid_api_key') {
+        if (openrouterError.status === 401 || openrouterError.code === 'invalid_api_key') {
           return res.status(401).json({
-            error: "Invalid OpenAI API key",
-            details: "The OpenAI API key provided is invalid or expired. Please update it at https://platform.openai.com/api-keys"
+            error: "Invalid OpenRouter API key",
+            details: "The OpenRouter API key provided is invalid or expired. Please update it at https://openrouter.io/keys"
           });
         }
         
-        throw openaiError;
+        throw openrouterError;
       }
     } catch (error: any) {
       console.error("AI generation error:", error);
