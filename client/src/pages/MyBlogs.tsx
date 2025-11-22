@@ -3,9 +3,8 @@ import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Globe, Eye, MoreHorizontal, Plus } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import {
     DropdownMenu,
@@ -15,27 +14,26 @@ import {
   } from "@/components/ui/dropdown-menu";
 
 export default function MyBlogs() {
-  const { token } = useAuth();
+  const [, setLocation] = useLocation();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
-    api.getBlogs(token)
+    const user = localStorage.getItem("stack_user");
+    if (!user) {
+      setLocation("/login");
+      return;
+    }
+    api.getBlogs()
       .then(data => setBlogs(data || []))
       .finally(() => setIsLoading(false));
-  }, [token]);
+  }, [setLocation]);
 
-  if (!token) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Not logged in</h1>
-          <Link href="/">
-            <Button>Go to Home</Button>
-          </Link>
-        </div>
-      </div>
+      <SidebarLayout>
+        <div className="p-8 text-center">Loading...</div>
+      </SidebarLayout>
     );
   }
 

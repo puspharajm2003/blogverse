@@ -41,3 +41,9 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_STACK_PROJECT_ID = "3ce4310e-ebb7-4170-9a9e-1ae402610cc1"
+NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY = "pck_ppmfx8bpmyn845vbpacnd3erp1dpjc541zhh99ynya5d8"

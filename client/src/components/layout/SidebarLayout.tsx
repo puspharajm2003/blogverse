@@ -109,7 +109,7 @@ export function SidebarLayout({ children }: SidebarProps) {
               <DropdownMenuItem>Billing</DropdownMenuItem>
               <DropdownMenuItem>Team</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive" onClick={logout}>
+              <DropdownMenuItem className="text-destructive" onClick={() => logout()}>
                 <LogOut className="mr-2 h-4 w-4" /> Log out
               </DropdownMenuItem>
             </DropdownMenuContent>

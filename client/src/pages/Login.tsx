@@ -1,33 +1,51 @@
-import { useState } from "react";
-import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/api";
 
 export default function Login() {
-  const { login, signup, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("stack_user");
+    if (savedUser) {
+      setLocation("/dashboard");
+    }
+  }, [setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+    setIsLoading(true);
+
     try {
+      let response;
       if (isSignup) {
-        await signup(email, password, displayName);
+        response = await api.signup(email, password, displayName);
       } else {
-        await login(email, password);
+        response = await api.login(email, password);
       }
-      setLocation("/dashboard");
+
+      if (response.error) {
+        setError(response.error);
+      } else {
+        localStorage.setItem("stack_user", JSON.stringify(response.user));
+        localStorage.setItem("stack_token", response.token);
+        setLocation("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
     }
   };
 
