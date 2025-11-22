@@ -10,7 +10,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  User
+  User,
+  Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export function SidebarLayout({ children }: SidebarProps) {
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
     { icon: PenTool, label: 'Write', href: '/editor' },
     { icon: Globe, label: 'My Blog', href: '/my-blogs' },
+    { icon: Send, label: 'Publish', href: '/publish' },
     { icon: BarChart3, label: 'Analytics', href: '/analytics' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];

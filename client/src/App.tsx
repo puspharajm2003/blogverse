@@ -14,6 +14,7 @@ import ThemeSettings from "@/pages/ThemeSettings";
 import Analytics from "@/pages/Analytics";
 import BlogPreview from "@/pages/BlogPreview";
 import MyBlogs from "@/pages/MyBlogs";
+import BlogPublish from "@/pages/BlogPublish";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/settings" component={ThemeSettings} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/my-blogs" component={MyBlogs} />
+      <Route path="/publish" component={BlogPublish} />
       <Route path="/blog/preview" component={BlogPreview} />
       <Route component={NotFound} />
     </Switch>
