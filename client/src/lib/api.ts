@@ -173,4 +173,14 @@ export const api = {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/chat/history?limit=${limit}`, { headers }).then((r) => r.json());
   },
+
+  // Content Brainstorm
+  brainstormContentIdeas: (niche: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/ai/brainstorm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ niche }),
+    }).then((r) => r.json());
+  },
 };

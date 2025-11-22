@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { AiChatbot } from "@/components/AiChatbot";
+import { ContentBrainstorm } from "@/components/ContentBrainstorm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,8 @@ import {
     Undo2,
     Redo2,
     AlertCircle,
-    Eye
+    Eye,
+    Lightbulb
 } from "lucide-react";
 import {
     Select,
@@ -172,6 +174,7 @@ export default function Editor() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [blogId, setBlogId] = useState<string | null>(null);
   const [articleId, setArticleId] = useState<string | null>(null);
+  const [isBrainstormOpen, setIsBrainstormOpen] = useState(false);
 
   // Initialize blog on mount
   useEffect(() => {
@@ -327,6 +330,23 @@ export default function Editor() {
     updateContent(content + formattedText, title);
   };
 
+  // Handle brainstorm idea selection
+  const handleBrainstormIdea = (idea: any) => {
+    // Set the title to the selected idea
+    updateContent(content, idea.title);
+    setIsBrainstormOpen(false);
+    
+    // Automatically generate full article for this idea
+    api.generateBlogContent(idea.title, "full").then((response) => {
+      if (response.text) {
+        const formattedText = convertMarkdownToHtml(response.text);
+        updateContent(formattedText, idea.title);
+      }
+    }).catch((error) => {
+      console.error("Failed to generate article:", error);
+    });
+  };
+
   const wordCount = countWords(content);
 
   return (
@@ -407,6 +427,24 @@ export default function Editor() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[500px] p-0 flex flex-col">
                 <AiChatbot onContentGenerated={handleContentGenerated} />
+              </SheetContent>
+            </Sheet>
+
+            {/* Content Brainstorm */}
+            <Sheet open={isBrainstormOpen} onOpenChange={setIsBrainstormOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  data-testid="button-brainstorm"
+                >
+                    <Lightbulb className="h-4 w-4 mr-2 text-yellow-500" />
+                    Brainstorm
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[500px] p-0 flex flex-col">
+                <div className="p-4 border-b overflow-auto flex-1">
+                  <ContentBrainstorm onSelectIdea={handleBrainstormIdea} />
+                </div>
               </SheetContent>
             </Sheet>
 

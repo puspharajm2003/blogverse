@@ -728,6 +728,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Content Brainstorm Route
+  app.post("/api/ai/brainstorm", authenticateToken, async (req: any, res) => {
+    try {
+      const { niche } = req.body;
+      
+      if (!niche) {
+        return res.status(400).json({ error: "Niche is required" });
+      }
+
+      // Return demo ideas directly (AI API might not be needed for simple ideas)
+      const ideas = generateDemoBrainstormIdeas(niche);
+
+      res.json({
+        ideas: ideas,
+        niche: niche,
+        timestamp: new Date(),
+      });
+    } catch (error: any) {
+      console.error("Brainstorm error:", error);
+      res.status(500).json({ 
+        error: "Failed to generate brainstorm ideas",
+        details: error?.message || "Unknown error"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Generate demo brainstorm ideas
+function generateDemoBrainstormIdeas(niche: string): any[] {
+  return [
+    {
+      id: "1",
+      title: `Beginner's Guide to ${niche}`,
+      description: `A comprehensive introduction to ${niche} for newcomers, covering fundamental concepts and getting started tips.`,
+      category: "Guide",
+      keywords: ["beginner", "guide", "tutorial", niche.toLowerCase()],
+    },
+    {
+      id: "2",
+      title: `10 Essential Tips for ${niche} Success`,
+      description: `Learn the top 10 actionable tips that professionals use to excel in ${niche}.`,
+      category: "Tips & Tricks",
+      keywords: ["tips", "best practices", "strategies", niche.toLowerCase()],
+    },
+    {
+      id: "3",
+      title: `The Future of ${niche}: Trends to Watch`,
+      description: `Explore emerging trends and innovations shaping the future of ${niche} industry.`,
+      category: "Trends",
+      keywords: ["trends", "future", "innovation", "industry", niche.toLowerCase()],
+    },
+    {
+      id: "4",
+      title: `${niche} vs Competitors: A Comprehensive Comparison`,
+      description: `Compare different approaches and tools within the ${niche} space to help readers make informed decisions.`,
+      category: "Comparison",
+      keywords: ["comparison", "alternatives", "tools", niche.toLowerCase()],
+    },
+    {
+      id: "5",
+      title: `Common ${niche} Mistakes and How to Avoid Them`,
+      description: `Explore the most common pitfalls in ${niche} and provide practical solutions to prevent them.`,
+      category: "Problem Solving",
+      keywords: ["mistakes", "errors", "troubleshooting", niche.toLowerCase()],
+    },
+    {
+      id: "6",
+      title: `${niche} Tools and Resources: The Complete Toolkit`,
+      description: `A curated list of the best tools, software, and resources available for ${niche} professionals.`,
+      category: "Resources",
+      keywords: ["tools", "resources", "software", "guides", niche.toLowerCase()],
+    },
+  ];
 }
