@@ -264,6 +264,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard Stats Route
+  app.get("/api/dashboard/stats", authenticateToken, async (req: any, res) => {
+    try {
+      const stats = await storage.getDashboardStats(req.userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Dashboard stats error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

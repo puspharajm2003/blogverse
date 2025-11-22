@@ -31,6 +31,7 @@ export interface IStorage {
   recordEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
   getArticleStats(articleId: string): Promise<{ views: number; uniqueVisitors: number }>;
   getBlogStats(blogId: string): Promise<{ totalViews: number; totalArticles: number }>;
+  getDashboardStats(userId: string): Promise<{ totalBlogs: number; totalArticles: number; totalViews: number; recentArticles: any[] }>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -138,6 +139,32 @@ export class PostgresStorage implements IStorage {
     return {
       totalViews,
       totalArticles: blogArticles.length,
+    };
+  }
+
+  async getDashboardStats(userId: string): Promise<{ totalBlogs: number; totalArticles: number; totalViews: number; recentArticles: any[] }> {
+    const userBlogs = await db.select({ id: blogs.id }).from(blogs).where(eq(blogs.userId, userId));
+    const blogIds = userBlogs.map(b => b.id);
+
+    let totalArticles = 0;
+    let totalViews = 0;
+    let recentArticles: any[] = [];
+
+    if (blogIds.length > 0) {
+      const allArticles = await db.select().from(articles).where(inArray(articles.blogId, blogIds));
+      totalArticles = allArticles.length;
+
+      const stats = await db.select({ count: db.$count(analyticsEvents) }).from(analyticsEvents).where(inArray(analyticsEvents.articleId, allArticles.map(a => a.id)));
+      totalViews = stats[0]?.count || 0;
+
+      recentArticles = allArticles.slice(0, 5).reverse();
+    }
+
+    return {
+      totalBlogs: userBlogs.length,
+      totalArticles,
+      totalViews,
+      recentArticles,
     };
   }
 }

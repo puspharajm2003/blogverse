@@ -124,4 +124,10 @@ export const api = {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/blogs/${blogId}/stats`, { headers }).then((r) => r.json());
   },
+
+  // Dashboard
+  getDashboardStats: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/dashboard/stats`, { headers }).then((r) => r.json());
+  },
 };
