@@ -26,6 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       res.status(201).json({ user: { id: user.id, email: user.email, displayName: user.displayName }, token });
     } catch (error) {
+      console.error("Signup error:", error);
       res.status(500).json({ error: "Server error" });
     }
   });
@@ -44,6 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       res.json({ user: { id: user.id, email: user.email, displayName: user.displayName }, token });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ error: "Server error" });
     }
   });
