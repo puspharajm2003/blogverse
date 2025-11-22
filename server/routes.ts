@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
@@ -306,6 +309,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Demo account error:", error);
       res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  // AI Content Generation Route (the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user)
+  app.post("/api/ai/generate", authenticateToken, async (req: any, res) => {
+    try {
+      const { prompt, type } = req.body;
+      
+      if (!prompt || !type) {
+        return res.status(400).json({ error: "Prompt and type are required" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      let systemPrompt = "";
+      let userPrompt = prompt;
+
+      switch (type) {
+        case "full":
+          systemPrompt = "You are a professional blog writer. Write a comprehensive, well-structured article with multiple paragraphs, headings, and engaging content. The article should be SEO-friendly and ready to publish.";
+          userPrompt = `Write a full blog article about: ${prompt}`;
+          break;
+        case "section":
+          systemPrompt = "You are a blog content writer. Write a well-crafted section or paragraph that flows naturally and engages readers.";
+          userPrompt = `Write a detailed section for a blog post about: ${prompt}`;
+          break;
+        case "outline":
+          systemPrompt = "You are a content strategist. Create a detailed outline with main sections and subsections. Format as HTML list.";
+          userPrompt = `Create a detailed outline for a blog post about: ${prompt}`;
+          break;
+        case "title":
+          systemPrompt = "You are a copywriter specializing in blog titles. Generate 3-5 catchy, SEO-friendly blog titles that attract readers.";
+          userPrompt = `Generate compelling blog titles for: ${prompt}`;
+          break;
+        case "tags":
+          systemPrompt = "You are a content tagging expert. Generate relevant tags for blog posts. Return as comma-separated values.";
+          userPrompt = `Generate relevant tags for a blog post about: ${prompt}`;
+          break;
+        case "meta":
+          systemPrompt = "You are an SEO expert. Write a compelling meta description (max 160 characters) that encourages clicks from search results.";
+          userPrompt = `Write an SEO meta description for: ${prompt}`;
+          break;
+        default:
+          return res.status(400).json({ error: "Invalid generation type" });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        max_completion_tokens: type === "full" ? 2000 : type === "outline" ? 1500 : 500,
+      });
+
+      const generatedText = response.choices[0]?.message?.content || "";
+
+      res.json({
+        text: generatedText,
+        type: type,
+        timestamp: new Date(),
+      });
+    } catch (error: any) {
+      console.error("AI generation error:", error);
+      res.status(500).json({ 
+        error: "Failed to generate content",
+        details: error?.message || "Unknown error"
+      });
     }
   });
 

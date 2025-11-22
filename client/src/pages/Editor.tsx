@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { api } from "@/lib/api";
 import { 
     Save, 
     Send, 
@@ -14,7 +15,8 @@ import {
     Sparkles, 
     Search,
     Tag,
-    Globe
+    Globe,
+    Loader2
 } from "lucide-react";
 import {
     Select,
@@ -33,30 +35,45 @@ export default function Editor() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [generationType, setGenerationType] = useState<"section" | "full" | "outline" | "title" | "tags" | "meta">("section");
 
-  const handleAiGenerate = () => {
+  const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return;
     
     setIsGenerating(true);
     
-    // Simulate AI generation delay
-    setTimeout(() => {
-      const generatedText = `
-        <h3>${aiPrompt}</h3>
-        <p>Here is a draft section based on your prompt. Artificial Intelligence has transformed the way we create content, enabling writers to overcome block and scale their output.</p>
-        <ul>
-          <li>Benefit 1: Faster research and outlining</li>
-          <li>Benefit 2: SEO optimization suggestions</li>
-          <li>Benefit 3: Tone and style consistency</li>
-        </ul>
-        <p>Remember to review and edit this content to ensure it matches your unique voice.</p>
-      `;
+    try {
+      const result = await api.generateBlogContent(aiPrompt, generationType);
       
-      setContent(prev => prev + generatedText);
-      setIsGenerating(false);
+      if (result.error) {
+        console.error("AI Error:", result.error);
+        setIsGenerating(false);
+        return;
+      }
+
+      if (generationType === "title") {
+        setTitle(result.text || aiPrompt);
+      } else if (generationType === "tags") {
+        // Tags can be used separately
+        console.log("Generated tags:", result.text);
+      } else if (generationType === "meta") {
+        // SEO meta can be used separately
+        console.log("Generated meta:", result.text);
+      } else if (generationType === "outline") {
+        const outllineHtml = `<h2>Article Outline</h2>${result.text}`;
+        setContent(prev => prev + outllineHtml);
+      } else {
+        // Full article or section
+        const generatedText = result.text || aiPrompt;
+        setContent(prev => prev + `<p>${generatedText}</p>`);
+      }
+      
       setAiPrompt("");
-      setIsAiOpen(false);
-    }, 1500);
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -175,28 +192,27 @@ export default function Editor() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs uppercase text-muted-foreground font-bold">Generate Content</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" className="justify-start">
-                                <Search className="h-3 w-3 mr-2" /> Outline
-                            </Button>
-                            <Button variant="outline" size="sm" className="justify-start">
-                                <Tag className="h-3 w-3 mr-2" /> Tags
-                            </Button>
-                            <Button variant="outline" size="sm" className="justify-start">
-                                <Globe className="h-3 w-3 mr-2" /> SEO Meta
-                            </Button>
-                            <Button variant="outline" size="sm" className="justify-start">
-                                <Sparkles className="h-3 w-3 mr-2" /> Summary
-                            </Button>
-                        </div>
+                        <Label className="text-xs uppercase text-muted-foreground font-bold">Generation Type</Label>
+                        <Select value={generationType} onValueChange={(v: any) => setGenerationType(v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="section">Write Section</SelectItem>
+                            <SelectItem value="full">Full Article</SelectItem>
+                            <SelectItem value="outline">Outline</SelectItem>
+                            <SelectItem value="title">Title Suggestion</SelectItem>
+                            <SelectItem value="tags">Generate Tags</SelectItem>
+                            <SelectItem value="meta">SEO Description</SelectItem>
+                          </SelectContent>
+                        </Select>
                     </div>
                 </div>
                 <div className="p-4 border-t border-border">
                     <div className="flex gap-2">
                         <Input 
-                            placeholder="Ask AI to write..." 
-                            className="h-9" 
+                            placeholder={`Ask AI to ${generationType === 'full' ? 'write a full article' : generationType === 'outline' ? 'create an outline' : generationType === 'title' ? 'suggest titles' : 'write'}...`}
+                            className="h-9 text-xs" 
                             value={aiPrompt}
                             onChange={(e) => setAiPrompt(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
@@ -209,12 +225,13 @@ export default function Editor() {
                             disabled={isGenerating || !aiPrompt.trim()}
                         >
                             {isGenerating ? (
-                                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                                 <Send className="h-4 w-4" />
                             )}
                         </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-2">Powered by OpenAI GPT-5</p>
                 </div>
             </div>
         )}

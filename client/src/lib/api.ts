@@ -148,4 +148,14 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     }).then((r) => r.json()),
+
+  // AI Writing
+  generateBlogContent: (prompt: string, type: "full" | "section" | "outline" | "title" | "tags" | "meta") => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/ai/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ prompt, type }),
+    }).then((r) => r.json());
+  },
 };
