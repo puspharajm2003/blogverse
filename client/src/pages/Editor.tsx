@@ -259,17 +259,22 @@ export default function Editor() {
     <SidebarLayout>
       <div className="h-full flex flex-col">
         {/* Editor Header */}
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-background sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-20 border-b border-border/40 flex items-center justify-between px-8 bg-gradient-to-r from-background via-background to-background/50 sticky top-0 z-20 backdrop-blur-sm">
+          <div className="flex items-center gap-6">
              <div className="flex flex-col">
-                 <span className="text-xs text-muted-foreground">Status</span>
-                 <span className="text-sm font-medium flex items-center gap-1.5">
-                    <span className="h-2 w-2 bg-amber-500 rounded-full" /> Draft
+                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Status</span>
+                 <span className="text-sm font-semibold flex items-center gap-2">
+                    <span className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                      saveStatus === 'saving' ? 'bg-blue-500 animate-pulse' : 
+                      saveStatus === 'saved' ? 'bg-green-500' : 
+                      'bg-amber-500'
+                    }`} /> 
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'All changes saved' : 'Draft'}
                  </span>
              </div>
              <Separator orientation="vertical" className="h-8" />
              <div className="text-sm text-muted-foreground">
-                Last saved: <span className="text-foreground">Just now</span>
+                <span className="font-medium">{wordCount}</span> words • {articleId ? '📁 Saved to database' : '📝 Not saved yet'}
              </div>
           </div>
           
@@ -444,24 +449,32 @@ export default function Editor() {
         </header>
 
         {/* Editor Main Area */}
-        <div className="flex-1 overflow-y-auto bg-background">
-            <div className="max-w-3xl mx-auto py-12 px-6">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-background via-background/95 to-background">
+            <div className="max-w-4xl mx-auto py-16 px-8">
                 {/* Title Input */}
-                <input 
-                    type="text" 
-                    value={title}
-                    onChange={(e) => updateContent(content, e.target.value)}
-                    className="w-full text-4xl md:text-5xl font-serif font-bold bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/50 mb-8"
-                    placeholder="Enter your title..."
-                    data-testid="input-title"
-                />
+                <div className="mb-12">
+                  <input 
+                      type="text" 
+                      value={title}
+                      onChange={(e) => updateContent(content, e.target.value)}
+                      className="w-full text-5xl lg:text-6xl font-serif font-bold bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/30 mb-4 tracking-tight leading-tight text-foreground"
+                      placeholder="Enter your article title..."
+                      data-testid="input-title"
+                  />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="h-1 w-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></span>
+                    Start typing your article content below
+                  </div>
+                </div>
                 
                 {/* Tiptap Editor */}
-                <RichTextEditor 
-                    content={content} 
-                    onChange={(newContent) => updateContent(newContent, title)} 
-                    className="border-none shadow-none bg-transparent"
-                />
+                <div className="bg-card/40 rounded-xl border border-border/50 backdrop-blur-sm overflow-hidden">
+                  <RichTextEditor 
+                      content={content} 
+                      onChange={(newContent) => updateContent(newContent, title)} 
+                      className="border-none shadow-none bg-transparent"
+                  />
+                </div>
             </div>
         </div>
 
@@ -512,71 +525,71 @@ export default function Editor() {
                   } as React.CSSProperties}
                 >
                   <style>{`
-                    .prose h1 {
+                    .preview-content h1 {
                       font-size: 2.25rem;
                       font-weight: bold;
                       margin-top: 2.5rem;
                       margin-bottom: 1.25rem;
                       color: currentColor;
                     }
-                    .prose h2 {
+                    .preview-content h2 {
                       font-size: 1.875rem;
                       font-weight: bold;
                       margin-top: 2rem;
                       margin-bottom: 1rem;
                       color: currentColor;
                     }
-                    .prose h3 {
+                    .preview-content h3 {
                       font-size: 1.5rem;
                       font-weight: bold;
                       margin-top: 1.5rem;
                       margin-bottom: 0.75rem;
                       color: currentColor;
                     }
-                    .prose h4 {
+                    .preview-content h4 {
                       font-size: 1.25rem;
                       font-weight: bold;
                       margin-top: 1.25rem;
                       margin-bottom: 0.75rem;
                       color: currentColor;
                     }
-                    .prose h5 {
+                    .preview-content h5 {
                       font-size: 1.125rem;
                       font-weight: bold;
                       margin-top: 1rem;
                       margin-bottom: 0.5rem;
                       color: currentColor;
                     }
-                    .prose p {
+                    .preview-content p {
                       margin-bottom: 1rem;
                       line-height: 1.75;
                       color: currentColor;
                     }
-                    .prose strong {
+                    .preview-content strong {
                       font-weight: 700;
                       color: currentColor;
                     }
-                    .prose em {
+                    .preview-content em {
                       font-style: italic;
                       color: currentColor;
                     }
-                    .prose ul {
+                    .preview-content ul {
                       list-style-type: disc;
-                      margin-left: 1rem;
+                      margin-left: 1.5rem;
                       margin-bottom: 1rem;
                     }
-                    .prose li {
+                    .preview-content li {
                       margin-bottom: 0.5rem;
                       color: currentColor;
                     }
-                    .prose hr {
+                    .preview-content hr {
                       margin: 2rem 0;
                       border: none;
                       border-top: 1px solid currentColor;
                       opacity: 0.2;
                     }
                   `}</style>
-                  <div dangerouslySetInnerHTML={{ __html: content }} />
+                  <div className="preview-content" dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(content) }} />
                 </div>
               </article>
             </div>
