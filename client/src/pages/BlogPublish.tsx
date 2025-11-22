@@ -34,6 +34,7 @@ import {
   Globe,
   Edit2,
   MoreHorizontal,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -55,6 +56,9 @@ export default function BlogPublish() {
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [editBlogTitle, setEditBlogTitle] = useState("");
   const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
+  const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
+  const [editArticleTitle, setEditArticleTitle] = useState("");
+  const [deletingArticleId, setDeletingArticleId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBlogs();
@@ -139,11 +143,55 @@ export default function BlogPublish() {
       
       toast.success("Article published successfully!");
       fetchArticles(selectedBlog);
+      setPublishingId(null);
     } catch (error) {
       console.error("Failed to publish article:", error);
       toast.error("Failed to publish article");
-    } finally {
       setPublishingId(null);
+    }
+  };
+
+  const handleEditArticle = async (articleId: string) => {
+    if (!editArticleTitle.trim()) {
+      toast.error("Article title cannot be empty");
+      return;
+    }
+    
+    try {
+      await api.updateArticle(articleId, { title: editArticleTitle });
+      setArticles(articles.map(a => a.id === articleId ? { ...a, title: editArticleTitle } : a));
+      setEditingArticleId(null);
+      toast.success("Article updated successfully");
+    } catch (error) {
+      console.error("Failed to update article:", error);
+      toast.error("Failed to update article");
+    }
+  };
+
+  const handleDeleteArticle = async (articleId: string) => {
+    try {
+      // Get article details for trash
+      const article = articles.find(a => a.id === articleId);
+      if (!article) return;
+
+      // Store in trash (localStorage for now)
+      const deletedArticles = JSON.parse(localStorage.getItem("deleted_articles") || "[]");
+      deletedArticles.push({
+        id: article.id,
+        blogId: article.blogId,
+        title: article.title,
+        excerpt: article.excerpt,
+        deletedAt: new Date().toISOString(),
+      });
+      localStorage.setItem("deleted_articles", JSON.stringify(deletedArticles));
+
+      // Remove from articles
+      setArticles(articles.filter(a => a.id !== articleId));
+      setDeletingArticleId(null);
+      toast.success("Article moved to trash");
+    } catch (error) {
+      console.error("Failed to delete article:", error);
+      toast.error("Failed to delete article");
     }
   };
 
@@ -302,6 +350,60 @@ export default function BlogPublish() {
                   </DialogContent>
                 </Dialog>
               )}
+
+              {/* Edit Article Dialog */}
+              {editingArticleId && (
+                <Dialog open={!!editingArticleId} onOpenChange={(open) => !open && setEditingArticleId(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Article</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Article Title</label>
+                        <Input
+                          value={editArticleTitle}
+                          onChange={(e) => setEditArticleTitle(e.target.value)}
+                          placeholder="Enter article title"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button variant="outline" onClick={() => setEditingArticleId(null)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => handleEditArticle(editingArticleId)}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              {/* Delete Article Confirmation */}
+              {deletingArticleId && (
+                <Dialog open={!!deletingArticleId} onOpenChange={(open) => !open && setDeletingArticleId(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Delete Article</DialogTitle>
+                      <DialogDescription>
+                        This article will be moved to trash. You can restore it later.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setDeletingArticleId(null)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        variant="destructive"
+                        onClick={() => handleDeleteArticle(deletingArticleId)}
+                      >
+                        Move to Trash
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </div>
@@ -380,14 +482,15 @@ export default function BlogPublish() {
                               </div>
                             </div>
 
-                            {/* Publish Settings */}
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button className="w-full gap-2 font-semibold h-11">
-                                  <Zap className="h-4 w-4" />
-                                  Ready to Publish?
-                                </Button>
-                              </DialogTrigger>
+                            {/* Article Actions */}
+                            <div className="flex gap-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button className="flex-1 gap-2 font-semibold h-11">
+                                    <Zap className="h-4 w-4" />
+                                    Ready to Publish?
+                                  </Button>
+                                </DialogTrigger>
                               <DialogContent className="max-w-md">
                                 <DialogHeader>
                                   <DialogTitle>Publish Article</DialogTitle>
@@ -432,21 +535,43 @@ export default function BlogPublish() {
                                     </p>
                                   </div>
 
-                                  <Button
-                                    onClick={() => handlePublish(article.id)}
-                                    disabled={publishingId === article.id}
-                                    className="w-full gap-2 font-semibold h-11"
-                                  >
-                                    {publishingId === article.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Send className="h-4 w-4" />
-                                    )}
-                                    {publishingId === article.id ? "Publishing..." : "Publish Now"}
-                                  </Button>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => handlePublish(article.id)}
+                                      disabled={publishingId === article.id}
+                                      className="flex-1 gap-2 font-semibold h-11"
+                                    >
+                                      {publishingId === article.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Send className="h-4 w-4" />
+                                      )}
+                                      {publishingId === article.id ? "Publishing..." : "Publish"}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingArticleId(article.id);
+                                        setEditArticleTitle(article.title);
+                                      }}
+                                      className="gap-2"
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                      Edit
+                                    </Button>
+                                  </div>
                                 </div>
                               </DialogContent>
-                            </Dialog>
+                              </Dialog>
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => setDeletingArticleId(article.id)}
+                                title="Delete article"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

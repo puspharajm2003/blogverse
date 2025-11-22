@@ -17,6 +17,7 @@ import MyBlogs from "@/pages/MyBlogs";
 import BlogPublish from "@/pages/BlogPublish";
 import ArticlePerformance from "@/pages/ArticlePerformance";
 import PublicBlog from "@/pages/PublicBlog";
+import Trash from "@/pages/Trash";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/publish" component={BlogPublish} />
       <Route path="/blog/preview" component={BlogPreview} />
       <Route path="/public-blog" component={PublicBlog} />
+      <Route path="/trash" component={Trash} />
       <Route component={NotFound} />
     </Switch>
   );
