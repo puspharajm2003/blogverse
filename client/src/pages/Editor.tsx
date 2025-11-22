@@ -52,51 +52,105 @@ const countWords = (htmlContent: string): number => {
   return text.split(/\s+/).filter(word => word.length > 0).length;
 };
 
-// Convert markdown syntax to HTML
+// Convert markdown syntax to HTML - handles already-converted HTML and markdown mixed content
 const convertMarkdownToHtml = (text: string): string => {
   let html = text;
   
-  // Convert headers (must be done in order from largest to smallest)
-  html = html.replace(/^##### (.*?)$/gm, '<h5 class="text-lg font-bold mt-4 mb-2">$1</h5>');
-  html = html.replace(/^#### (.*?)$/gm, '<h4 class="text-xl font-bold mt-5 mb-3">$1</h4>');
-  html = html.replace(/^### (.*?)$/gm, '<h3 class="text-2xl font-bold mt-6 mb-3">$1</h3>');
-  html = html.replace(/^## (.*?)$/gm, '<h2 class="text-3xl font-bold mt-8 mb-4">$1</h2>');
-  html = html.replace(/^# (.*?)$/gm, '<h1 class="text-4xl font-bold mt-10 mb-5">$1</h1>');
+  // Only convert if it contains markdown headers (# ## ### etc)
+  // Check if content has markdown syntax
+  const hasMarkdown = /^#+\s/m.test(html);
   
-  // Convert bold markdown **text** to <strong>
+  if (!hasMarkdown) {
+    // Content is already HTML or plain text, return as-is
+    return html;
+  }
+  
+  // Split by newlines and process each line
+  const lines = html.split('\n');
+  let result: string[] = [];
+  let inList = false;
+  let listItems: string[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Headers
+    if (line.match(/^##### /)) {
+      if (inList && listItems.length > 0) {
+        result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+        listItems = [];
+        inList = false;
+      }
+      result.push(line.replace(/^##### (.+)$/, '<h5 class="text-lg font-bold mt-4 mb-2">$1</h5>'));
+      continue;
+    }
+    if (line.match(/^#### /)) {
+      if (inList && listItems.length > 0) {
+        result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+        listItems = [];
+        inList = false;
+      }
+      result.push(line.replace(/^#### (.+)$/, '<h4 class="text-xl font-bold mt-5 mb-3">$1</h4>'));
+      continue;
+    }
+    if (line.match(/^### /)) {
+      if (inList && listItems.length > 0) {
+        result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+        listItems = [];
+        inList = false;
+      }
+      result.push(line.replace(/^### (.+)$/, '<h3 class="text-2xl font-bold mt-6 mb-3">$1</h3>'));
+      continue;
+    }
+    if (line.match(/^## /)) {
+      if (inList && listItems.length > 0) {
+        result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+        listItems = [];
+        inList = false;
+      }
+      result.push(line.replace(/^## (.+)$/, '<h2 class="text-3xl font-bold mt-8 mb-4">$1</h2>'));
+      continue;
+    }
+    if (line.match(/^# /)) {
+      if (inList && listItems.length > 0) {
+        result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+        listItems = [];
+        inList = false;
+      }
+      result.push(line.replace(/^# (.+)$/, '<h1 class="text-4xl font-bold mt-10 mb-5">$1</h1>'));
+      continue;
+    }
+    
+    // List items
+    if (line.match(/^- /)) {
+      inList = true;
+      listItems.push(line.replace(/^- (.+)$/, '<li class="mb-2">$1</li>'));
+      continue;
+    }
+    
+    // Regular paragraphs
+    if (line.trim()) {
+      if (inList && listItems.length > 0) {
+        result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+        listItems = [];
+        inList = false;
+      }
+      result.push(`<p class="mb-4 leading-relaxed">${line}</p>`);
+    }
+  }
+  
+  // Close any remaining list
+  if (inList && listItems.length > 0) {
+    result.push(`<ul class="list-disc ml-6 mb-4">${listItems.join('')}</ul>`);
+  }
+  
+  html = result.join('\n');
+  
+  // Convert remaining markdown in paragraphs
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-  
-  // Convert italic markdown *text* to <em>
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
   html = html.replace(/_(.*?)_/g, '<em>$1</em>');
-  
-  // Convert bullet points
-  html = html.replace(/^\- (.*?)$/gm, '<li class="ml-4">$1</li>');
-  
-  // Wrap consecutive list items in <ul>
-  html = html.replace(/(<li[^>]*>.*?<\/li>)/g, (match) => {
-    if (!match.includes('<ul')) {
-      return `<ul class="list-disc">${match}</ul>`;
-    }
-    return match;
-  });
-  
-  // Convert line breaks to proper spacing
-  html = html.replace(/\n\n/g, '</p><p>');
-  html = html.replace(/\n/g, '<br>');
-  
-  // Wrap paragraphs
-  const paragraphs = html.split('</p><p>');
-  html = paragraphs.map((p) => {
-    if (p.includes('<h') || p.includes('<ul') || p.includes('<li')) {
-      return p;
-    }
-    if (!p.includes('<p>')) {
-      return `<p>${p}</p>`;
-    }
-    return p;
-  }).join('');
   
   return html;
 };
@@ -192,8 +246,8 @@ export default function Editor() {
 
   // Handle saving blog article
   const handleSaveArticle = async () => {
-    if (!blogId) {
-      alert("Blog not initialized. Please refresh the page.");
+    if (!title.trim()) {
+      alert("Please enter a title for your article.");
       return;
     }
 
@@ -201,19 +255,38 @@ export default function Editor() {
     setSaveStatus("saving");
 
     try {
+      let currentBlogId = blogId;
       const slug = title.toLowerCase().replace(/\s+/g, "-").slice(0, 50);
+      
+      // Create or update blog with article title if needed
+      if (!currentBlogId) {
+        const newBlog = await api.createBlog({
+          title: title,
+          slug: slug,
+          description: `Blog about ${title}`
+        });
+        currentBlogId = newBlog.id;
+        setBlogId(newBlog.id);
+      } else {
+        // Update blog title to match article title
+        await api.updateBlog(currentBlogId, {
+          title: title,
+          slug: slug,
+        });
+      }
       
       if (articleId) {
         // Update existing article
-        await api.updateArticle(articleId, {
+        const updated = await api.updateArticle(articleId, {
           title,
           content,
           slug,
         });
+        console.log("Article updated:", updated);
       } else {
         // Create new article
         const article = await api.createArticle({
-          blogId,
+          blogId: currentBlogId,
           title,
           content,
           slug,
@@ -221,6 +294,7 @@ export default function Editor() {
           status: "draft",
         });
         setArticleId(article.id);
+        console.log("Article created:", article);
       }
 
       setSaveStatus("saved");
@@ -507,91 +581,142 @@ export default function Editor() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Preview Modal */}
+        {/* Advanced Preview Modal */}
         <Sheet open={showPreview} onOpenChange={setShowPreview}>
-          <SheetContent side="right" className="w-full sm:w-[90vw] md:w-[75vw] overflow-y-auto p-0">
-            <SheetHeader className="px-6 py-4 border-b border-border sticky top-0 bg-background z-10">
-              <SheetTitle>Article Preview</SheetTitle>
-            </SheetHeader>
-            <div className="px-6 py-8 max-w-3xl">
-              <article>
-                <h1 className="text-5xl font-serif font-bold mb-8 text-foreground">{title}</h1>
-                <div 
-                  className="prose dark:prose-invert max-w-none text-base leading-relaxed text-foreground"
-                  style={{
-                    '--tw-prose-body': 'currentColor',
-                    '--tw-prose-headings': 'currentColor',
-                    '--tw-prose-bold': 'currentColor',
-                  } as React.CSSProperties}
-                >
-                  <style>{`
-                    .preview-content h1 {
-                      font-size: 2.25rem;
-                      font-weight: bold;
-                      margin-top: 2.5rem;
-                      margin-bottom: 1.25rem;
-                      color: currentColor;
-                    }
-                    .preview-content h2 {
-                      font-size: 1.875rem;
-                      font-weight: bold;
-                      margin-top: 2rem;
-                      margin-bottom: 1rem;
-                      color: currentColor;
-                    }
-                    .preview-content h3 {
-                      font-size: 1.5rem;
-                      font-weight: bold;
-                      margin-top: 1.5rem;
-                      margin-bottom: 0.75rem;
-                      color: currentColor;
-                    }
-                    .preview-content h4 {
-                      font-size: 1.25rem;
-                      font-weight: bold;
-                      margin-top: 1.25rem;
-                      margin-bottom: 0.75rem;
-                      color: currentColor;
-                    }
-                    .preview-content h5 {
-                      font-size: 1.125rem;
-                      font-weight: bold;
-                      margin-top: 1rem;
-                      margin-bottom: 0.5rem;
-                      color: currentColor;
-                    }
-                    .preview-content p {
-                      margin-bottom: 1rem;
-                      line-height: 1.75;
-                      color: currentColor;
-                    }
-                    .preview-content strong {
-                      font-weight: 700;
-                      color: currentColor;
-                    }
-                    .preview-content em {
-                      font-style: italic;
-                      color: currentColor;
-                    }
-                    .preview-content ul {
-                      list-style-type: disc;
-                      margin-left: 1.5rem;
-                      margin-bottom: 1rem;
-                    }
-                    .preview-content li {
-                      margin-bottom: 0.5rem;
-                      color: currentColor;
-                    }
-                    .preview-content hr {
-                      margin: 2rem 0;
-                      border: none;
-                      border-top: 1px solid currentColor;
-                      opacity: 0.2;
-                    }
-                  `}</style>
-                  <div className="preview-content" dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(content) }} />
+          <SheetContent side="right" className="w-full sm:w-[90vw] md:w-[80vw] overflow-y-auto p-0 bg-gradient-to-b from-background via-background/95 to-background">
+            {/* Preview Header */}
+            <div className="sticky top-0 z-10 border-b border-border/40 bg-gradient-to-r from-background via-background to-background/50 backdrop-blur-sm">
+              <div className="px-8 py-6">
+                <SheetTitle className="text-2xl">Article Preview</SheetTitle>
+                <p className="text-sm text-muted-foreground mt-2">Full article layout with formatting</p>
+              </div>
+              
+              {/* Preview Meta Info */}
+              <div className="px-8 py-4 border-t border-border/40 flex gap-6 bg-muted/30">
+                <div className="text-xs">
+                  <span className="text-muted-foreground block">Word Count</span>
+                  <span className="font-semibold text-sm">{wordCount} words</span>
                 </div>
+                <div className="text-xs">
+                  <span className="text-muted-foreground block">Status</span>
+                  <span className="font-semibold text-sm text-amber-600">Draft</span>
+                </div>
+                <div className="text-xs">
+                  <span className="text-muted-foreground block">Reading Time</span>
+                  <span className="font-semibold text-sm">{Math.ceil(wordCount / 200)} min</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Article Content */}
+            <div className="px-8 py-12 max-w-4xl">
+              <article className="prose prose-invert max-w-none">
+                {/* Article Title */}
+                <div className="mb-12 pb-8 border-b border-border/40">
+                  <h1 className="text-5xl lg:text-6xl font-serif font-bold mb-4 text-foreground leading-tight tracking-tight">
+                    {title || "Untitled Article"}
+                  </h1>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>📅 {new Date().toLocaleDateString()}</span>
+                    <span>•</span>
+                    <span>✍️ Draft</span>
+                  </div>
+                </div>
+
+                {/* Article Body */}
+                <style>{`
+                  .article-preview h1 {
+                    font-size: 2.25rem;
+                    font-weight: bold;
+                    margin-top: 2.5rem;
+                    margin-bottom: 1.25rem;
+                    color: currentColor;
+                    line-height: 1.3;
+                  }
+                  .article-preview h2 {
+                    font-size: 1.875rem;
+                    font-weight: bold;
+                    margin-top: 2.5rem;
+                    margin-bottom: 1rem;
+                    color: currentColor;
+                    line-height: 1.4;
+                  }
+                  .article-preview h3 {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    margin-top: 2rem;
+                    margin-bottom: 0.75rem;
+                    color: currentColor;
+                  }
+                  .article-preview h4 {
+                    font-size: 1.25rem;
+                    font-weight: bold;
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.75rem;
+                    color: currentColor;
+                  }
+                  .article-preview h5 {
+                    font-size: 1.125rem;
+                    font-weight: bold;
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.5rem;
+                    color: currentColor;
+                  }
+                  .article-preview p {
+                    margin-bottom: 1.5rem;
+                    line-height: 1.8;
+                    color: currentColor;
+                  }
+                  .article-preview strong {
+                    font-weight: 700;
+                    color: currentColor;
+                  }
+                  .article-preview em {
+                    font-style: italic;
+                    color: currentColor;
+                  }
+                  .article-preview ul, .article-preview ol {
+                    margin-left: 1.5rem;
+                    margin-bottom: 1.5rem;
+                  }
+                  .article-preview li {
+                    margin-bottom: 0.75rem;
+                    color: currentColor;
+                    line-height: 1.6;
+                  }
+                  .article-preview hr {
+                    margin: 3rem 0;
+                    border: none;
+                    border-top: 1px solid currentColor;
+                    opacity: 0.1;
+                  }
+                  .article-preview blockquote {
+                    border-left: 4px solid currentColor;
+                    padding-left: 1.5rem;
+                    margin-left: 0;
+                    margin-right: 0;
+                    margin-bottom: 1.5rem;
+                    font-style: italic;
+                    color: currentColor;
+                    opacity: 0.8;
+                  }
+                  .article-preview code {
+                    background: muted;
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 0.25rem;
+                    font-family: monospace;
+                    color: currentColor;
+                  }
+                `}</style>
+                <div className="article-preview" dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(content) }} />
               </article>
+
+              {/* Article Footer */}
+              <div className="mt-12 pt-8 border-t border-border/40">
+                <p className="text-sm text-muted-foreground text-center">
+                  💡 This is a preview of how your article will appear to readers
+                </p>
+              </div>
             </div>
           </SheetContent>
         </Sheet>
