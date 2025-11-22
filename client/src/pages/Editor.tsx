@@ -27,7 +27,11 @@ import {
     Redo2,
     AlertCircle,
     Eye,
-    Lightbulb
+    Lightbulb,
+    Video,
+    Clock,
+    Share,
+    Users
 } from "lucide-react";
 import {
     Select,
@@ -447,6 +451,36 @@ export default function Editor() {
                 </div>
               </SheetContent>
             </Sheet>
+
+            {/* Media Embedding */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              data-testid="button-embed-media"
+              title="Embed videos, iframes, and interactive content"
+            >
+              <Video className="h-4 w-4 text-green-500" />
+            </Button>
+
+            {/* Version History */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              data-testid="button-version-history"
+              title="View and manage article version history"
+            >
+              <Clock className="h-4 w-4 text-orange-500" />
+            </Button>
+
+            {/* Collaborative Editing */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              data-testid="button-collaborate"
+              title="Invite collaborators to edit this article"
+            >
+              <Users className="h-4 w-4 text-purple-500" />
+            </Button>
 
             {/* Share Button */}
             <Sheet>

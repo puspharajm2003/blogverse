@@ -44,7 +44,7 @@ export function SidebarLayout({ children }: SidebarProps) {
     { icon: PenTool, label: 'Write', href: '/editor' },
     { icon: Globe, label: 'My Blog', href: '/my-blogs' },
     { icon: Send, label: 'Publish', href: '/publish' },
-    { icon: BarChart3, label: 'Analytics', href: '/analytics' },
+    { icon: BarChart3, label: 'Performance', href: '/performance' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];
 

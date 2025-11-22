@@ -67,6 +67,28 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Article versions table for version history
+export const articleVersions = pgTable("article_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  versionNumber: integer("version_number").notNull(),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  changeDescription: text("change_description"),
+});
+
+// Collaborative editors table
+export const collaborators = pgTable("collaborators", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: varchar("role").notNull().default("editor"), // viewer, editor, admin
+  addedAt: timestamp("added_at").notNull().default(sql`now()`),
+  lastActiveAt: timestamp("last_active_at"),
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -96,6 +118,16 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+export const insertArticleVersionSchema = createInsertSchema(articleVersions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCollaboratorSchema = createInsertSchema(collaborators).omit({
+  id: true,
+  addedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -111,3 +143,9 @@ export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type ArticleVersion = typeof articleVersions.$inferSelect;
+export type InsertArticleVersion = z.infer<typeof insertArticleVersionSchema>;
+
+export type Collaborator = typeof collaborators.$inferSelect;
+export type InsertCollaborator = z.infer<typeof insertCollaboratorSchema>;
