@@ -573,6 +573,15 @@ export default function Editor() {
                       <Textarea placeholder="Meta description for search engines..." className="h-24" />
                       <p className="text-xs text-muted-foreground text-right">0/160</p>
                     </div>
+                    <div className="space-y-2">
+                      <Label>Author Bio</Label>
+                      <Textarea 
+                        placeholder="Tell readers about yourself..." 
+                        className="h-20"
+                        data-testid="textarea-author-bio"
+                      />
+                      <p className="text-xs text-muted-foreground">Optional: A brief bio for readers to know about the author</p>
+                    </div>
                     <Button 
                       variant="destructive" 
                       className="w-full"

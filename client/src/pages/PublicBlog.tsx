@@ -300,6 +300,15 @@ export default function PublicBlog() {
                       )}
                     </div>
                     <Separator className="my-4" />
+                    
+                    {/* Author Bio Section */}
+                    {selectedArticle?.authorBio && (
+                      <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">About the Author</p>
+                        <p className="text-sm leading-relaxed">{selectedArticle.authorBio}</p>
+                      </div>
+                    )}
+
                     <div className="space-y-4 pt-4">
                       <div className="grid grid-cols-3 gap-2 text-center py-3 bg-muted/30 rounded-lg">
                         <div>

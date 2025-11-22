@@ -40,6 +40,7 @@ export const articles = pgTable("articles", {
   tags: text("tags").array(),
   status: varchar("status").notNull().default("draft"), // draft, published
   publishedAt: timestamp("published_at"),
+  authorBio: text("author_bio"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
