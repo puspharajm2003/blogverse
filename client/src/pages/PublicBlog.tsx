@@ -68,20 +68,19 @@ export default function PublicBlog() {
       setBlogTitle(blogData.title || "");
       setBlogImage(blogData.image || "");
       
-      const articlesData = await api.getArticlesByBlogAdmin(blogId);
-      // Show only published articles, remove duplicates
-      const allArticles = articlesData || [];
+      // Use the public endpoint which returns only published articles
+      const articlesData = await api.getArticles(blogId);
+      const allArticles = Array.isArray(articlesData) ? articlesData : [];
+      // Remove any duplicates
       const uniqueArticles = Array.from(
         new Map(allArticles.map((article: any) => [article.id, article])).values()
       );
-      // Filter to show only published articles
-      const publishedArticles = uniqueArticles.filter((article: any) => article.status === "published");
-      setArticles(publishedArticles);
+      setArticles(uniqueArticles);
       
-      if (publishedArticles.length > 0) {
-        setSelectedArticle(publishedArticles[0]);
+      if (uniqueArticles.length > 0) {
+        setSelectedArticle(uniqueArticles[0]);
         // Record view for first article
-        api.recordEvent(publishedArticles[0].id, "pageview", {});
+        api.recordEvent(uniqueArticles[0].id, "pageview", {});
       }
     } catch (error) {
       console.error("Failed to fetch blog data:", error);
