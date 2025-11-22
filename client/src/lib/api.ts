@@ -158,4 +158,19 @@ export const api = {
       body: JSON.stringify({ prompt, type }),
     }).then((r) => r.json());
   },
+
+  // Chat
+  saveChatMessage: (role: string, message: string, generationType?: string, topic?: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/chat/message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ role, message, generationType, topic }),
+    }).then((r) => r.json());
+  },
+
+  getChatHistory: (limit: number = 50) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/chat/history?limit=${limit}`, { headers }).then((r) => r.json());
+  },
 };

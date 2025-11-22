@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
+import { AiChatbot } from "@/components/AiChatbot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -67,10 +68,6 @@ export default function Editor() {
   const [history, setHistory] = useState<HistoryEntry[]>([{ title, content }]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
-  // AI Generation state
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [generationType, setGenerationType] = useState<"section" | "full" | "outline" | "title" | "tags" | "meta">("section");
 
   // Add to history when content changes
   const updateContent = (newContent: string, newTitle: string = title) => {
@@ -124,54 +121,17 @@ export default function Editor() {
     window.open(urls[platform], '_blank', 'width=600,height=400');
   };
 
-  const handleAiGenerate = async () => {
-    if (!aiPrompt.trim()) return;
-    
-    setIsGenerating(true);
-    
-    try {
-      const response = await api.generateBlogContent(aiPrompt, generationType);
-      
-      if (response.error) {
-        console.error("AI Error:", response.error);
-        alert(`Error: ${response.error}\n\n${response.details || 'Please check your OpenRouter API key and try again.'}`);
-        setIsGenerating(false);
-        return;
-      }
+  // Handle content generated from chatbot
+  const handleContentGenerated = (generatedText: string, type: string) => {
+    if (!generatedText) return;
 
-      const generatedText = response.text || "";
-      
-      if (!generatedText) {
-        console.error("No content generated");
-        alert("No content was generated. Please try again.");
-        setIsGenerating(false);
-        return;
-      }
-
-      if (generationType === "title") {
-        updateContent(content, generatedText);
-      } else if (generationType === "tags") {
-        console.log("Generated tags:", generatedText);
-        alert(`Tags:\n${generatedText}`);
-      } else if (generationType === "meta") {
-        console.log("Generated meta:", generatedText);
-        alert(`SEO Meta Description:\n${generatedText}`);
-      } else if (generationType === "outline") {
-        const outlineHtml = `<h2>Article Outline</h2><p>${generatedText.replace(/\n/g, '</p><p>')}</p>`;
-        updateContent(content + outlineHtml, title);
-      } else {
-        // Full article or section - wrap in paragraphs
-        const formattedText = generatedText.split('\n\n').map((para: string) => `<p>${para.trim()}</p>`).join('');
-        updateContent(content + formattedText, title);
-      }
-      
-      setAiPrompt("");
-    } catch (error) {
-      console.error("Failed to generate content:", error);
-      alert("Failed to generate content. Please check your connection and try again.");
-    } finally {
-      setIsGenerating(false);
-    }
+    const formattedText = generatedText
+      .split('\n\n')
+      .filter((para: string) => para.trim().length > 0)
+      .map((para: string) => `<p>${para.trim().replace(/\n/g, '<br>')}</p>`)
+      .join('');
+    
+    updateContent(content + formattedText, title);
   };
 
   const wordCount = countWords(content);
@@ -237,14 +197,20 @@ export default function Editor() {
             </Button>
 
             {/* AI Assistant */}
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsAiOpen(true)}
-              data-testid="button-ai-assistant"
-            >
-                <Sparkles className="h-4 w-4 mr-2 text-indigo-500" />
-                AI Assistant
-            </Button>
+            <Sheet open={isAiOpen} onOpenChange={setIsAiOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  data-testid="button-ai-assistant"
+                >
+                    <Sparkles className="h-4 w-4 mr-2 text-indigo-500" />
+                    AI Assistant
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[500px] p-0 flex flex-col">
+                <AiChatbot onContentGenerated={handleContentGenerated} />
+              </SheetContent>
+            </Sheet>
 
             {/* Share Button */}
             <Sheet>
@@ -366,73 +332,6 @@ export default function Editor() {
             </div>
         </div>
 
-        {/* AI Assistant Panel */}
-        {isAiOpen && (
-            <div className="w-80 border-l border-border bg-card fixed right-0 top-16 bottom-0 z-30 flex flex-col shadow-xl animate-in slide-in-from-right-10">
-                <div className="p-4 border-b border-border flex items-center justify-between">
-                    <h3 className="font-semibold flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-indigo-500" /> AI Assistant
-                    </h3>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setIsAiOpen(false)}>
-                        ✕
-                    </Button>
-                </div>
-                <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-                    <div className="bg-muted/50 p-3 rounded-lg text-sm">
-                        <p className="font-medium mb-1 text-indigo-600">Suggestion</p>
-                        <p>Your title is a bit generic. Try something more catchy like:</p>
-                        <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
-                            <li>"5 Ways AI is Revolutionizing Blogging"</li>
-                            <li>"The Writer's Guide to AI Tools"</li>
-                        </ul>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-xs uppercase text-muted-foreground font-bold">Generation Type</Label>
-                        <Select value={generationType} onValueChange={(v: any) => setGenerationType(v)}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="section">Write Section</SelectItem>
-                            <SelectItem value="full">Full Article</SelectItem>
-                            <SelectItem value="outline">Outline</SelectItem>
-                            <SelectItem value="title">Title Suggestion</SelectItem>
-                            <SelectItem value="tags">Generate Tags</SelectItem>
-                            <SelectItem value="meta">SEO Description</SelectItem>
-                          </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <div className="p-4 border-t border-border">
-                    <div className="flex gap-2">
-                        <Input 
-                            placeholder={`Ask AI to ${generationType === 'full' ? 'write a full article' : generationType === 'outline' ? 'create an outline' : generationType === 'title' ? 'suggest titles' : 'write'}...`}
-                            className="h-9 text-xs" 
-                            value={aiPrompt}
-                            onChange={(e) => setAiPrompt(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
-                            disabled={isGenerating}
-                            data-testid="input-ai-prompt"
-                        />
-                        <Button 
-                            size="sm" 
-                            className="h-9 w-9 p-0"
-                            onClick={handleAiGenerate}
-                            disabled={isGenerating || !aiPrompt.trim()}
-                            data-testid="button-ai-generate"
-                        >
-                            {isGenerating ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Send className="h-4 w-4" />
-                            )}
-                        </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">Powered by Llama 3.1 (OpenRouter)</p>
-                </div>
-            </div>
-        )}
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

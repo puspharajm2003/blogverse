@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, inArray, and } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents } from "@shared/schema";
-import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent } from "@shared/schema";
+import { eq, inArray, and, desc } from "drizzle-orm";
+import { users, blogs, articles, analyticsEvents, chatMessages } from "@shared/schema";
+import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -37,6 +37,10 @@ export interface IStorage {
   getDetailedAnalytics(userId: string): Promise<any>;
   getChartData(userId: string, days?: number): Promise<any[]>;
   getOrCreateDemoAccount(): Promise<{ user: any; token: string }>;
+
+  // Chat Messages
+  saveChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatHistory(userId: string, limit?: number): Promise<ChatMessage[]>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -391,6 +395,20 @@ export class PostgresStorage implements IStorage {
       user: { id: demoUser.id, email: demoUser.email, displayName: demoUser.displayName },
       token,
     };
+  }
+
+  // Chat Messages
+  async saveChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const result = await db.insert(chatMessages).values(message).returning();
+    return result[0];
+  }
+
+  async getChatHistory(userId: string, limit: number = 50): Promise<ChatMessage[]> {
+    return db.select()
+      .from(chatMessages)
+      .where(eq(chatMessages.userId, userId))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
   }
 }
 

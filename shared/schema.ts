@@ -56,6 +56,17 @@ export const analyticsEvents = pgTable("analytics_events", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Chat messages table for AI Assistant
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: varchar("role").notNull(), // user, assistant
+  message: text("message").notNull(),
+  generationType: varchar("generation_type"), // section, full, outline, title, tags, meta
+  topic: text("topic"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -80,6 +91,11 @@ export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).om
   createdAt: true,
 });
 
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -92,3 +108,6 @@ export type InsertArticle = z.infer<typeof insertArticleSchema>;
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

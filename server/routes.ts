@@ -1,9 +1,85 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema } from "@shared/schema";
+import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema, insertChatMessageSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+// Generate professional prompts based on generation type
+function getProessionalPrompt(topic: string, type: string): { system: string; user: string } {
+  const prompts: { [key: string]: { system: string; user: string } } = {
+    full: {
+      system: "You are a professional Content Creator and Blog Script Writer with expertise in SEO optimization. Your task is to create high-quality, engaging blog content that ranks well in search engines.",
+      user: `Act as a Content Creator and Blog Script Writer. Generate a comprehensive blog post about "${topic}" with the following requirements:
+- Minimum 800-1000 words
+- Include SEO-friendly keywords throughout (highlight 5-7 main keywords)
+- Use proper H2 and H3 heading structure
+- Add an engaging introduction and conclusion
+- Include practical insights and actionable tips
+- Format with clear sections and bullet points where appropriate
+- Ensure content is original, professional, and ready to publish
+
+Please provide the complete blog post with all sections clearly marked.`
+    },
+    section: {
+      system: "You are a professional content writer specializing in blog content creation with strong SEO knowledge.",
+      user: `Act as a Content Creator and Blog Script Writer. Write a detailed and engaging section/paragraph for a blog post about "${topic}" with:
+- 300-500 words
+- Naturally incorporate relevant SEO keywords
+- Professional tone with engaging language
+- Clear structure with supporting details
+- Practical insights and examples
+
+Ensure the section flows naturally and can be easily integrated into a larger article.`
+    },
+    outline: {
+      system: "You are a strategic content planner and blog outline specialist with deep SEO knowledge.",
+      user: `Create a comprehensive, SEO-optimized outline for a blog post about "${topic}" with:
+- Main sections and subsections
+- Target keywords for each section
+- Brief description of content for each section
+- Suggested word count for sections
+- Key points to cover
+- Call-to-action section
+
+Format as a clear, hierarchical outline that a writer can easily follow.`
+    },
+    title: {
+      system: "You are an expert copywriter specializing in creating catchy, SEO-friendly blog titles that drive clicks.",
+      user: `Generate 5 highly compelling and SEO-friendly blog title options for an article about "${topic}". Each title should:
+- Be attention-grabbing and click-worthy
+- Include relevant keywords naturally
+- Be between 50-60 characters
+- Appeal to the target audience
+- Follow proven title formulas (how-to, number-based, curiosity-driven, etc.)
+
+Provide titles with brief explanations of why each works well.`
+    },
+    tags: {
+      system: "You are an SEO expert specializing in content tagging and categorization.",
+      user: `Generate 8-10 relevant, searchable tags/keywords for a blog post about "${topic}". 
+- Include long-tail keywords
+- Mix broad and specific terms
+- Use industry-relevant terminology
+- Consider search volume and relevance
+
+Return as comma-separated values, ordered by relevance.`
+    },
+    meta: {
+      system: "You are an SEO specialist expert at writing compelling meta descriptions that improve click-through rates.",
+      user: `Write a compelling SEO meta description for a blog post about "${topic}" with:
+- Maximum 160 characters
+- Include the main keyword naturally
+- Be compelling and encourage clicks
+- Clearly convey the article's value
+- Use active voice
+
+Provide the meta description ready to use.`
+    }
+  };
+
+  return prompts[type] || prompts["section"];
+}
+
 // Generate demo content for testing (fallback when API is unavailable)
 function generateDemoContent(prompt: string, type: string): string {
   const demoResponses: { [key: string]: string } = {
@@ -390,6 +466,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat Message Routes
+  app.post("/api/chat/message", authenticateToken, async (req: any, res) => {
+    try {
+      const { role, message, generationType, topic } = req.body;
+      
+      if (!role || !message) {
+        return res.status(400).json({ error: "Role and message are required" });
+      }
+
+      const chatMessage = await storage.saveChatMessage({
+        userId: req.userId,
+        role,
+        message,
+        generationType: generationType || null,
+        topic: topic || null,
+      });
+
+      res.json(chatMessage);
+    } catch (error) {
+      console.error("Chat message error:", error);
+      res.status(500).json({ error: "Failed to save chat message" });
+    }
+  });
+
+  app.get("/api/chat/history", authenticateToken, async (req: any, res) => {
+    try {
+      const limit = parseInt((req.query.limit as string) || "50", 10);
+      const chatHistory = await storage.getChatHistory(req.userId, limit);
+      
+      // Return in chronological order (oldest first)
+      res.json(chatHistory.reverse());
+    } catch (error) {
+      console.error("Chat history error:", error);
+      res.status(500).json({ error: "Failed to fetch chat history" });
+    }
+  });
+
   // AI Content Generation Route
   app.post("/api/ai/generate", authenticateToken, async (req: any, res) => {
     try {
@@ -399,43 +512,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Prompt and type are required" });
       }
 
-      let systemPrompt = "";
-      let userPrompt = prompt;
       let maxTokens = 500;
+      const promptData = getProessionalPrompt(prompt, type);
+      const systemPrompt = promptData.system;
+      const userPrompt = promptData.user;
 
-      switch (type) {
-        case "full":
-          systemPrompt = "You are a professional SEO-optimized blog writer. Create a complete blog post with:\n1. A catchy, SEO-friendly title\n2. 3-4 main body paragraphs with valuable content\n3. 5-7 relevant SEO keywords throughout\n4. Proper heading structure (H2, H3)\nMake it engaging, informative, and ready to publish.";
-          userPrompt = `Write a complete blog article about: ${prompt}\n\nInclude:\n- Title\n- Body content (3-4 paragraphs)\n- SEO Keywords (5-7 keywords)\n\nFormat the response clearly with these sections.`;
-          maxTokens = 2000;
-          break;
-        case "section":
-          systemPrompt = "You are a blog content writer. Write a well-crafted, engaging section or paragraph that flows naturally.";
-          userPrompt = `Write a detailed section for a blog post about: ${prompt}`;
-          maxTokens = 500;
-          break;
-        case "outline":
-          systemPrompt = "You are a content strategist. Create a detailed outline with main sections and subsections.";
-          userPrompt = `Create a detailed outline for a blog post about: ${prompt}`;
-          maxTokens = 1500;
-          break;
-        case "title":
-          systemPrompt = "You are a copywriter specializing in blog titles. Generate 3-5 catchy, SEO-friendly blog titles that attract readers.";
-          userPrompt = `Generate compelling blog titles for: ${prompt}`;
-          maxTokens = 300;
-          break;
-        case "tags":
-          systemPrompt = "You are a content tagging expert. Generate relevant tags for blog posts. Return as comma-separated values.";
-          userPrompt = `Generate 8-10 relevant tags for a blog post about: ${prompt}`;
-          maxTokens = 200;
-          break;
-        case "meta":
-          systemPrompt = "You are an SEO expert. Write a compelling meta description (max 160 characters) that encourages clicks from search results.";
-          userPrompt = `Write an SEO meta description for: ${prompt}`;
-          maxTokens = 150;
-          break;
-        default:
-          return res.status(400).json({ error: "Invalid generation type" });
+      if (type === "full") maxTokens = 2000;
+      else if (type === "outline") maxTokens = 1500;
+      else if (type === "title") maxTokens = 300;
+      else if (type === "tags") maxTokens = 200;
+      else if (type === "meta") maxTokens = 150;
+      else if (!["section", "full", "outline", "title", "tags", "meta"].includes(type)) {
+        return res.status(400).json({ error: "Invalid generation type" });
       }
 
       try {
