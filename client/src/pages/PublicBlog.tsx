@@ -36,6 +36,7 @@ export default function PublicBlog() {
   const [isEditingBlog, setIsEditingBlog] = useState(false);
   const [blogTitle, setBlogTitle] = useState("");
   const [blogImage, setBlogImage] = useState("");
+  const [articleEngagement, setArticleEngagement] = useState<Record<string, any>>({"views": 0, "likes": 0, "shares": 0});
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -58,15 +59,19 @@ export default function PublicBlog() {
       setBlogImage(blogData.image || "");
       
       const articlesData = await api.getArticlesByBlogAdmin(blogId);
-      // Show all articles (both draft and published), remove duplicates
+      // Show only published articles, remove duplicates
       const allArticles = articlesData || [];
       const uniqueArticles = Array.from(
         new Map(allArticles.map((article: any) => [article.id, article])).values()
       );
-      setArticles(uniqueArticles);
+      // Filter to show only published articles
+      const publishedArticles = uniqueArticles.filter((article: any) => article.status === "published");
+      setArticles(publishedArticles);
       
-      if (uniqueArticles.length > 0) {
-        setSelectedArticle(uniqueArticles[0]);
+      if (publishedArticles.length > 0) {
+        setSelectedArticle(publishedArticles[0]);
+        // Record view for first article
+        api.recordEvent(publishedArticles[0].id, "pageview", {});
       }
     } catch (error) {
       console.error("Failed to fetch blog data:", error);
@@ -207,9 +212,9 @@ export default function PublicBlog() {
             {articles.length === 0 ? (
               <Card className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <CardTitle>No Articles Yet</CardTitle>
+                <CardTitle>No Published Articles</CardTitle>
                 <CardDescription>
-                  Write and save articles in the editor to display them here.
+                  No articles have been published yet. Publish some articles in the editor to display them here.
                 </CardDescription>
               </Card>
             ) : (
@@ -225,24 +230,15 @@ export default function PublicBlog() {
                     onClick={() => setSelectedArticle(article)}
                   >
                     <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
-                        <CardTitle className="font-serif text-xl">
-                          {article.title}
-                        </CardTitle>
-                        <Badge variant={article.status === "published" ? "default" : "outline"}>
-                          {article.status === "published" ? "Published" : "Draft"}
-                        </Badge>
-                      </div>
-                      <CardDescription className="flex items-center gap-4 text-sm mt-2 flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-4 w-4" /> 2.4K views
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Heart className="h-4 w-4" /> 128 likes
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="h-4 w-4" /> 24 comments
-                        </span>
+                      <CardTitle className="font-serif text-xl">
+                        {article.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm mt-2">
+                        Published on {new Date(article.publishedAt || article.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -304,23 +300,53 @@ export default function PublicBlog() {
                       )}
                     </div>
                     <Separator className="my-4" />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        Like
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      >
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                      </Button>
+                    <div className="space-y-4 pt-4">
+                      <div className="grid grid-cols-3 gap-2 text-center py-3 bg-muted/30 rounded-lg">
+                        <div>
+                          <div className="text-lg font-semibold text-primary">0</div>
+                          <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                            <Eye className="h-3 w-3" /> Views
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-semibold text-primary">0</div>
+                          <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                            <Heart className="h-3 w-3" /> Likes
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-semibold text-primary">0</div>
+                          <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                            <Share2 className="h-3 w-3" /> Shares
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            api.recordEvent(selectedArticle.id, "like", {});
+                            setArticleEngagement(prev => ({ ...prev, likes: (prev.likes || 0) + 1 }));
+                          }}
+                        >
+                          <Heart className="h-4 w-4 mr-2" />
+                          Like
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            api.recordEvent(selectedArticle.id, "share", {});
+                            setArticleEngagement(prev => ({ ...prev, shares: (prev.shares || 0) + 1 }));
+                          }}
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </>
