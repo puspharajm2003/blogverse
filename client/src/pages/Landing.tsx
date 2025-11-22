@@ -24,7 +24,7 @@ export default function Landing() {
             <Link href="/login">
               <Button variant="ghost">Sign in</Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/login">
               <Button>Get Started <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </Link>
           </div>
@@ -47,7 +47,7 @@ export default function Landing() {
                 The complete platform for serious writers. Create beautiful blogs, optimize with AI, and monetize your audience from day one.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/dashboard">
+                <Link href="/login">
                   <Button size="lg" className="h-12 px-8 text-base">Start Writing for Free</Button>
                 </Link>
                 <Button size="lg" variant="outline" className="h-12 px-8 text-base">View Demo</Button>

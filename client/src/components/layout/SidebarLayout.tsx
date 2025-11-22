@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/lib/auth';
 import { 
   LayoutDashboard, 
   PenTool, 
@@ -30,6 +31,7 @@ interface SidebarProps {
 export function SidebarLayout({ children }: SidebarProps) {
   const [location] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { user, logout } = useAuth();
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -88,12 +90,12 @@ export function SidebarLayout({ children }: SidebarProps) {
               <Button variant="ghost" className={cn("w-full justify-start px-0", collapsed && "justify-center")}>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>CN</AvatarFallback>
+                    <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
+                    <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   {!collapsed && (
                     <div className="flex flex-col items-start text-sm">
-                      <span className="font-medium">Jane Doe</span>
+                      <span className="font-medium">{user?.displayName || "User"}</span>
                       <span className="text-xs text-muted-foreground">Pro Plan</span>
                     </div>
                   )}
@@ -107,7 +109,7 @@ export function SidebarLayout({ children }: SidebarProps) {
               <DropdownMenuItem>Billing</DropdownMenuItem>
               <DropdownMenuItem>Team</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" /> Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
