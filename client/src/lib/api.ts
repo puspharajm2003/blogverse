@@ -130,4 +130,10 @@ export const api = {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/dashboard/stats`, { headers }).then((r) => r.json());
   },
+
+  // Analytics
+  getDetailedAnalytics: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/analytics/detailed`, { headers }).then((r) => r.json());
+  },
 };

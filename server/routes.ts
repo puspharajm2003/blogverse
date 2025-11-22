@@ -275,6 +275,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Detailed Analytics Route
+  app.get("/api/analytics/detailed", authenticateToken, async (req: any, res) => {
+    try {
+      const analytics = await storage.getDetailedAnalytics(req.userId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Analytics error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
