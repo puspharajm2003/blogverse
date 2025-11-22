@@ -93,7 +93,7 @@ export default function MyBlogs() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Link href={`/blog/preview?blogId=${blog.id}`} className="flex-1">
+                    <Link href={`/public-blog?blogId=${blog.id}`} className="flex-1">
                       <Button variant="outline" className="w-full gap-2">
                           <Eye className="h-4 w-4" /> Preview
                       </Button>

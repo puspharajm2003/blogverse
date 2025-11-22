@@ -356,56 +356,60 @@ export default function Editor() {
   return (
     <SidebarLayout>
       <div className="h-full flex flex-col">
-        {/* Editor Header */}
-        <header className="h-20 border-b border-border/40 flex items-center justify-between px-8 bg-gradient-to-r from-background via-background to-background/50 sticky top-0 z-20 backdrop-blur-sm">
-          <div className="flex items-center gap-6">
-             <div className="flex flex-col">
-                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Status</span>
-                 <span className="text-sm font-semibold flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                      saveStatus === 'saving' ? 'bg-blue-500 animate-pulse' : 
-                      saveStatus === 'saved' ? 'bg-green-500' : 
-                      'bg-amber-500'
-                    }`} /> 
-                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'All changes saved' : 'Draft'}
-                 </span>
-             </div>
-             <Separator orientation="vertical" className="h-8" />
-             <div className="text-sm text-muted-foreground">
-                <span className="font-medium">{wordCount}</span> words • {articleId ? '📁 Saved to database' : '📝 Not saved yet'}
-             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {/* Word Counter */}
-            <div className="text-sm text-muted-foreground px-3 py-2 rounded-md bg-muted/50">
-              <span data-testid="word-count">{wordCount}</span> words
+        {/* Editor Header - Professional & Modern */}
+        <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* Left side - Status and Info */}
+            <div className="flex items-center gap-8 min-w-0">
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Article Status</span>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full transition-colors ${
+                    saveStatus === 'saving' ? 'bg-blue-500 animate-pulse' : 
+                    saveStatus === 'saved' ? 'bg-green-500' : 
+                    'bg-amber-500'
+                  }`} />
+                  <span className="text-sm font-medium">
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Draft'}
+                  </span>
+                </div>
+              </div>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                <span className="font-semibold text-foreground">{wordCount}</span> words
+              </div>
             </div>
             
-            {/* Undo/Redo Buttons */}
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleUndo}
-              disabled={historyIndex <= 0}
-              data-testid="button-undo"
-            >
-              <Undo2 className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleRedo}
-              disabled={historyIndex >= history.length - 1}
-              data-testid="button-redo"
-            >
-              <Redo2 className="h-4 w-4" />
-            </Button>
+            {/* Center - Toolbar Buttons */}
+            <div className="flex items-center gap-1 justify-center">
+              {/* Undo/Redo Buttons */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                data-testid="button-undo"
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                data-testid="button-redo"
+                title="Redo (Ctrl+Y)"
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
 
-            <Separator orientation="vertical" className="h-6" />
+              <Separator orientation="vertical" className="h-6" />
 
-            {/* Dark Mode Toggle */}
-            <Button 
+              {/* Dark Mode Toggle */}
+              <Button 
               variant="ghost" 
               size="icon"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -416,17 +420,19 @@ export default function Editor() {
               ) : (
                 <Moon className="h-4 w-4" />
               )}
-            </Button>
+              </Button>
 
-            {/* AI Assistant */}
-            <Sheet open={isAiOpen} onOpenChange={setIsAiOpen}>
+              {/* AI Assistant - Icon Only */}
+              <Sheet open={isAiOpen} onOpenChange={setIsAiOpen}>
               <SheetTrigger asChild>
                 <Button 
                   variant="ghost" 
+                  size="icon"
                   data-testid="button-ai-assistant"
+                  title="AI Assistant"
+                  className="hover:bg-indigo-500/10"
                 >
-                    <Sparkles className="h-4 w-4 mr-2 text-indigo-500" />
-                    AI Assistant
+                    <Sparkles className="h-4 w-4 text-indigo-500" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[500px] p-0 flex flex-col">
@@ -434,15 +440,17 @@ export default function Editor() {
               </SheetContent>
             </Sheet>
 
-            {/* Content Brainstorm */}
+            {/* Content Brainstorm - Icon Only */}
             <Sheet open={isBrainstormOpen} onOpenChange={setIsBrainstormOpen}>
               <SheetTrigger asChild>
                 <Button 
                   variant="ghost" 
+                  size="icon"
                   data-testid="button-brainstorm"
+                  title="Brainstorm Ideas"
+                  className="hover:bg-yellow-500/10"
                 >
-                    <Lightbulb className="h-4 w-4 mr-2 text-yellow-500" />
-                    Brainstorm
+                    <Lightbulb className="h-4 w-4 text-yellow-500" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[500px] p-0 flex flex-col">
@@ -457,7 +465,8 @@ export default function Editor() {
               variant="ghost" 
               size="icon"
               data-testid="button-embed-media"
-              title="Embed videos, iframes, and interactive content"
+              title="Embed Media"
+              className="hover:bg-green-500/10"
             >
               <Video className="h-4 w-4 text-green-500" />
             </Button>
@@ -467,7 +476,8 @@ export default function Editor() {
               variant="ghost" 
               size="icon"
               data-testid="button-version-history"
-              title="View and manage article version history"
+              title="Version History"
+              className="hover:bg-orange-500/10"
             >
               <Clock className="h-4 w-4 text-orange-500" />
             </Button>
@@ -477,19 +487,22 @@ export default function Editor() {
               variant="ghost" 
               size="icon"
               data-testid="button-collaborate"
-              title="Invite collaborators to edit this article"
+              title="Collaborate"
+              className="hover:bg-purple-500/10"
             >
               <Users className="h-4 w-4 text-purple-500" />
             </Button>
 
-            {/* Share Button */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" data-testid="button-share">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
+                <Separator orientation="vertical" className="h-6 ml-1" />
+
+              {/* Share Button */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" data-testid="button-share" title="Share">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
                 <SheetHeader>
                   <SheetTitle>Share Article</SheetTitle>
                 </SheetHeader>
@@ -522,74 +535,85 @@ export default function Editor() {
               </SheetContent>
             </Sheet>
 
-            <Sheet>
+              <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="outline" size="icon" data-testid="button-settings">
-                        <Settings className="h-4 w-4" />
-                    </Button>
+                  <Button variant="outline" size="icon" data-testid="button-settings" title="Settings">
+                    <Settings className="h-4 w-4" />
+                  </Button>
                 </SheetTrigger>
                 <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>Post Settings</SheetTitle>
-                    </SheetHeader>
-                    <div className="space-y-6 py-6">
-                        <div className="space-y-2">
-                            <Label>Featured Image</Label>
-                            <div className="aspect-video rounded-md border border-dashed border-border flex items-center justify-center bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
-                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                    <ImageIcon className="h-8 w-8" />
-                                    <span className="text-sm">Upload cover</span>
-                                </div>
-                            </div>
+                  <SheetHeader>
+                    <SheetTitle>Post Settings</SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-6 py-6">
+                    <div className="space-y-2">
+                      <Label>Featured Image</Label>
+                      <div className="aspect-video rounded-md border border-dashed border-border flex items-center justify-center bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <ImageIcon className="h-8 w-8" />
+                          <span className="text-sm">Upload cover</span>
                         </div>
-                        <div className="space-y-2">
-                            <Label>URL Slug</Label>
-                            <div className="flex">
-                                <span className="bg-muted px-3 py-2 rounded-l-md border border-r-0 border-border text-sm text-muted-foreground flex items-center">
-                                    blogverse.com/
-                                </span>
-                                <Input className="rounded-l-none" placeholder="my-post-slug" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Tags</Label>
-                            <Input placeholder="Add tags (comma separated)" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>SEO Description</Label>
-                            <Textarea placeholder="Meta description for search engines..." className="h-24" />
-                            <p className="text-xs text-muted-foreground text-right">0/160</p>
-                        </div>
-                        <Button 
-                          variant="destructive" 
-                          className="w-full"
-                          onClick={handleDeleteContent}
-                          data-testid="button-delete-content"
-                        >
-                          Delete Content
-                        </Button>
+                      </div>
                     </div>
+                    <div className="space-y-2">
+                      <Label>URL Slug</Label>
+                      <div className="flex">
+                        <span className="bg-muted px-3 py-2 rounded-l-md border border-r-0 border-border text-sm text-muted-foreground flex items-center">
+                          blogverse.com/
+                        </span>
+                        <Input className="rounded-l-none" placeholder="my-post-slug" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tags</Label>
+                      <Input placeholder="Add tags (comma separated)" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>SEO Description</Label>
+                      <Textarea placeholder="Meta description for search engines..." className="h-24" />
+                      <p className="text-xs text-muted-foreground text-right">0/160</p>
+                    </div>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full"
+                      onClick={handleDeleteContent}
+                      data-testid="button-delete-content"
+                    >
+                      Delete Content
+                    </Button>
+                  </div>
                 </SheetContent>
-            </Sheet>
+              </Sheet>
+
+              <Button 
+                variant="outline" 
+                onClick={handleSaveArticle}
+                disabled={isSaving}
+                data-testid="button-save"
+              >
+                <Save className="h-4 w-4 mr-2" /> 
+                {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved!" : "Save"}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setShowPreview(true)}
+                data-testid="button-preview"
+                title="Preview"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Right side - Save Button */}
             <Button 
-              variant="outline" 
+              className="ml-auto gap-2"
               onClick={handleSaveArticle}
               disabled={isSaving}
-              data-testid="button-save"
-            >
-              <Save className="h-4 w-4 mr-2" /> 
-              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved!" : "Save"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setShowPreview(true)}
-              data-testid="button-preview"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button data-testid="button-publish">
-                <Send className="h-4 w-4 mr-2" /> Publish
+              size="lg"
+              data-testid="button-publish-final">
+              <Save className="h-4 w-4" />
+              {saveStatus === "saving" ? "Saving..." : "Save Article"}
             </Button>
           </div>
         </header>

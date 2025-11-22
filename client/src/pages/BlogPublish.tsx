@@ -32,7 +32,15 @@ import {
   CheckCircle2,
   Zap,
   Globe,
+  Edit2,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 export default function BlogPublish() {
@@ -44,6 +52,9 @@ export default function BlogPublish() {
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState(new Date().toISOString().split("T")[0]);
   const [publishTime, setPublishTime] = useState("12:00");
+  const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
+  const [editBlogTitle, setEditBlogTitle] = useState("");
+  const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBlogs();
@@ -82,6 +93,38 @@ export default function BlogPublish() {
   const handleBlogChange = (blogId: string) => {
     setSelectedBlog(blogId);
     fetchArticles(blogId);
+  };
+
+  const handleEditBlog = async (blogId: string) => {
+    if (!editBlogTitle.trim()) {
+      toast.error("Blog title cannot be empty");
+      return;
+    }
+    
+    try {
+      await api.updateBlog(blogId, { title: editBlogTitle });
+      setBlogs(blogs.map(b => b.id === blogId ? { ...b, title: editBlogTitle } : b));
+      setEditingBlogId(null);
+      toast.success("Blog updated successfully");
+    } catch (error) {
+      console.error("Failed to update blog:", error);
+      toast.error("Failed to update blog");
+    }
+  };
+
+  const handleDeleteBlog = async (blogId: string) => {
+    try {
+      // Note: Implement delete endpoint in your API
+      setBlogs(blogs.filter(b => b.id !== blogId));
+      if (selectedBlog === blogId) {
+        setSelectedBlog(blogs[0]?.id || "");
+      }
+      setDeletingBlogId(null);
+      toast.success("Blog deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete blog:", error);
+      toast.error("Failed to delete blog");
+    }
   };
 
   const handlePublish = async (articleId: string) => {
@@ -175,7 +218,90 @@ export default function BlogPublish() {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* Blog Management Buttons */}
+                {selectedBlogData && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="ml-auto">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setEditingBlogId(selectedBlog);
+                          setEditBlogTitle(selectedBlogData.title);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Edit Blog
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeletingBlogId(selectedBlog)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Blog
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
+
+              {/* Edit Blog Dialog */}
+              {editingBlogId && (
+                <Dialog open={!!editingBlogId} onOpenChange={(open) => !open && setEditingBlogId(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Blog</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Blog Title</label>
+                        <Input
+                          value={editBlogTitle}
+                          onChange={(e) => setEditBlogTitle(e.target.value)}
+                          placeholder="Enter blog title"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button variant="outline" onClick={() => setEditingBlogId(null)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => handleEditBlog(editingBlogId)}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              {/* Delete Blog Confirmation */}
+              {deletingBlogId && (
+                <Dialog open={!!deletingBlogId} onOpenChange={(open) => !open && setDeletingBlogId(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Delete Blog</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete this blog? This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setDeletingBlogId(null)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        variant="destructive"
+                        onClick={() => handleDeleteBlog(deletingBlogId)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </div>
