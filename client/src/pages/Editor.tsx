@@ -566,7 +566,11 @@ export default function Editor() {
                     </div>
                     <div className="space-y-2">
                       <Label>Tags</Label>
-                      <Input placeholder="Add tags (comma separated)" />
+                      <Input 
+                        placeholder="Add tags (comma separated)" 
+                        data-testid="input-article-tags"
+                      />
+                      <p className="text-xs text-muted-foreground">Example: react, javascript, webdev</p>
                     </div>
                     <div className="space-y-2">
                       <Label>SEO Description</Label>

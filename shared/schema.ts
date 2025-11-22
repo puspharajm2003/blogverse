@@ -80,6 +80,17 @@ export const articleVersions = pgTable("article_versions", {
   changeDescription: text("change_description"),
 });
 
+// Comments table for article discussions
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  content: text("content").notNull(),
+  approved: boolean("approved").default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 // Collaborative editors table
 export const collaborators = pgTable("collaborators", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

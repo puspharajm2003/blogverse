@@ -23,6 +23,13 @@ import {
   Image as ImageIcon,
   Loader2,
   AlertCircle,
+  Clock,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Mail,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -37,6 +44,9 @@ export default function PublicBlog() {
   const [blogTitle, setBlogTitle] = useState("");
   const [blogImage, setBlogImage] = useState("");
   const [articleEngagement, setArticleEngagement] = useState<Record<string, any>>({"views": 0, "likes": 0, "shares": 0});
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState({ name: "", email: "", content: "" });
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -78,6 +88,53 @@ export default function PublicBlog() {
       toast.error("Failed to load blog");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const calculateReadTime = (content: string): number => {
+    if (!content) return 0;
+    const text = content.replace(/<[^>]*>/g, "").trim();
+    const wordCount = text.split(/\s+/).length;
+    return Math.max(1, Math.ceil(wordCount / 200));
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.name.trim() || !newComment.email.trim() || !newComment.content.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    const comment = {
+      id: Date.now().toString(),
+      ...newComment,
+      createdAt: new Date().toISOString(),
+    };
+    setComments([...comments, comment]);
+    setNewComment({ name: "", email: "", content: "" });
+    toast.success("Comment added successfully!");
+  };
+
+  const copyShareLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}?article=${selectedArticle?.id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const shareOnSocial = (platform: string) => {
+    if (!selectedArticle) return;
+    const url = `${window.location.origin}${window.location.pathname}?article=${selectedArticle.id}`;
+    const text = `Check out: ${selectedArticle.title}`;
+    
+    const shares: any = {
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      email: `mailto:?subject=${encodeURIComponent(selectedArticle.title)}&body=${encodeURIComponent(text + "\n\n" + url)}`,
+    };
+    
+    if (shares[platform]) {
+      window.open(shares[platform], "_blank");
+      api.recordEvent(selectedArticle.id, "share", { platform });
     }
   };
 
@@ -275,19 +332,34 @@ export default function PublicBlog() {
                     <CardTitle className="font-serif text-2xl line-clamp-2 mt-2">
                       {selectedArticle.title}
                     </CardTitle>
-                    <CardDescription className="mt-2">
-                      {selectedArticle.publishedAt 
-                        ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                      }
+                    <CardDescription className="mt-2 space-y-2">
+                      <div>
+                        {selectedArticle.publishedAt 
+                          ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                        }
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4" />
+                        {calculateReadTime(selectedArticle.content)} min read
+                      </div>
+                      {selectedArticle.tags && selectedArticle.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {selectedArticle.tags.map((tag: string, i: number) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <Separator />
@@ -330,31 +402,149 @@ export default function PublicBlog() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            api.recordEvent(selectedArticle.id, "like", {});
-                            setArticleEngagement(prev => ({ ...prev, likes: (prev.likes || 0) + 1 }));
-                          }}
-                        >
-                          <Heart className="h-4 w-4 mr-2" />
-                          Like
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            api.recordEvent(selectedArticle.id, "share", {});
-                            setArticleEngagement(prev => ({ ...prev, shares: (prev.shares || 0) + 1 }));
-                          }}
-                        >
-                          <Share2 className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              api.recordEvent(selectedArticle.id, "like", {});
+                              setArticleEngagement(prev => ({ ...prev, likes: (prev.likes || 0) + 1 }));
+                            }}
+                          >
+                            <Heart className="h-4 w-4 mr-2" />
+                            Like
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              api.recordEvent(selectedArticle.id, "share", {});
+                              setArticleEngagement(prev => ({ ...prev, shares: (prev.shares || 0) + 1 }));
+                            }}
+                          >
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Share
+                          </Button>
+                        </div>
+
+                        {/* Social Sharing Buttons */}
+                        <div className="space-y-2 border-t pt-3">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase">Share on Social</p>
+                          <div className="grid grid-cols-4 gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => shareOnSocial("twitter")}
+                              title="Share on Twitter"
+                            >
+                              <Twitter className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => shareOnSocial("facebook")}
+                              title="Share on Facebook"
+                            >
+                              <Facebook className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => shareOnSocial("linkedin")}
+                              title="Share on LinkedIn"
+                            >
+                              <Linkedin className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => shareOnSocial("email")}
+                              title="Share via Email"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-8"
+                            onClick={copyShareLink}
+                          >
+                            {copiedLink ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                            {copiedLink ? "Copied!" : "Copy Link"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Comments Section */}
+                    <div className="mt-8 space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                          <MessageCircle className="h-5 w-5" />
+                          Comments ({comments.length})
+                        </h3>
+                        
+                        {/* Add Comment Form */}
+                        <div className="bg-muted/30 rounded-lg p-4 mb-6 space-y-3">
+                          <Input
+                            placeholder="Your name"
+                            value={newComment.name}
+                            onChange={(e) => setNewComment({...newComment, name: e.target.value})}
+                            data-testid="input-comment-name"
+                          />
+                          <Input
+                            placeholder="Your email"
+                            type="email"
+                            value={newComment.email}
+                            onChange={(e) => setNewComment({...newComment, email: e.target.value})}
+                            data-testid="input-comment-email"
+                          />
+                          <textarea
+                            placeholder="Share your thoughts..."
+                            className="w-full p-2 rounded border border-border bg-background text-foreground resize-none"
+                            rows={3}
+                            value={newComment.content}
+                            onChange={(e) => setNewComment({...newComment, content: e.target.value})}
+                            data-testid="textarea-comment"
+                          />
+                          <Button
+                            className="w-full"
+                            onClick={handleAddComment}
+                            data-testid="button-add-comment"
+                          >
+                            Post Comment
+                          </Button>
+                        </div>
+
+                        {/* Display Comments */}
+                        {comments.length > 0 ? (
+                          <div className="space-y-4">
+                            {comments.map((comment) => (
+                              <div key={comment.id} className="border-l-2 border-primary pl-4 py-2">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-semibold text-sm">{comment.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(comment.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1">{comment.email}</p>
+                                <p className="text-sm mt-2">{comment.content}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-center text-muted-foreground text-sm py-4">
+                            No comments yet. Be the first to comment!
+                          </p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
