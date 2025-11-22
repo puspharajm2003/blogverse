@@ -382,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const response = await client.chat.completions.create({
-          model: "openai/gpt-4-turbo",
+          model: "gpt-3.5-turbo",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }

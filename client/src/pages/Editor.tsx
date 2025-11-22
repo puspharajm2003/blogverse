@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
+import { useTheme } from "next-themes";
 import { 
     Save, 
     Send, 
@@ -16,7 +17,13 @@ import {
     Search,
     Tag,
     Globe,
-    Loader2
+    Loader2,
+    Moon,
+    Sun,
+    Share2,
+    Undo2,
+    Redo2,
+    AlertCircle
 } from "lucide-react";
 import {
     Select,
@@ -27,15 +34,95 @@ import {
   } from "@/components/ui/select";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Helper to strip HTML and count words
+const countWords = (htmlContent: string): number => {
+  const text = htmlContent.replace(/<[^>]*>/g, '').trim();
+  return text.split(/\s+/).filter(word => word.length > 0).length;
+};
+
+// History entry for undo/redo
+interface HistoryEntry {
+  title: string;
+  content: string;
+}
 
 export default function Editor() {
+  const { theme, setTheme } = useTheme();
   const [title, setTitle] = useState("Untitled Draft");
   const [content, setContent] = useState("<p>Start writing...</p>");
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Undo/Redo state
+  const [history, setHistory] = useState<HistoryEntry[]>([{ title, content }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // AI Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [generationType, setGenerationType] = useState<"section" | "full" | "outline" | "title" | "tags" | "meta">("section");
+
+  // Add to history when content changes
+  const updateContent = (newContent: string, newTitle: string = title) => {
+    setContent(newContent);
+    setTitle(newTitle);
+    
+    const newEntry: HistoryEntry = { title: newTitle, content: newContent };
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newEntry);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  // Undo functionality
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setTitle(history[newIndex].title);
+      setContent(history[newIndex].content);
+    }
+  };
+
+  // Redo functionality
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setTitle(history[newIndex].title);
+      setContent(history[newIndex].content);
+    }
+  };
+
+  // Handle content deletion with confirmation
+  const handleDeleteContent = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    updateContent("<p>Start writing...</p>", "Untitled Draft");
+    setShowDeleteConfirm(false);
+  };
+
+  // Share to social media
+  const shareToSocial = (platform: 'twitter' | 'facebook' | 'linkedin') => {
+    const urls = {
+      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my blog: "${title}"`)}&url=${encodeURIComponent(window.location.href)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(title)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`
+    };
+    window.open(urls[platform], '_blank', 'width=600,height=400');
+  };
 
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return;
@@ -47,7 +134,7 @@ export default function Editor() {
       
       if (response.error) {
         console.error("AI Error:", response.error);
-        alert(`Error: ${response.error}\n\n${response.details || 'Please check your OpenAI API key and try again.'}`);
+        alert(`Error: ${response.error}\n\n${response.details || 'Please check your OpenRouter API key and try again.'}`);
         setIsGenerating(false);
         return;
       }
@@ -62,7 +149,7 @@ export default function Editor() {
       }
 
       if (generationType === "title") {
-        setTitle(generatedText);
+        updateContent(content, generatedText);
       } else if (generationType === "tags") {
         console.log("Generated tags:", generatedText);
         alert(`Tags:\n${generatedText}`);
@@ -71,11 +158,11 @@ export default function Editor() {
         alert(`SEO Meta Description:\n${generatedText}`);
       } else if (generationType === "outline") {
         const outlineHtml = `<h2>Article Outline</h2><p>${generatedText.replace(/\n/g, '</p><p>')}</p>`;
-        setContent(prev => prev + outlineHtml);
+        updateContent(content + outlineHtml, title);
       } else {
         // Full article or section - wrap in paragraphs
         const formattedText = generatedText.split('\n\n').map((para: string) => `<p>${para.trim()}</p>`).join('');
-        setContent(prev => prev + formattedText);
+        updateContent(content + formattedText, title);
       }
       
       setAiPrompt("");
@@ -86,6 +173,8 @@ export default function Editor() {
       setIsGenerating(false);
     }
   };
+
+  const wordCount = countWords(content);
 
   return (
     <SidebarLayout>
@@ -106,13 +195,100 @@ export default function Editor() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setIsAiOpen(true)}>
+            {/* Word Counter */}
+            <div className="text-sm text-muted-foreground px-3 py-2 rounded-md bg-muted/50">
+              <span data-testid="word-count">{wordCount}</span> words
+            </div>
+            
+            {/* Undo/Redo Buttons */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleUndo}
+              disabled={historyIndex <= 0}
+              data-testid="button-undo"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleRedo}
+              disabled={historyIndex >= history.length - 1}
+              data-testid="button-redo"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            {/* Dark Mode Toggle */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              data-testid="button-toggle-theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+
+            {/* AI Assistant */}
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsAiOpen(true)}
+              data-testid="button-ai-assistant"
+            >
                 <Sparkles className="h-4 w-4 mr-2 text-indigo-500" />
                 AI Assistant
             </Button>
+
+            {/* Share Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" data-testid="button-share">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Share Article</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4 py-6">
+                  <p className="text-sm text-muted-foreground">Share your article on social media</p>
+                  <div className="space-y-2">
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700" 
+                      onClick={() => shareToSocial('twitter')}
+                      data-testid="button-share-twitter"
+                    >
+                      Share on Twitter
+                    </Button>
+                    <Button 
+                      className="w-full bg-blue-500 hover:bg-blue-600" 
+                      onClick={() => shareToSocial('facebook')}
+                      data-testid="button-share-facebook"
+                    >
+                      Share on Facebook
+                    </Button>
+                    <Button 
+                      className="w-full bg-blue-700 hover:bg-blue-800" 
+                      onClick={() => shareToSocial('linkedin')}
+                      data-testid="button-share-linkedin"
+                    >
+                      Share on LinkedIn
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+
             <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" data-testid="button-settings">
                         <Settings className="h-4 w-4" />
                     </Button>
                 </SheetTrigger>
@@ -148,13 +324,21 @@ export default function Editor() {
                             <Textarea placeholder="Meta description for search engines..." className="h-24" />
                             <p className="text-xs text-muted-foreground text-right">0/160</p>
                         </div>
+                        <Button 
+                          variant="destructive" 
+                          className="w-full"
+                          onClick={handleDeleteContent}
+                          data-testid="button-delete-content"
+                        >
+                          Delete Content
+                        </Button>
                     </div>
                 </SheetContent>
             </Sheet>
-            <Button variant="outline">
+            <Button variant="outline" data-testid="button-save">
                 <Save className="h-4 w-4 mr-2" /> Save
             </Button>
-            <Button>
+            <Button data-testid="button-publish">
                 <Send className="h-4 w-4 mr-2" /> Publish
             </Button>
           </div>
@@ -167,21 +351,22 @@ export default function Editor() {
                 <input 
                     type="text" 
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(e) => updateContent(content, e.target.value)}
                     className="w-full text-4xl md:text-5xl font-serif font-bold bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/50 mb-8"
                     placeholder="Enter your title..."
+                    data-testid="input-title"
                 />
                 
                 {/* Tiptap Editor */}
                 <RichTextEditor 
                     content={content} 
-                    onChange={setContent} 
+                    onChange={(newContent) => updateContent(newContent, title)} 
                     className="border-none shadow-none bg-transparent"
                 />
             </div>
         </div>
 
-        {/* AI Assistant Panel (Simulated) */}
+        {/* AI Assistant Panel */}
         {isAiOpen && (
             <div className="w-80 border-l border-border bg-card fixed right-0 top-16 bottom-0 z-30 flex flex-col shadow-xl animate-in slide-in-from-right-10">
                 <div className="p-4 border-b border-border flex items-center justify-between">
@@ -228,12 +413,14 @@ export default function Editor() {
                             onChange={(e) => setAiPrompt(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
                             disabled={isGenerating}
+                            data-testid="input-ai-prompt"
                         />
                         <Button 
                             size="sm" 
                             className="h-9 w-9 p-0"
                             onClick={handleAiGenerate}
                             disabled={isGenerating || !aiPrompt.trim()}
+                            data-testid="button-ai-generate"
                         >
                             {isGenerating ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -242,10 +429,38 @@ export default function Editor() {
                             )}
                         </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Powered by OpenAI GPT-5</p>
+                    <p className="text-xs text-muted-foreground mt-2">Powered by OpenRouter</p>
                 </div>
             </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Delete All Content?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all your article content. This action cannot be undone. Are you sure you want to continue?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-2 mt-4 p-3 bg-destructive/10 rounded-md text-sm text-destructive">
+              <p>Current word count: <strong>{wordCount}</strong> words</p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete"
+              >
+                Delete Content
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SidebarLayout>
   );
