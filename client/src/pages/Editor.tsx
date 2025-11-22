@@ -52,6 +52,55 @@ const countWords = (htmlContent: string): number => {
   return text.split(/\s+/).filter(word => word.length > 0).length;
 };
 
+// Convert markdown syntax to HTML
+const convertMarkdownToHtml = (text: string): string => {
+  let html = text;
+  
+  // Convert headers (must be done in order from largest to smallest)
+  html = html.replace(/^##### (.*?)$/gm, '<h5 class="text-lg font-bold mt-4 mb-2">$1</h5>');
+  html = html.replace(/^#### (.*?)$/gm, '<h4 class="text-xl font-bold mt-5 mb-3">$1</h4>');
+  html = html.replace(/^### (.*?)$/gm, '<h3 class="text-2xl font-bold mt-6 mb-3">$1</h3>');
+  html = html.replace(/^## (.*?)$/gm, '<h2 class="text-3xl font-bold mt-8 mb-4">$1</h2>');
+  html = html.replace(/^# (.*?)$/gm, '<h1 class="text-4xl font-bold mt-10 mb-5">$1</h1>');
+  
+  // Convert bold markdown **text** to <strong>
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  
+  // Convert italic markdown *text* to <em>
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+  
+  // Convert bullet points
+  html = html.replace(/^\- (.*?)$/gm, '<li class="ml-4">$1</li>');
+  
+  // Wrap consecutive list items in <ul>
+  html = html.replace(/(<li[^>]*>.*?<\/li>)/g, (match) => {
+    if (!match.includes('<ul')) {
+      return `<ul class="list-disc">${match}</ul>`;
+    }
+    return match;
+  });
+  
+  // Convert line breaks to proper spacing
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+  
+  // Wrap paragraphs
+  const paragraphs = html.split('</p><p>');
+  html = paragraphs.map((p) => {
+    if (p.includes('<h') || p.includes('<ul') || p.includes('<li')) {
+      return p;
+    }
+    if (!p.includes('<p>')) {
+      return `<p>${p}</p>`;
+    }
+    return p;
+  }).join('');
+  
+  return html;
+};
+
 // History entry for undo/redo
 interface HistoryEntry {
   title: string;
@@ -198,11 +247,8 @@ export default function Editor() {
   const handleContentGenerated = (generatedText: string, type: string) => {
     if (!generatedText) return;
 
-    const formattedText = generatedText
-      .split('\n\n')
-      .filter((para: string) => para.trim().length > 0)
-      .map((para: string) => `<p>${para.trim().replace(/\n/g, '<br>')}</p>`)
-      .join('');
+    // Convert markdown to HTML
+    const formattedText = convertMarkdownToHtml(generatedText);
     
     updateContent(content + formattedText, title);
   };
@@ -454,13 +500,84 @@ export default function Editor() {
             <SheetHeader className="px-6 py-4 border-b border-border sticky top-0 bg-background z-10">
               <SheetTitle>Article Preview</SheetTitle>
             </SheetHeader>
-            <div className="px-6 py-8">
-              <article className="max-w-2xl prose prose-sm dark:prose-invert">
-                <h1 className="text-4xl md:text-5xl font-serif font-bold mb-8">{title}</h1>
+            <div className="px-6 py-8 max-w-3xl">
+              <article>
+                <h1 className="text-5xl font-serif font-bold mb-8 text-foreground">{title}</h1>
                 <div 
-                  className="text-base leading-relaxed text-foreground"
-                  dangerouslySetInnerHTML={{ __html: content }}
-                />
+                  className="prose dark:prose-invert max-w-none text-base leading-relaxed text-foreground"
+                  style={{
+                    '--tw-prose-body': 'currentColor',
+                    '--tw-prose-headings': 'currentColor',
+                    '--tw-prose-bold': 'currentColor',
+                  } as React.CSSProperties}
+                >
+                  <style>{`
+                    .prose h1 {
+                      font-size: 2.25rem;
+                      font-weight: bold;
+                      margin-top: 2.5rem;
+                      margin-bottom: 1.25rem;
+                      color: currentColor;
+                    }
+                    .prose h2 {
+                      font-size: 1.875rem;
+                      font-weight: bold;
+                      margin-top: 2rem;
+                      margin-bottom: 1rem;
+                      color: currentColor;
+                    }
+                    .prose h3 {
+                      font-size: 1.5rem;
+                      font-weight: bold;
+                      margin-top: 1.5rem;
+                      margin-bottom: 0.75rem;
+                      color: currentColor;
+                    }
+                    .prose h4 {
+                      font-size: 1.25rem;
+                      font-weight: bold;
+                      margin-top: 1.25rem;
+                      margin-bottom: 0.75rem;
+                      color: currentColor;
+                    }
+                    .prose h5 {
+                      font-size: 1.125rem;
+                      font-weight: bold;
+                      margin-top: 1rem;
+                      margin-bottom: 0.5rem;
+                      color: currentColor;
+                    }
+                    .prose p {
+                      margin-bottom: 1rem;
+                      line-height: 1.75;
+                      color: currentColor;
+                    }
+                    .prose strong {
+                      font-weight: 700;
+                      color: currentColor;
+                    }
+                    .prose em {
+                      font-style: italic;
+                      color: currentColor;
+                    }
+                    .prose ul {
+                      list-style-type: disc;
+                      margin-left: 1rem;
+                      margin-bottom: 1rem;
+                    }
+                    .prose li {
+                      margin-bottom: 0.5rem;
+                      color: currentColor;
+                    }
+                    .prose hr {
+                      margin: 2rem 0;
+                      border: none;
+                      border-top: 1px solid currentColor;
+                      opacity: 0.2;
+                    }
+                  `}</style>
+                  <div dangerouslySetInnerHTML={{ __html: content }} />
+                </div>
               </article>
             </div>
           </SheetContent>
