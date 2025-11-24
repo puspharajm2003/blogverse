@@ -7,10 +7,17 @@ BlogVerse is a modern SaaS blogging platform that enables users to create, publi
 ## Recent Changes (November 24, 2025)
 
 ### New Features Implemented
-1. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings
-2. **Scheduled Article Publishing** - Added `scheduledPublishAt` field to articles table for future publication
-3. **PDF/Document Export** - Integrated html2pdf library for exporting articles to PDF format
-4. **Plagiarism Checker** - Foundation for plagiarism detection with simulated checking and extensible API
+1. **Admin User System** - puspharaj.m2003@gmail.com marked as admin with `isAdmin` field in users table, gets enterprise plan and all features unlocked
+2. **Plan-Based Feature Access Control** - Three-tier system (free/pro/enterprise) with FeatureGate component:
+   - **Free Plan**: Basic features (dark mode, limited articles)
+   - **Pro Plan**: Advanced features (scheduled publishing, PDF export, plagiarism checker, version history, collaborative editing, advanced analytics)
+   - **Enterprise Plan**: All features including custom domain
+   - **Admin Override**: Admin users bypass all feature gates and access all features
+3. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings
+4. **Scheduled Article Publishing** - Added `scheduledPublishAt` field to articles table for future publication
+5. **PDF/Document Export** - Integrated html2pdf library for exporting articles to PDF format
+6. **Plagiarism Checker** - Foundation for plagiarism detection with simulated checking and extensible API
+7. **Achievement System** - 8 achievements across 4 tiers (bronze/silver/gold/platinum) with progress tracking
 
 ## User Preferences
 
