@@ -1,16 +1,25 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star, X, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import heroImage from "@assets/generated_images/abstract_modern_digital_publishing_hero_background.png";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const { user, isLoading } = useAuth();
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [showDemoPanel, setShowDemoPanel] = useState(false);
   const [demoUser, setDemoUser] = useState<any>(null);
+
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (!isLoading && user) {
+      setLocation("/dashboard");
+    }
+  }, [user, isLoading, setLocation]);
 
   const handleViewDemo = async () => {
     setIsLoadingDemo(true);
