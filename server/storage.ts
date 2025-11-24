@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and, desc } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages } from "@shared/schema";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments } from "@shared/schema";
 import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -41,6 +41,13 @@ export interface IStorage {
   // Chat Messages
   saveChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatHistory(userId: string, limit?: number): Promise<ChatMessage[]>;
+
+  // Comments
+  createComment(comment: any): Promise<any>;
+  getCommentsByArticle(articleId: string): Promise<any[]>;
+  updateCommentStatus(commentId: string, status: string): Promise<any>;
+  deleteComment(commentId: string): Promise<void>;
+  getCommentsByBlog(blogId: string): Promise<any[]>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -409,6 +416,34 @@ export class PostgresStorage implements IStorage {
       .where(eq(chatMessages.userId, userId))
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
+  }
+
+  // Comments
+  async createComment(comment: any): Promise<any> {
+    const result = await db.insert(comments).values(comment).returning();
+    return result[0];
+  }
+
+  async getCommentsByArticle(articleId: string): Promise<any[]> {
+    return db.select().from(comments).where(eq(comments.articleId, articleId)).orderBy(desc(comments.createdAt));
+  }
+
+  async updateCommentStatus(commentId: string, status: string): Promise<any> {
+    const result = await db.update(comments).set({ status }).where(eq(comments.id, commentId)).returning();
+    return result[0];
+  }
+
+  async deleteComment(commentId: string): Promise<void> {
+    await db.delete(comments).where(eq(comments.id, commentId));
+  }
+
+  async getCommentsByBlog(blogId: string): Promise<any[]> {
+    const blogArticles = await db.select({ id: articles.id }).from(articles).where(eq(articles.blogId, blogId));
+    const articleIds = blogArticles.map(a => a.id);
+    
+    if (articleIds.length === 0) return [];
+    
+    return db.select().from(comments).where(inArray(comments.articleId, articleIds)).orderBy(desc(comments.createdAt));
   }
 }
 

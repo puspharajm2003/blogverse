@@ -121,12 +121,25 @@ export default function PublicBlog() {
         setSelectedArticle(uniqueArticles[0]);
         api.recordEvent(uniqueArticles[0].id, "pageview", {});
         trackScrollDepth();
+        // Fetch comments for first article
+        fetchComments(uniqueArticles[0].id);
       }
     } catch (error) {
       console.error("Failed to fetch blog data:", error);
       toast.error("Failed to load blog");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchComments = async (articleId: string) => {
+    try {
+      const commentsData = await api.getCommentsByArticle(articleId);
+      // Only show approved comments in public view
+      const approvedComments = (commentsData || []).filter((c: any) => c.status === "approved");
+      setComments(approvedComments);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
     }
   };
 
@@ -162,20 +175,25 @@ export default function PublicBlog() {
     return Math.max(1, Math.ceil(wordCount / 200));
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newComment.name.trim() || !newComment.email.trim() || !newComment.content.trim()) {
       toast.error("Please fill in all fields");
       return;
     }
-    const comment = {
-      id: Date.now().toString(),
-      ...newComment,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-    setComments([...comments, comment]);
-    setNewComment({ name: "", email: "", content: "" });
-    toast.success("Comment submitted for moderation!");
+    try {
+      const comment = await api.createComment(
+        selectedArticle.id,
+        newComment.name,
+        newComment.email,
+        newComment.content
+      );
+      setComments([...comments, comment]);
+      setNewComment({ name: "", email: "", content: "" });
+      toast.success("Comment submitted for moderation!");
+    } catch (error) {
+      console.error("Failed to post comment:", error);
+      toast.error("Failed to submit comment");
+    }
   };
 
   const handleApproveComment = (commentId: string) => {

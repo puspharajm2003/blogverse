@@ -667,6 +667,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment Routes
+  app.post("/api/comments", async (req, res) => {
+    try {
+      const { articleId, authorName, authorEmail, content } = req.body;
+      
+      if (!articleId || !authorName || !authorEmail || !content) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const comment = await storage.createComment({
+        articleId,
+        authorName,
+        authorEmail,
+        content,
+        status: "pending",
+      });
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Comment creation error:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  app.get("/api/comments/article/:articleId", async (req, res) => {
+    try {
+      const { articleId } = req.params;
+      const comments = await storage.getCommentsByArticle(articleId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Get comments error:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.get("/api/comments/blog/:blogId", authenticateToken, async (req: any, res) => {
+    try {
+      const { blogId } = req.params;
+      const comments = await storage.getCommentsByBlog(blogId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Get blog comments error:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.patch("/api/comments/:commentId", authenticateToken, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      const { status } = req.body;
+      
+      if (!status || !["approved", "rejected", "pending"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const comment = await storage.updateCommentStatus(commentId, status);
+      res.json(comment);
+    } catch (error) {
+      console.error("Update comment error:", error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/comments/:commentId", authenticateToken, async (req: any, res) => {
+    try {
+      const { commentId } = req.params;
+      await storage.deleteComment(commentId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete comment error:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
   // AI Content Generation Route
   app.post("/api/ai/generate", authenticateToken, async (req: any, res) => {
     try {

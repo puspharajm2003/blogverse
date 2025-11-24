@@ -183,4 +183,37 @@ export const api = {
       body: JSON.stringify({ niche }),
     }).then((r) => r.json());
   },
+
+  // Comments
+  createComment: (articleId: string, authorName: string, authorEmail: string, content: string) =>
+    fetch(`${API_BASE}/api/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ articleId, authorName, authorEmail, content }),
+    }).then((r) => r.json()),
+
+  getCommentsByArticle: (articleId: string) =>
+    fetch(`${API_BASE}/api/comments/article/${articleId}`).then((r) => r.json()),
+
+  getCommentsByBlog: (blogId: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/comments/blog/${blogId}`, { headers }).then((r) => r.json());
+  },
+
+  updateCommentStatus: (commentId: string, status: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/comments/${commentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ status }),
+    }).then((r) => r.json());
+  },
+
+  deleteComment: (commentId: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/comments/${commentId}`, {
+      method: "DELETE",
+      headers,
+    }).then((r) => r.json());
+  },
 };

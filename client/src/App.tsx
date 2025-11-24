@@ -18,6 +18,7 @@ import BlogPublish from "@/pages/BlogPublish";
 import ArticlePerformance from "@/pages/ArticlePerformance";
 import PublicBlog from "@/pages/PublicBlog";
 import Trash from "@/pages/Trash";
+import AdminDashboard from "@/pages/AdminDashboard";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/blog/preview" component={BlogPreview} />
       <Route path="/public-blog" component={PublicBlog} />
       <Route path="/trash" component={Trash} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
