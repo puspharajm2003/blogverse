@@ -31,6 +31,16 @@ export default function Settings() {
   const [userPlan, setUserPlan] = useState("free");
   const [isAdmin, setIsAdmin] = useState(false);
   const [userAvatar, setUserAvatar] = useState("");
+  const [selectedHeadingFont, setSelectedHeadingFont] = useState("playfair");
+
+  const fontOptions = [
+    { id: "playfair", name: "Playfair Display", class: "font-serif" },
+    { id: "inter", name: "Inter", class: "font-sans" },
+    { id: "space-mono", name: "Space Mono", class: "font-mono" },
+    { id: "georgia", name: "Georgia", class: "font-georgia" },
+    { id: "garamond", name: "Garamond", class: "font-garamond" },
+    { id: "courier", name: "Courier New", class: "font-courier" },
+  ];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -237,9 +247,17 @@ export default function Settings() {
                             <div className="space-y-2">
                                 <Label>Heading Font</Label>
                                 <div className="grid grid-cols-1 gap-2">
-                                    <Button variant="outline" className="justify-start font-serif">Playfair Display</Button>
-                                    <Button variant="ghost" className="justify-start font-sans">Inter</Button>
-                                    <Button variant="ghost" className="justify-start font-mono">Space Mono</Button>
+                                    {fontOptions.map((font) => (
+                                        <Button 
+                                          key={font.id}
+                                          variant={selectedHeadingFont === font.id ? "default" : "ghost"}
+                                          onClick={() => setSelectedHeadingFont(font.id)}
+                                          className={`justify-start ${font.class}`}
+                                          data-testid={`button-font-${font.id}`}
+                                        >
+                                          {font.name}
+                                        </Button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -261,7 +279,7 @@ export default function Settings() {
                     <div className="flex-1 p-8 overflow-y-auto bg-background">
                          <article className="max-w-lg mx-auto">
                             <span className="text-xs font-bold text-indigo-600 mb-2 block uppercase tracking-wider">Blog</span>
-                            <h1 className="font-serif text-4xl font-bold mb-4 leading-tight">{siteTitle || "My Blog"}</h1>
+                            <h1 className={`text-4xl font-bold mb-4 leading-tight ${fontOptions.find(f => f.id === selectedHeadingFont)?.class || "font-serif"}`}>{siteTitle || "My Blog"}</h1>
                             <div className="flex items-center gap-2 mb-6 text-xs text-muted-foreground">
                                 <div className="h-6 w-6 rounded-full bg-muted" />
                                 <span>By {displayName || "Author"}</span>
@@ -320,17 +338,17 @@ export default function Settings() {
                 <Card className="col-span-2">
                     <CardHeader>
                         <CardTitle>Current Plan</CardTitle>
-                        <CardDescription>You are currently on the {isAdmin ? "Admin (Enterprise)" : userPlan ? userPlan.charAt(0).toUpperCase() + userPlan.slice(1) : "Free"} Plan.</CardDescription>
+                        <CardDescription>You are currently on the {isAdmin ? "Pro Plus" : userPlan ? userPlan.charAt(0).toUpperCase() + userPlan.slice(1) : "Free"} Plan.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between p-4 border border-primary/20 bg-primary/5 rounded-lg">
                             <div>
                                 <div className="font-bold text-lg flex items-center gap-2">
-                                  {isAdmin ? "Admin (Enterprise)" : userPlan ? userPlan.charAt(0).toUpperCase() + userPlan.slice(1) : "Free"} Plan
+                                  {isAdmin ? "Pro Plus" : userPlan ? userPlan.charAt(0).toUpperCase() + userPlan.slice(1) : "Free"} Plan
                                   {isAdmin && <Crown className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {isAdmin ? "Full access to all features" : userPlan === "pro" ? "$12/month, billed monthly" : "Limited features"}
+                                  {isAdmin ? "Unlimited access to all features" : userPlan === "pro" ? "$12/month, billed monthly" : "Limited features"}
                                 </div>
                             </div>
                             <Badge variant="default" className="bg-primary">Active</Badge>
@@ -338,10 +356,10 @@ export default function Settings() {
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span>Storage Used</span>
-                                <span>4.2GB / {userPlan === "enterprise" || isAdmin ? "Unlimited" : "10GB"}</span>
+                                <span>{isAdmin ? "Unlimited" : userPlan === "enterprise" ? "Unlimited" : userPlan === "pro" ? "4.2GB / 100GB" : "4.2GB / 10GB"}</span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className={`h-full ${userPlan === "enterprise" || isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${userPlan === "free" ? "w-[30%]" : "w-[42%]"}`} />
+                                <div className={`h-full ${isAdmin || userPlan === "enterprise" ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${userPlan === "free" ? "w-[30%]" : userPlan === "pro" ? "w-[42%]" : "w-full"}`} />
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -350,7 +368,7 @@ export default function Settings() {
                                 <span>{isAdmin ? "Unlimited" : userPlan === "pro" ? "850 / 1000" : "10 / 100"}</span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className={`h-full ${isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${userPlan === "free" ? "w-[10%]" : "w-[85%]"}`} />
+                                <div className={`h-full ${isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${userPlan === "free" ? "w-[10%]" : userPlan === "pro" ? "w-[85%]" : "w-full"}`} />
                             </div>
                         </div>
                     </CardContent>
@@ -398,14 +416,14 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-2">
-                        <Input placeholder="www.yourdomain.com" disabled={!isAdmin && userPlan !== "enterprise"} />
-                        <Button disabled={!isAdmin && userPlan !== "enterprise"}>Verify</Button>
+                        <Input placeholder="www.yourdomain.com" disabled={!isAdmin && userPlan !== "enterprise"} data-testid="input-custom-domain" />
+                        <Button disabled={!isAdmin && userPlan !== "enterprise"} data-testid="button-verify-domain">Verify</Button>
                     </div>
                     {(!isAdmin && userPlan !== "enterprise") && (
                       <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
                         <div className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-100">
                             <Lock className="h-4 w-4 mt-0.5" />
-                            <p>Custom domains are available on Enterprise plan.</p>
+                            <p>Custom domains are available on Pro Plus plan and above.</p>
                         </div>
                       </div>
                     )}
