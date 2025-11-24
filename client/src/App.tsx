@@ -34,6 +34,7 @@ function Router() {
       <Route path="/performance" component={ArticlePerformance} />
       <Route path="/my-blogs" component={MyBlogs} />
       <Route path="/publish" component={BlogPublish} />
+      <Route path="/blog-publish" component={BlogPublish} />
       <Route path="/blog/preview" component={BlogPreview} />
       <Route path="/public-blog" component={PublicBlog} />
       <Route path="/feed" component={PersonalizedFeed} />
