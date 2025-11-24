@@ -430,88 +430,100 @@ export default function BlogPublish() {
 
         <main className="max-w-7xl mx-auto px-6 py-12">
           {!Array.isArray(blogs) || blogs.length === 0 ? (
-            <Card className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Card className="text-center py-12 border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+              <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <CardTitle>No Blogs Found</CardTitle>
               <CardDescription>Create a blog first to publish articles</CardDescription>
             </Card>
           ) : (
             <Tabs defaultValue="drafts" className="space-y-8">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="drafts" className="gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  Drafts ({draftArticles.length})
-                </TabsTrigger>
-                <TabsTrigger value="published" className="gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Published ({publishedArticles.length})
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between">
+                <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100 dark:bg-slate-800">
+                  <TabsTrigger value="drafts" className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700">
+                    <AlertCircle className="h-4 w-4" />
+                    Drafts ({draftArticles.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="published" className="gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Published ({publishedArticles.length})
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Draft Articles Tab */}
               <TabsContent value="drafts" className="space-y-6">
                 {draftArticles.length === 0 ? (
-                  <Card className="text-center py-12">
-                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <CardTitle>No Draft Articles</CardTitle>
-                    <CardDescription>Create a new article to get started</CardDescription>
+                  <Card className="text-center py-16 border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
+                    <AlertCircle className="h-12 w-12 text-amber-400 mx-auto mb-4" />
+                    <CardTitle className="text-amber-900 dark:text-amber-100">No Draft Articles</CardTitle>
+                    <CardDescription className="text-amber-800/70">Create a new article to get started</CardDescription>
                   </Card>
                 ) : (
                   <div className="grid gap-6">
                     {draftArticles.map((article) => (
                       <Card
                         key={article.id}
-                        className="hover:shadow-md transition-shadow border-l-4 border-l-amber-500"
+                        className="hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:scale-[1.01] overflow-hidden"
                       >
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-2">
-                              <CardTitle className="text-2xl font-serif">
-                                {article.title || "Untitled"}
-                              </CardTitle>
-                              <CardDescription className="text-base">
-                                {article.excerpt || article.content?.substring(0, 100) || "No description"}
+                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 pointer-events-none" />
+                        <CardHeader className="relative">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-start gap-3">
+                                <div className="w-1 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full" />
+                                <div className="flex-1">
+                                  <CardTitle className="text-2xl font-serif line-clamp-2">
+                                    {article.title || "Untitled"}
+                                  </CardTitle>
+                                </div>
+                              </div>
+                              <CardDescription className="text-sm ml-4 line-clamp-2">
+                                {article.excerpt || article.content?.substring(0, 150) || "No description"}
                               </CardDescription>
                             </div>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-xs font-semibold px-3 py-1">
                               Draft
                             </Badge>
                           </div>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative">
                           <div className="space-y-6">
-                            {/* Article Meta */}
-                            <div className="grid grid-cols-3 gap-4 p-4 bg-muted/40 rounded-lg">
-                              <div>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">Created</p>
-                                <p className="font-medium">
-                                  {new Date(article.createdAt).toLocaleDateString()}
+                            {/* Article Meta Stats */}
+                            <div className="grid grid-cols-4 gap-3">
+                              <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/40 dark:to-blue-900/40 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                                <p className="text-xs text-blue-600 dark:text-blue-300 uppercase font-bold">Created</p>
+                                <p className="font-semibold text-sm mt-1 text-blue-900 dark:text-blue-100">
+                                  {new Date(article.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">Word Count</p>
-                                <p className="font-medium">
-                                  {article.content?.split(/\s+/).length || 0} words
+                              <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/40 dark:to-purple-900/40 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+                                <p className="text-xs text-purple-600 dark:text-purple-300 uppercase font-bold">Words</p>
+                                <p className="font-semibold text-sm mt-1 text-purple-900 dark:text-purple-100">
+                                  {(article.content?.split(/\s+/).length || 0).toLocaleString()}
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">Reading Time</p>
-                                <p className="font-medium">
+                              <div className="p-3 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/40 dark:to-green-900/40 rounded-lg border border-green-200/50 dark:border-green-800/50">
+                                <p className="text-xs text-green-600 dark:text-green-300 uppercase font-bold">Read Time</p>
+                                <p className="font-semibold text-sm mt-1 text-green-900 dark:text-green-100">
                                   {Math.ceil((article.content?.split(/\s+/).length || 0) / 200)} min
                                 </p>
+                              </div>
+                              <div className="p-3 bg-gradient-to-br from-pink-50 to-pink-100/50 dark:from-pink-950/40 dark:to-pink-900/40 rounded-lg border border-pink-200/50 dark:border-pink-800/50">
+                                <p className="text-xs text-pink-600 dark:text-pink-300 uppercase font-bold">Status</p>
+                                <p className="font-semibold text-sm mt-1 text-pink-900 dark:text-pink-100">Draft</p>
                               </div>
                             </div>
 
                             {/* Article Actions */}
-                            <div className="flex gap-2 flex-wrap">
+                            <div className="flex gap-3 flex-wrap pt-3">
                               <Button
                                 variant="outline"
                                 onClick={() => setLocation(`/editor?articleId=${article.id}`)}
-                                className="gap-2 flex-1"
+                                className="gap-2 flex-1 h-10 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:border-blue-300"
                                 title="Edit article content"
                               >
                                 <PenTool className="h-4 w-4" />
-                                Change
+                                Edit Content
                               </Button>
 
                               <Button
@@ -520,18 +532,18 @@ export default function BlogPublish() {
                                   setEditingArticleId(article.id);
                                   setEditArticleTitle(article.title);
                                 }}
-                                className="gap-2 flex-1"
+                                className="gap-2 flex-1 h-10 hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:border-purple-300"
                                 title="Edit article title"
                               >
                                 <Pencil className="h-4 w-4" />
-                                Edit
+                                Edit Title
                               </Button>
 
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <Button className="flex-1 gap-2 font-semibold h-11">
+                                  <Button className="flex-1 gap-2 font-semibold h-10 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-lg hover:shadow-xl transition-all">
                                     <Zap className="h-4 w-4" />
-                                    Ready to Publish?
+                                    Publish
                                   </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-md">
@@ -614,70 +626,79 @@ export default function BlogPublish() {
               {/* Published Articles Tab */}
               <TabsContent value="published" className="space-y-6">
                 {publishedArticles.length === 0 ? (
-                  <Card className="text-center py-12">
-                    <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <CardTitle>No Published Articles</CardTitle>
-                    <CardDescription>Publish your first article to see it here</CardDescription>
+                  <Card className="text-center py-16 border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+                    <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-4" />
+                    <CardTitle className="text-green-900 dark:text-green-100">No Published Articles</CardTitle>
+                    <CardDescription className="text-green-800/70">Publish your first article to see it here</CardDescription>
                   </Card>
                 ) : (
                   <div className="grid gap-6">
                     {publishedArticles.map((article) => (
                       <Card
                         key={article.id}
-                        className="hover:shadow-md transition-shadow border-l-4 border-l-green-500"
+                        className="hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:scale-[1.01] overflow-hidden"
                       >
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-2">
-                              <CardTitle className="text-2xl font-serif">
-                                {article.title || "Untitled"}
-                              </CardTitle>
-                              <CardDescription className="text-base">
-                                {article.excerpt || article.content?.substring(0, 100) || "No description"}
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 dark:from-green-500/10 dark:to-emerald-500/10 pointer-events-none" />
+                        <CardHeader className="relative">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-start gap-3">
+                                <div className="w-1 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
+                                <div className="flex-1">
+                                  <CardTitle className="text-2xl font-serif line-clamp-2">
+                                    {article.title || "Untitled"}
+                                  </CardTitle>
+                                </div>
+                              </div>
+                              <CardDescription className="text-sm ml-4 line-clamp-2">
+                                {article.excerpt || article.content?.substring(0, 150) || "No description"}
                               </CardDescription>
                             </div>
-                            <Badge className="bg-green-100 text-green-700 border-green-200">
-                              Published
+                            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 text-xs font-semibold px-3 py-1">
+                              Live
                             </Badge>
                           </div>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative">
                           <div className="space-y-6">
-                            {/* Article Meta */}
-                            <div className="grid grid-cols-3 gap-4 p-4 bg-muted/40 rounded-lg">
-                              <div>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">Published</p>
-                                <p className="font-medium">
-                                  {new Date(article.publishedAt).toLocaleDateString()}
+                            {/* Article Meta Stats */}
+                            <div className="grid grid-cols-4 gap-3">
+                              <div className="p-3 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/40 dark:to-green-900/40 rounded-lg border border-green-200/50 dark:border-green-800/50">
+                                <p className="text-xs text-green-600 dark:text-green-300 uppercase font-bold">Published</p>
+                                <p className="font-semibold text-sm mt-1 text-green-900 dark:text-green-100">
+                                  {new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">Word Count</p>
-                                <p className="font-medium">
-                                  {article.content?.split(/\s+/).length || 0} words
+                              <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/40 dark:to-indigo-900/40 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
+                                <p className="text-xs text-indigo-600 dark:text-indigo-300 uppercase font-bold">Words</p>
+                                <p className="font-semibold text-sm mt-1 text-indigo-900 dark:text-indigo-100">
+                                  {(article.content?.split(/\s+/).length || 0).toLocaleString()}
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">Status</p>
-                                <p className="font-medium text-green-600 flex items-center gap-1">
-                                  <Eye className="h-4 w-4" /> Live
+                              <div className="p-3 bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/40 rounded-lg border border-cyan-200/50 dark:border-cyan-800/50">
+                                <p className="text-xs text-cyan-600 dark:text-cyan-300 uppercase font-bold">Read Time</p>
+                                <p className="font-semibold text-sm mt-1 text-cyan-900 dark:text-cyan-100">
+                                  {Math.ceil((article.content?.split(/\s+/).length || 0) / 200)} min
                                 </p>
+                              </div>
+                              <div className="p-3 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/40 dark:to-emerald-900/40 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
+                                <p className="text-xs text-emerald-600 dark:text-emerald-300 uppercase font-bold">Status</p>
+                                <p className="font-semibold text-sm mt-1 text-emerald-900 dark:text-emerald-100">Live</p>
                               </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 pt-3">
                               <Button 
-                                variant="outline" 
-                                className="flex-1 gap-2"
+                                className="flex-1 gap-2 h-10 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0 shadow-lg hover:shadow-xl transition-all"
                                 onClick={() => setLocation(`/public-blog?blogId=${selectedBlog}`)}
                               >
                                 <Eye className="h-4 w-4" />
-                                View Published
+                                View Live
                               </Button>
                               <Button
-                                variant="destructive"
-                                className="flex-1 gap-2"
+                                variant="outline"
+                                className="flex-1 gap-2 h-10 hover:bg-red-50 dark:hover:bg-red-950/50 hover:border-red-300 hover:text-red-600"
                                 onClick={() => handleUnpublish(article.id)}
                                 disabled={publishingId === article.id}
                               >
