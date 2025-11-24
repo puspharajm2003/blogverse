@@ -973,6 +973,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Plagiarism Checker Endpoints
+  app.post("/api/plagiarism/check", authenticateToken, async (req: any, res) => {
+    try {
+      const { articleId, content } = req.body;
+      
+      if (!articleId || !content) {
+        return res.status(400).json({ error: "Missing articleId or content" });
+      }
+
+      const article = await storage.getArticle(articleId);
+      if (!article) return res.status(404).json({ error: "Article not found" });
+
+      const blog = await storage.getBlog(article.blogId);
+      if (!blog || blog.userId !== req.userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      const result = await storage.checkArticlePlagiarism(articleId, req.userId, content);
+      
+      res.json({
+        ...result,
+        matches: typeof result.matches === 'string' ? JSON.parse(result.matches) : result.matches
+      });
+    } catch (error) {
+      console.error("Plagiarism check error:", error);
+      res.status(500).json({ error: "Failed to check plagiarism" });
+    }
+  });
+
+  app.get("/api/plagiarism/:articleId", authenticateToken, async (req: any, res) => {
+    try {
+      const { articleId } = req.params;
+      
+      const article = await storage.getArticle(articleId);
+      if (!article) return res.status(404).json({ error: "Article not found" });
+
+      const blog = await storage.getBlog(article.blogId);
+      if (!blog || blog.userId !== req.userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      const checks = await storage.getPlagiarismChecksByArticle(articleId);
+      const formattedChecks = checks.map(check => ({
+        ...check,
+        matches: typeof check.matches === 'string' ? JSON.parse(check.matches) : check.matches
+      }));
+
+      res.json(formattedChecks);
+    } catch (error) {
+      console.error("Get plagiarism history error:", error);
+      res.status(500).json({ error: "Failed to fetch plagiarism history" });
+    }
+  });
+
+  app.get("/api/plagiarism/:articleId/latest", authenticateToken, async (req: any, res) => {
+    try {
+      const { articleId } = req.params;
+      
+      const article = await storage.getArticle(articleId);
+      if (!article) return res.status(404).json({ error: "Article not found" });
+
+      const blog = await storage.getBlog(article.blogId);
+      if (!blog || blog.userId !== req.userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      const check = await storage.getLatestPlagiarismCheck(articleId);
+      
+      if (!check) {
+        return res.json(null);
+      }
+
+      res.json({
+        ...check,
+        matches: typeof check.matches === 'string' ? JSON.parse(check.matches) : check.matches
+      });
+    } catch (error) {
+      console.error("Get latest plagiarism check error:", error);
+      res.status(500).json({ error: "Failed to fetch latest plagiarism check" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

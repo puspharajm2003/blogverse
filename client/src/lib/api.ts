@@ -265,4 +265,24 @@ export const api = {
 
   initAchievements: () =>
     fetch(`${API_BASE}/api/achievements/init`).then((r) => r.json()),
+
+  // Plagiarism Checker
+  checkPlagiarism: (articleId: string, content: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/plagiarism/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ articleId, content }),
+    }).then((r) => r.json());
+  },
+
+  getPlagiarismHistory: (articleId: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/plagiarism/${articleId}`, { headers }).then((r) => r.json());
+  },
+
+  getLatestPlagiarismCheck: (articleId: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/plagiarism/${articleId}/latest`, { headers }).then((r) => r.json());
+  },
 };

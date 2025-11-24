@@ -164,6 +164,20 @@ export const userAchievements = pgTable("user_achievements", {
   progress: integer("progress").default(0), // 0-100 for partial progress
 });
 
+// Plagiarism check results table
+export const plagiarismChecks = pgTable("plagiarism_checks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  overallScore: integer("overall_score").notNull(), // 0-100
+  uniqueScore: integer("unique_score").notNull(), // 0-100
+  matchCount: integer("match_count").notNull().default(0),
+  matches: jsonb("matches").default(sql`'[]'::jsonb`), // Array of plagiarism matches
+  status: varchar("status").notNull().default("completed"), // completed, pending, error
+  checkedAt: timestamp("checked_at").notNull().default(sql`now()`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -268,3 +282,11 @@ export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+export type PlagiarismCheck = typeof plagiarismChecks.$inferSelect;
+export const insertPlagiarismCheckSchema = createInsertSchema(plagiarismChecks).omit({
+  id: true,
+  checkedAt: true,
+  createdAt: true,
+});
+export type InsertPlagiarismCheck = z.infer<typeof insertPlagiarismCheckSchema>;
