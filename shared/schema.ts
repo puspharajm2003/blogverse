@@ -40,8 +40,9 @@ export const articles = pgTable("articles", {
   coverImage: text("cover_image"),
   slug: varchar("slug").notNull(),
   tags: text("tags").array(),
-  status: varchar("status").notNull().default("draft"), // draft, published
+  status: varchar("status").notNull().default("draft"), // draft, published, scheduled
   publishedAt: timestamp("published_at"),
+  scheduledPublishAt: timestamp("scheduled_publish_at"), // For scheduled publishing
   authorBio: text("author_bio"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),

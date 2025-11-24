@@ -4,6 +4,14 @@
 
 BlogVerse is a modern SaaS blogging platform that enables users to create, publish, and manage blogs with AI-powered content generation capabilities. The platform emphasizes speed, SEO optimization, and scalability while providing a rich editing experience with analytics and team collaboration features.
 
+## Recent Changes (November 24, 2025)
+
+### New Features Implemented
+1. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings
+2. **Scheduled Article Publishing** - Added `scheduledPublishAt` field to articles table for future publication
+3. **PDF/Document Export** - Integrated html2pdf library for exporting articles to PDF format
+4. **Plagiarism Checker** - Foundation for plagiarism detection with simulated checking and extensible API
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -51,11 +59,13 @@ Preferred communication style: Simple, everyday language.
 - **PostgreSQL**: Primary data store via Neon serverless
 - **Drizzle ORM**: Type-safe database queries with schema migrations
 - **Schema Design**:
-  - Users: Authentication and profile data
+  - Users: Authentication and profile data with plan tracking (free/pro/enterprise)
   - Blogs: Multi-tenant blog instances with customizable themes
-  - Articles: Content with draft/published states, SEO metadata
+  - Articles: Content with draft/published/scheduled states, SEO metadata, scheduling support
   - Analytics Events: View tracking and engagement metrics
   - Chat Messages: AI conversation history
+  - Achievements: User achievement milestones with tier system
+  - User Achievements: Progress tracking for achievements
 
 **Data Access Layer**
 - Storage abstraction (IStorage interface) for database operations
@@ -89,6 +99,36 @@ Preferred communication style: Simple, everyday language.
 - Content brainstorming with niche-based idea generation
 - Persistent chat history per user
 
+### Document & Export Features
+
+**Article Export**
+- PDF export functionality using html2pdf for professional formatting
+- Document export as text/plaintext format
+- Preserves formatting and metadata during export
+
+**Plagiarism Detection**
+- Simulated plagiarism checker for development/testing
+- Extensible architecture for API integration
+- Analyzes content uniqueness and similarity scores
+
+### Achievement System
+
+**Features**
+- 8 default achievements across 4 tiers (Bronze, Silver, Gold, Platinum)
+- Achievement types: articles published, total views, consecutive publishing days
+- Progress tracking with point rewards
+- User achievement unlock history
+
+**Achievements Include**
+- First Post (1 article) - 10 points
+- Five Articles - 25 points
+- Ten Articles - 50 points
+- Twenty Five Articles - 100 points
+- Fifty Articles - 250 points
+- Consistency Champion (7 consecutive days) - 75 points
+- 1000 Views - 30 points
+- Popular Creator (10000 views) - 150 points
+
 ### API Design
 
 **RESTful Endpoints**
@@ -99,6 +139,8 @@ Preferred communication style: Simple, everyday language.
 - `/api/analytics/*`: Event recording, statistics retrieval
 - `/api/ai/*`: Content generation, chat, brainstorming
 - `/api/chat/*`: Message history
+- `/api/achievements/*`: Achievement management and user progress
+- `/api/plagiarism/*`: Plagiarism detection (future integration)
 
 **Response Format**
 - JSON responses with error/success indicators
@@ -148,9 +190,11 @@ Preferred communication style: Simple, everyday language.
 - cmdk (command palette)
 - input-otp (OTP input)
 
-**Editor**
+**Editor & Export**
 - @tiptap/react and extensions
 - ProseMirror-based editing
+- pdfkit (PDF generation)
+- html2pdf.js (Document export)
 
 **Forms & Validation**
 - react-hook-form
@@ -164,6 +208,7 @@ Preferred communication style: Simple, everyday language.
 - bcryptjs (password hashing)
 - jsonwebtoken (JWT tokens)
 - date-fns (date manipulation)
+- next-themes (theme management)
 
 **Build & Dev**
 - @vitejs/plugin-react
@@ -180,5 +225,7 @@ Preferred communication style: Simple, everyday language.
 ### Environment Requirements
 
 - `DATABASE_URL`: PostgreSQL connection string (required)
+- `OPENAI_API_KEY`: OpenAI API for content generation
+- `OPENROUTER_API_KEY`: Alternative AI model access
 - Node.js environment for server execution
 - Port 5000 for Vite dev server

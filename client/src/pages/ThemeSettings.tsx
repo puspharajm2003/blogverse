@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Palette, Layout, Type, Image as ImageIcon, User, Building, CreditCard, Globe, Lock, Bell } from "lucide-react";
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
   return (
     <SidebarLayout>
       <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -105,7 +107,12 @@ export default function Settings() {
                             </div>
                             <div className="flex items-center justify-between pt-2">
                                 <Label htmlFor="dark-mode">Dark Mode</Label>
-                                <Switch id="dark-mode" />
+                                <Switch 
+                                  id="dark-mode" 
+                                  checked={theme === "dark"}
+                                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                                  data-testid="toggle-dark-mode"
+                                />
                             </div>
                         </div>
                         <Separator />
