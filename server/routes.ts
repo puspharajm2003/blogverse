@@ -398,9 +398,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/user/blogs", authenticateToken, async (req: any, res) => {
     try {
-      const blogs = await storage.getBlogsByUser(req.userId);
+      const userId = req.userId;
+      console.log(`[DEBUG] Fetching blogs for userId: ${userId}`);
+      const blogs = await storage.getBlogsByUser(userId);
+      console.log(`[DEBUG] Found ${blogs.length} blogs for userId: ${userId}`, blogs.map(b => ({ id: b.id, title: b.title })));
       res.json(blogs);
     } catch (error) {
+      console.error("[DEBUG] Error fetching blogs:", error);
       res.status(500).json({ error: "Server error" });
     }
   });

@@ -86,7 +86,14 @@ export class PostgresStorage implements IStorage {
   }
 
   async getBlogsByUser(userId: string): Promise<Blog[]> {
-    return db.select().from(blogs).where(eq(blogs.userId, userId));
+    try {
+      const userBlogs = await db.select().from(blogs).where(eq(blogs.userId, userId));
+      console.log(`[Storage] getBlogsByUser(${userId}): Found ${userBlogs.length} blogs`);
+      return userBlogs;
+    } catch (error) {
+      console.error(`[Storage] getBlogsByUser error for userId ${userId}:`, error);
+      throw error;
+    }
   }
 
   async createBlog(blog: InsertBlog): Promise<Blog> {
