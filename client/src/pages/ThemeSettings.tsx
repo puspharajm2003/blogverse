@@ -28,6 +28,9 @@ export default function Settings() {
   const [siteIndexing, setSiteIndexing] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [userPlan, setUserPlan] = useState("free");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userAvatar, setUserAvatar] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,6 +43,9 @@ export default function Settings() {
           setBio(profile.bio || "");
           setSiteTitle(profile.displayName ? `${profile.displayName}'s Blog` : "My Blog");
           setSiteDescription("Share your thoughts and ideas with the world.");
+          setUserPlan(profile.plan || "free");
+          setIsAdmin(profile.isAdmin || false);
+          setUserAvatar(profile.avatar || "");
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -121,8 +127,8 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-6">
                         <Avatar className="h-24 w-24">
-                            <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
-                            <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
+                            <AvatarImage src={userAvatar || "https://github.com/shadcn.png"} />
+                            <AvatarFallback>{displayName?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                         <Button variant="outline">Change Avatar</Button>
                     </div>
@@ -284,19 +290,19 @@ export default function Settings() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Avatar>
-                                    <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
-                                    <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
+                                    <AvatarImage src={userAvatar || "https://github.com/shadcn.png"} />
+                                    <AvatarFallback>{displayName?.charAt(0) || "U"}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <div className="font-medium flex items-center gap-2">
-                                      {user?.displayName}
-                                      {user?.isAdmin && <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
+                                      {displayName}
+                                      {isAdmin && <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
                                     </div>
-                                    <div className="text-sm text-muted-foreground">{user?.email}</div>
+                                    <div className="text-sm text-muted-foreground">{email}</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-muted-foreground">{user?.isAdmin ? "Admin" : "Owner"}</span>
+                                <span className="text-sm text-muted-foreground">{isAdmin ? "Admin" : "Owner"}</span>
                                 <Button variant="ghost" size="sm" disabled>Active</Button>
                             </div>
                         </div>
@@ -314,17 +320,17 @@ export default function Settings() {
                 <Card className="col-span-2">
                     <CardHeader>
                         <CardTitle>Current Plan</CardTitle>
-                        <CardDescription>You are currently on the {user?.isAdmin ? "Admin (Enterprise)" : user?.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1) : "Free"} Plan.</CardDescription>
+                        <CardDescription>You are currently on the {isAdmin ? "Admin (Enterprise)" : userPlan ? userPlan.charAt(0).toUpperCase() + userPlan.slice(1) : "Free"} Plan.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between p-4 border border-primary/20 bg-primary/5 rounded-lg">
                             <div>
                                 <div className="font-bold text-lg flex items-center gap-2">
-                                  {user?.isAdmin ? "Admin (Enterprise)" : user?.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1) : "Free"} Plan
-                                  {user?.isAdmin && <Crown className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
+                                  {isAdmin ? "Admin (Enterprise)" : userPlan ? userPlan.charAt(0).toUpperCase() + userPlan.slice(1) : "Free"} Plan
+                                  {isAdmin && <Crown className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {user?.isAdmin ? "Full access to all features" : user?.plan === "pro" ? "$12/month, billed monthly" : "Limited features"}
+                                  {isAdmin ? "Full access to all features" : userPlan === "pro" ? "$12/month, billed monthly" : "Limited features"}
                                 </div>
                             </div>
                             <Badge variant="default" className="bg-primary">Active</Badge>
@@ -332,24 +338,24 @@ export default function Settings() {
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span>Storage Used</span>
-                                <span>4.2GB / {user?.plan === "enterprise" || user?.isAdmin ? "Unlimited" : "10GB"}</span>
+                                <span>4.2GB / {userPlan === "enterprise" || isAdmin ? "Unlimited" : "10GB"}</span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className={`h-full ${user?.plan === "enterprise" || user?.isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${user?.plan === "free" ? "w-[30%]" : "w-[42%]"}`} />
+                                <div className={`h-full ${userPlan === "enterprise" || isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${userPlan === "free" ? "w-[30%]" : "w-[42%]"}`} />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span>AI Generations</span>
-                                <span>{user?.isAdmin ? "Unlimited" : user?.plan === "pro" ? "850 / 1000" : "10 / 100"}</span>
+                                <span>{isAdmin ? "Unlimited" : userPlan === "pro" ? "850 / 1000" : "10 / 100"}</span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className={`h-full ${user?.isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${user?.plan === "free" ? "w-[10%]" : "w-[85%]"}`} />
+                                <div className={`h-full ${isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${userPlan === "free" ? "w-[10%]" : "w-[85%]"}`} />
                             </div>
                         </div>
                     </CardContent>
                     <CardFooter>
-                        {!user?.isAdmin && <Button variant="outline">Upgrade Plan</Button>}
+                        {!isAdmin && userPlan === "free" && <Button variant="outline">Upgrade Plan</Button>}
                     </CardFooter>
                 </Card>
                 
@@ -358,7 +364,7 @@ export default function Settings() {
                         <CardTitle>Payment Method</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {user?.isAdmin ? (
+                        {isAdmin ? (
                           <div className="flex items-center gap-3 p-3 border border-border rounded-md bg-yellow-50 dark:bg-yellow-950/20">
                             <Crown className="h-5 w-5 text-yellow-500" />
                             <div className="flex-1">
@@ -392,10 +398,10 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-2">
-                        <Input placeholder="www.yourdomain.com" disabled={!user?.isAdmin && user?.plan !== "enterprise"} />
-                        <Button disabled={!user?.isAdmin && user?.plan !== "enterprise"}>Verify</Button>
+                        <Input placeholder="www.yourdomain.com" disabled={!isAdmin && userPlan !== "enterprise"} />
+                        <Button disabled={!isAdmin && userPlan !== "enterprise"}>Verify</Button>
                     </div>
-                    {(!user?.isAdmin && user?.plan !== "enterprise") && (
+                    {(!isAdmin && userPlan !== "enterprise") && (
                       <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
                         <div className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-100">
                             <Lock className="h-4 w-4 mt-0.5" />
@@ -403,7 +409,7 @@ export default function Settings() {
                         </div>
                       </div>
                     )}
-                    {(user?.isAdmin || user?.plan === "enterprise") && (
+                    {(isAdmin || userPlan === "enterprise") && (
                       <div className="p-4 bg-muted rounded-lg">
                         <div className="flex items-start gap-2 text-sm text-muted-foreground">
                             <Globe className="h-4 w-4 mt-0.5" />
