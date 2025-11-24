@@ -7,7 +7,24 @@ BlogVerse is a modern SaaS blogging platform that enables users to create, publi
 ## Recent Changes (November 24, 2025)
 
 ### Latest Feature Additions
-1. **Reading Time Estimation** - Automatic word count → reading time calculation:
+1. **Content Sanitization & HTML Cleanup** - Clean display on public blog:
+   - Removes `<strong>` and `</strong>` HTML markup from article content
+   - Strips markdown heading symbols (#, ##, ###) while preserving heading hierarchy
+   - Converts markdown headers to semantic HTML (H1, H2, H3)
+   - Beautiful prose styling for headings with serif fonts
+   - Utility functions in `lib/sanitize.ts`
+
+2. **Advanced MyArticles Page Redesign**:
+   - 4 stat cards (Total, Published, Drafts, Scheduled) with gradient backgrounds
+   - Tab-based navigation for quick status filtering
+   - Multi-blog support with dropdown filtering
+   - Grid and list view modes with responsive design
+   - Enhanced article cards showing reading time, word count, tags, blog name
+   - Dropdown menu actions (View Draft, Copy Share Link)
+   - Color-coded status badges (Green/Amber/Purple)
+   - Improved error handling and data validation
+
+3. **Reading Time Estimation** - Automatic word count → reading time calculation:
    - Displays in editor header next to word count
    - Shows in draft preview and article views
    - Calculated at 220 words per minute standard
