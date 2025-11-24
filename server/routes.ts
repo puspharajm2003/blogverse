@@ -530,10 +530,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const blog = await storage.getBlog(article.blogId);
       if (!blog || blog.userId !== req.userId) return res.status(403).json({ error: "Unauthorized" });
 
-      const updated = await storage.updateArticle(req.params.id, req.body);
+      // Validate and clean the update data
+      const updates: any = { ...req.body };
+      
+      // Convert ISO string dates to Date objects if present
+      if (updates.publishedAt && typeof updates.publishedAt === "string") {
+        updates.publishedAt = new Date(updates.publishedAt);
+      }
+      if (updates.scheduledPublishAt && typeof updates.scheduledPublishAt === "string") {
+        updates.scheduledPublishAt = new Date(updates.scheduledPublishAt);
+      }
+
+      const updated = await storage.updateArticle(req.params.id, updates);
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: "Server error" });
+      console.error("[ERROR] Failed to update article:", error);
+      const errorMessage = error instanceof Error ? error.message : "Server error";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
