@@ -81,14 +81,14 @@ export const articleVersions = pgTable("article_versions", {
   changeDescription: text("change_description"),
 });
 
-// Comments table for article discussions
+// Comments table for article discussions with moderation
 export const comments = pgTable("comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   articleId: varchar("article_id").notNull().references(() => articles.id),
   authorName: text("author_name").notNull(),
   authorEmail: text("author_email").notNull(),
   content: text("content").notNull(),
-  approved: boolean("approved").default(true),
+  status: varchar("status").notNull().default("pending"), // pending, approved, rejected
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -100,6 +100,19 @@ export const collaborators = pgTable("collaborators", {
   role: varchar("role").notNull().default("editor"), // viewer, editor, admin
   addedAt: timestamp("added_at").notNull().default(sql`now()`),
   lastActiveAt: timestamp("last_active_at"),
+});
+
+// Advanced analytics events table for detailed engagement tracking
+export const advancedAnalyticsEvents = pgTable("advanced_analytics_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  sessionId: text("session_id").notNull(),
+  eventType: varchar("event_type").notNull(), // scroll, timeOnPage, exitIntent, engagement, scrollDepth
+  scrollDepthPercent: integer("scroll_depth_percent"), // 0-100
+  timeOnPageSeconds: integer("time_on_page_seconds"),
+  engagementScore: integer("engagement_score"), // 0-100 based on interactions
+  referrer: text("referrer"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 // Schemas for validation
