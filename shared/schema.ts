@@ -140,6 +140,28 @@ export const userPreferences = pgTable("user_preferences", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
+// Achievements table
+export const achievements = pgTable("achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(), // emoji or icon name
+  requirement: integer("requirement").notNull(), // number of articles needed or milestone
+  requirementType: varchar("requirement_type").notNull(), // articles_published, consecutive_days, total_views, etc
+  tier: varchar("tier").notNull().default("bronze"), // bronze, silver, gold, platinum
+  points: integer("points").notNull().default(10),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+// User achievements table (join table for users and achievements)
+export const userAchievements = pgTable("user_achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  achievementId: varchar("achievement_id").notNull().references(() => achievements.id),
+  unlockedAt: timestamp("unlocked_at").notNull().default(sql`now()`),
+  progress: integer("progress").default(0), // 0-100 for partial progress
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -198,6 +220,16 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
   updatedAt: true,
 });
 
+export const insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
+  id: true,
+  unlockedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -228,3 +260,9 @@ export type InsertReadingHistory = z.infer<typeof insertReadingHistorySchema>;
 
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
