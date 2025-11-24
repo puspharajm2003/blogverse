@@ -21,6 +21,7 @@ import PersonalizedFeed from "@/pages/PersonalizedFeed";
 import Trash from "@/pages/Trash";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Achievements from "@/pages/Achievements";
+import MyArticles from "@/pages/MyArticles";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/performance" component={ArticlePerformance} />
       <Route path="/my-blogs" component={MyBlogs} />
+      <Route path="/my-articles" component={MyArticles} />
       <Route path="/publish" component={BlogPublish} />
       <Route path="/blog-publish" component={BlogPublish} />
       <Route path="/blog/preview" component={BlogPreview} />
