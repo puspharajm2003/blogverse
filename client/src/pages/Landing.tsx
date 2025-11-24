@@ -1,13 +1,16 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star } from "lucide-react";
+import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import heroImage from "@assets/generated_images/abstract_modern_digital_publishing_hero_background.png";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+  const [showDemoPanel, setShowDemoPanel] = useState(false);
+  const [demoUser, setDemoUser] = useState<any>(null);
 
   const handleViewDemo = async () => {
     setIsLoadingDemo(true);
@@ -16,14 +19,28 @@ export default function Landing() {
       if (result.token && result.user) {
         localStorage.setItem("stack_token", result.token);
         localStorage.setItem("stack_user", JSON.stringify(result.user));
-        setLocation("/");
-        window.location.reload();
+        setDemoUser(result.user);
+        setShowDemoPanel(true);
+        toast.success("Demo loaded! Explore the platform.", { duration: 3000 });
       }
     } catch (error) {
       console.error("Failed to load demo:", error);
+      toast.error("Failed to load demo");
     } finally {
       setIsLoadingDemo(false);
     }
+  };
+
+  const handleNavigateToDashboard = () => {
+    setShowDemoPanel(false);
+    setLocation("/dashboard");
+  };
+
+  const handleCloseDemoPanel = () => {
+    localStorage.removeItem("stack_token");
+    localStorage.removeItem("stack_user");
+    setShowDemoPanel(false);
+    setDemoUser(null);
   };
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -373,6 +390,101 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Demo Panel Overlay */}
+      {showDemoPanel && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in duration-300"
+          onClick={handleCloseDemoPanel}
+        />
+      )}
+
+      {/* Demo Panel */}
+      {showDemoPanel && (
+        <div 
+          className="fixed bottom-0 right-0 h-screen w-full md:w-[600px] bg-card border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-500 ease-out"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Panel Header */}
+          <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
+            <div>
+              <h2 className="text-lg font-serif font-bold">Welcome to BlogVerse Demo</h2>
+              <p className="text-xs text-muted-foreground">Explore the platform with sample data</p>
+            </div>
+            <button
+              onClick={handleCloseDemoPanel}
+              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+              data-testid="button-close-demo-panel"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Panel Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Demo Account</p>
+              <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                <p className="text-sm font-mono">{demoUser?.email || "demo@blogverse.com"}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">What you can explore:</p>
+              <ul className="space-y-2">
+                {[
+                  "Dashboard with analytics",
+                  "Create and publish blogs",
+                  "AI-powered content generation",
+                  "Article management",
+                  "Personalized feed",
+                  "Trash & restore functionality"
+                ].map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                💡 <strong>Tip:</strong> All demo data is pre-loaded. Navigate to different sections using the sidebar to explore features.
+              </p>
+            </div>
+          </div>
+
+          {/* Panel Footer */}
+          <div className="p-4 border-t border-border bg-muted/30 space-y-3">
+            <Button 
+              onClick={handleNavigateToDashboard}
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 animate-in fade-in slide-in-from-bottom duration-500 delay-100"
+              data-testid="button-navigate-dashboard"
+            >
+              {isLoadingDemo ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  Explore Dashboard
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="ghost"
+              onClick={handleCloseDemoPanel}
+              className="w-full hover:bg-muted transition-colors"
+              data-testid="button-close-demo"
+            >
+              Explore Later
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
