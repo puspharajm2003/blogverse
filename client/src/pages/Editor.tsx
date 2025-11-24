@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { useTheme } from "next-themes";
 import { exportArticleToPDF, exportArticleAsDocx } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import { 
     Save, 
     Send, 
@@ -188,6 +189,10 @@ export default function Editor() {
   const [showPlagiarismResult, setShowPlagiarismResult] = useState(false);
   const [plagiarismResult, setPlagiarismResult] = useState<any>(null);
   const [isCheckingPlagiarism, setIsCheckingPlagiarism] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [showDraftPreviewLink, setShowDraftPreviewLink] = useState(false);
 
   // Initialize blog on mount
   useEffect(() => {
@@ -212,6 +217,19 @@ export default function Editor() {
     
     initializeBlog();
   }, []);
+
+  // Autosave functionality
+  useEffect(() => {
+    if (!autoSaveEnabled) return;
+    
+    const autoSaveTimer = setTimeout(() => {
+      if (title !== "Untitled Draft" || content !== "<p>Start writing...</p>") {
+        handleSaveArticle();
+      }
+    }, 30000); // Autosave every 30 seconds
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [content, title, autoSaveEnabled]);
 
   // Undo/Redo state
   const [history, setHistory] = useState<HistoryEntry[]>([{ title, content }]);
@@ -299,6 +317,7 @@ export default function Editor() {
           slug,
           scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
           status: scheduledPublishAt ? "scheduled" : "draft",
+          tags: tags.length > 0 ? tags : null,
         });
         console.log("Article updated:", updated);
       } else {
@@ -311,6 +330,7 @@ export default function Editor() {
           excerpt: content.replace(/<[^>]*>/g, "").slice(0, 160),
           status: scheduledPublishAt ? "scheduled" : "draft",
           scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
+          tags: tags.length > 0 ? tags : null,
         });
         setArticleId(article.id);
         console.log("Article created:", article);
@@ -421,6 +441,7 @@ export default function Editor() {
   };
 
   const wordCount = countWords(content);
+  const readingTime = calculateReadingTime(content);
 
   return (
     <SidebarLayout>
@@ -448,6 +469,11 @@ export default function Editor() {
               
               <div className="text-sm text-muted-foreground whitespace-nowrap">
                 <span className="font-semibold text-foreground">{wordCount}</span> words
+              </div>
+
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                <Clock className="h-4 w-4 inline mr-1" />
+                <span className="font-semibold text-foreground">{formatReadingTime(readingTime)}</span>
               </div>
             </div>
             
@@ -663,12 +689,59 @@ export default function Editor() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Tags</Label>
-                      <Input 
-                        placeholder="Add tags (comma separated)" 
-                        data-testid="input-article-tags"
-                      />
-                      <p className="text-xs text-muted-foreground">Example: react, javascript, webdev</p>
+                      <Label>Tags & Categories</Label>
+                      <div className="flex gap-2 mb-2">
+                        <Input 
+                          placeholder="Add a tag..." 
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+                                setTags([...tags, tagInput.trim()]);
+                                setTagInput("");
+                                toast.success(`Tag "${tagInput.trim()}" added`);
+                              }
+                            }
+                          }}
+                          data-testid="input-article-tags"
+                        />
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+                              setTags([...tags, tagInput.trim()]);
+                              setTagInput("");
+                              toast.success(`Tag "${tagInput.trim()}" added`);
+                            }
+                          }}
+                          data-testid="button-add-tag"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {tags.map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant="secondary"
+                              className="cursor-pointer"
+                              onClick={() => {
+                                setTags(tags.filter(t => t !== tag));
+                                toast.success(`Tag "${tag}" removed`);
+                              }}
+                            >
+                              {tag}
+                              <span className="ml-1 text-xs">✕</span>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Press Enter or click Add. Click tags to remove.</p>
                     </div>
                     <div className="space-y-2">
                       <Label>SEO Description</Label>
@@ -702,7 +775,22 @@ export default function Editor() {
                     </div>
                     <Separator className="my-4" />
                     <div className="space-y-3">
-                      <Label>Export Article</Label>
+                      <Label>Share & Export</Label>
+                      {articleId && (
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-start"
+                          onClick={() => {
+                            const shareLink = `${window.location.origin}/draft-preview/${articleId}`;
+                            navigator.clipboard.writeText(shareLink);
+                            toast.success("Draft preview link copied!");
+                          }}
+                          data-testid="button-draft-preview-link"
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Copy Draft Preview Link
+                        </Button>
+                      )}
                       <Button 
                         variant="outline" 
                         className="w-full justify-start"

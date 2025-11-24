@@ -22,6 +22,7 @@ import Trash from "@/pages/Trash";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Achievements from "@/pages/Achievements";
 import MyArticles from "@/pages/MyArticles";
+import DraftPreview from "@/pages/DraftPreview";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/blog-publish" component={BlogPublish} />
       <Route path="/blog/preview" component={BlogPreview} />
       <Route path="/public-blog" component={PublicBlog} />
+      <Route path="/draft-preview/:articleId" component={DraftPreview} />
       <Route path="/feed" component={PersonalizedFeed} />
       <Route path="/trash" component={Trash} />
       <Route path="/achievements" component={Achievements} />
