@@ -1,4 +1,4 @@
-import html2pdf from "html2pdf.js/dist/html2pdf.umd";
+import html2pdf from "html2pdf.js";
 
 export const exportArticleToPDF = (
   title: string,

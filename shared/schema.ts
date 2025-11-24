@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name").notNull(),
   plan: varchar("plan").notNull().default("free"), // free, pro, enterprise
+  isAdmin: boolean("is_admin").notNull().default(false), // Admin user with all features
   bio: text("bio"),
   avatar: text("avatar"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),

@@ -339,13 +339,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingUser) return res.status(409).json({ error: "Email already exists" });
 
       const hashedPassword = await bcrypt.hash(parsed.data.password, 10);
+      
+      // Mark admin email with special privileges
+      const isAdminEmail = parsed.data.email === "puspharaj.m2003@gmail.com";
+      
       const user = await storage.createUser({
         ...parsed.data,
         password: hashedPassword,
+        isAdmin: isAdminEmail,
+        plan: isAdminEmail ? "enterprise" : "free",
       });
 
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
-      res.status(201).json({ user: { id: user.id, email: user.email, displayName: user.displayName }, token });
+      res.status(201).json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          displayName: user.displayName,
+          plan: user.plan,
+          isAdmin: user.isAdmin 
+        }, 
+        token 
+      });
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({ error: "Server error" });
@@ -364,7 +379,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!passwordMatch) return res.status(401).json({ error: "Invalid credentials" });
 
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
-      res.json({ user: { id: user.id, email: user.email, displayName: user.displayName }, token });
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          displayName: user.displayName,
+          plan: user.plan,
+          isAdmin: user.isAdmin,
+          avatar: user.avatar,
+          bio: user.bio
+        }, 
+        token 
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Server error" });
@@ -566,7 +592,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUser(req.userId);
       if (!user) return res.status(404).json({ error: "User not found" });
-      res.json({ id: user.id, email: user.email, displayName: user.displayName, bio: user.bio, avatar: user.avatar });
+      res.json({ 
+        id: user.id, 
+        email: user.email, 
+        displayName: user.displayName, 
+        plan: user.plan,
+        isAdmin: user.isAdmin,
+        bio: user.bio, 
+        avatar: user.avatar 
+      });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
     }
@@ -583,7 +617,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.updateUser(req.userId, updates);
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      res.json({ id: user.id, email: user.email, displayName: user.displayName, bio: user.bio, avatar: user.avatar });
+      res.json({ 
+        id: user.id, 
+        email: user.email, 
+        displayName: user.displayName, 
+        plan: user.plan,
+        isAdmin: user.isAdmin,
+        bio: user.bio, 
+        avatar: user.avatar 
+      });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
     }
