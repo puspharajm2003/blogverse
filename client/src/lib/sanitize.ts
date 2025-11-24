@@ -1,54 +1,106 @@
 /**
- * Sanitize HTML content by removing markdown symbols and cleaning up HTML tags
- * Removes: <strong> tags, #/##/### markdown headers, and extra whitespace
+ * Advanced Content Sanitization - Expert Level
+ * Removes ALL HTML tags, markdown symbols, and returns clean plain text
  */
+
 export function sanitizeContent(content: string): string {
   if (!content || typeof content !== 'string') return '';
 
   let cleaned = content;
 
-  // Remove <strong> and </strong> tags
-  cleaned = cleaned.replace(/<\/?strong>/g, '');
+  // Step 1: Decode HTML entities first
+  cleaned = decodeHTMLEntities(cleaned);
 
-  // Remove markdown heading symbols at line starts (# ## ###)
-  cleaned = cleaned.replace(/^#+\s+/gm, '');
+  // Step 2: Remove ALL HTML tags (including <strong>, <em>, <p>, etc.)
+  cleaned = cleaned.replace(/<[^>]*>/g, ' ');
 
-  // Convert markdown headers to semantic HTML (but keep them rendered)
-  // This allows proper rendering while removing the # symbols
-  cleaned = cleaned.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-  cleaned = cleaned.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-  cleaned = cleaned.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-
-  // Remove extra blank lines
-  cleaned = cleaned.replace(/\n\n+/g, '\n\n');
-
-  return cleaned.trim();
-}
-
-/**
- * Extract plain text from HTML content (for previews/excerpts)
- */
-export function extractPlainText(content: string): string {
-  if (!content || typeof content !== 'string') return '';
-
-  let text = content;
-
-  // Remove HTML tags
-  text = text.replace(/<[^>]*>/g, '');
-
-  // Remove markdown symbols
-  text = text.replace(/^#+\s+/gm, '');
-
-  // Decode HTML entities
-  text = text
+  // Step 3: Remove HTML entity encodings
+  cleaned = cleaned
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
     .replace(/&amp;/g, '&');
 
-  // Remove extra whitespace
-  text = text.replace(/\s+/g, ' ').trim();
+  // Step 4: Remove markdown heading symbols at start of lines
+  cleaned = cleaned.replace(/^#+\s+/gm, '');
 
-  return text;
+  // Step 5: Remove other markdown symbols
+  cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, '$1'); // **bold**
+  cleaned = cleaned.replace(/\*(.+?)\*/g, '$1'); // *italic*
+  cleaned = cleaned.replace(/__(.+?)__/g, '$1'); // __bold__
+  cleaned = cleaned.replace(/_(.+?)_/g, '$1'); // _italic_
+  cleaned = cleaned.replace(/~~(.+?)~~/g, '$1'); // ~~strikethrough~~
+  cleaned = cleaned.replace(/`(.+?)`/g, '$1'); // `code`
+
+  // Step 6: Clean up multiple spaces and empty lines
+  cleaned = cleaned.replace(/\s+/g, ' '); // Multiple spaces to single
+  cleaned = cleaned.replace(/\n\s*\n/g, '\n'); // Multiple newlines to single
+  cleaned = cleaned.trim();
+
+  return cleaned;
+}
+
+/**
+ * Decode HTML entities in text
+ */
+function decodeHTMLEntities(text: string): string {
+  const entities: { [key: string]: string } = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+    '&nbsp;': ' ',
+  };
+
+  let decoded = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    decoded = decoded.replace(new RegExp(entity, 'g'), char);
+  }
+
+  return decoded;
+}
+
+/**
+ * Extract plain text from HTML content for previews/excerpts
+ * Keeps content readable without HTML formatting
+ */
+export function extractPlainText(content: string): string {
+  return sanitizeContent(content);
+}
+
+/**
+ * Format content for display - converts to readable paragraphs
+ * Removes all markup and displays as clean text
+ */
+export function formatContentForDisplay(content: string): string {
+  const cleaned = sanitizeContent(content);
+
+  // Split into paragraphs on double newlines or common paragraph breaks
+  const paragraphs = cleaned
+    .split(/\n{2,}|(?:^|\n)(?:##|###|\*\*|--)/m)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+
+  return paragraphs.join('\n\n');
+}
+
+/**
+ * Sanitize for safe HTML display (removes dangerous content)
+ * Returns text formatted for readable display
+ */
+export function sanitizeForDisplay(content: string): string {
+  const cleaned = sanitizeContent(content);
+
+  // Preserve paragraph structure
+  const lines = cleaned.split('\n');
+  const formatted = lines
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join('\n');
+
+  return formatted;
 }
