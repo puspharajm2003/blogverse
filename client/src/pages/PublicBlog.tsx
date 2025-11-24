@@ -196,16 +196,6 @@ export default function PublicBlog() {
     }
   };
 
-  const handleApproveComment = (commentId: string) => {
-    setComments(comments.map(c => c.id === commentId ? { ...c, status: "approved" } : c));
-    toast.success("Comment approved!");
-  };
-
-  const handleRejectComment = (commentId: string) => {
-    setComments(comments.map(c => c.id === commentId ? { ...c, status: "rejected" } : c));
-    toast.error("Comment rejected");
-  };
-
   const copyShareLink = () => {
     const url = `${window.location.origin}${window.location.pathname}?article=${selectedArticle?.id}`;
     navigator.clipboard.writeText(url);
@@ -386,8 +376,255 @@ export default function PublicBlog() {
             </CardDescription>
           </Card>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Sidebar - Articles List with Filters */}
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* Main Content - Article Display (70-75% width) */}
+            <div className="lg:col-span-3">
+              {selectedArticle ? (
+                <div className="space-y-6">
+                  {/* Article Header */}
+                  <Card className="border-0 shadow-lg overflow-hidden">
+                    <CardHeader className="border-b border-slate-200 dark:border-slate-800 pb-6 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30">
+                      <div className="flex items-center justify-between gap-2 mb-4">
+                        <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200">
+                          Published
+                        </Badge>
+                        {metrics && (
+                          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                            <Zap className="h-3 w-3 text-yellow-500" />
+                            <span>{metrics.engagementScore}% Engagement</span>
+                          </div>
+                        )}
+                      </div>
+                      <CardTitle className="font-serif text-4xl line-clamp-3 text-slate-900 dark:text-white mb-4">
+                        {selectedArticle.title}
+                      </CardTitle>
+                      <CardDescription className="space-y-3">
+                        <div className="flex items-center gap-2 text-base">
+                          <span className="text-slate-600 dark:text-slate-400">
+                            {selectedArticle.publishedAt 
+                              ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })
+                              : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })
+                            }
+                          </span>
+                          <span className="text-slate-400">•</span>
+                          <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                            <Clock className="h-4 w-4" />
+                            {calculateReadTime(selectedArticle.content)} min read
+                          </div>
+                        </div>
+                        {selectedArticle.tags && selectedArticle.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {selectedArticle.tags.map((tag: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-xs cursor-pointer hover:border-indigo-500"
+                                onClick={() => {
+                                  if (!selectedTags.includes(tag)) {
+                                    setSelectedTags([...selectedTags, tag]);
+                                  }
+                                }}
+                                data-testid={`badge-article-tag-${tag}`}
+                              >
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+
+                    {/* Article Content */}
+                    <CardContent className="pt-8 space-y-6">
+                      <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+                        {typeof selectedArticle.content === 'string' && selectedArticle.content ? (
+                          <div 
+                            dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                            data-testid="text-article-content"
+                          />
+                        ) : (
+                          <p className="text-slate-500">No content available</p>
+                        )}
+                      </div>
+
+                      <Separator className="my-6" />
+
+                      {/* Author Bio */}
+                      {selectedArticle?.authorBio && (
+                        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 rounded-lg p-6 space-y-3 border border-indigo-200/50 dark:border-indigo-800/50">
+                          <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">About the Author</p>
+                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{selectedArticle.authorBio}</p>
+                        </div>
+                      )}
+
+                      {/* Advanced Engagement Metrics */}
+                      {metrics && (
+                        <div className="space-y-4 p-6 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-800 dark:to-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
+                          <div className="flex items-center gap-2 mb-4">
+                            <BarChart3 className="h-5 w-5 text-indigo-600" />
+                            <h3 className="font-semibold text-slate-900 dark:text-white">Article Performance</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <div className="text-2xl font-bold text-indigo-600">{metrics.views}</div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
+                                <Eye className="h-3 w-3" /> Views
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <div className="text-2xl font-bold text-pink-600">{metrics.likes}</div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
+                                <Heart className="h-3 w-3" /> Likes
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <div className="text-2xl font-bold text-blue-600">{metrics.shares}</div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
+                                <Share2 className="h-3 w-3" /> Shares
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <div className="text-2xl font-bold text-green-600">{metrics.uniqueVisitors}</div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
+                                <Users className="h-3 w-3" /> Visitors
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Share Section */}
+                      <div className="flex gap-2 flex-wrap">
+                        <Button 
+                          onClick={copyShareLink} 
+                          variant="outline" 
+                          size="sm"
+                          className="gap-2"
+                          data-testid="button-copy-link"
+                        >
+                          <Copy className="h-4 w-4" />
+                          {copiedLink ? "Copied!" : "Copy Link"}
+                        </Button>
+                        <Button onClick={() => shareOnSocial("twitter")} variant="outline" size="sm" className="gap-2" data-testid="button-share-twitter">
+                          <Twitter className="h-4 w-4" /> Twitter
+                        </Button>
+                        <Button onClick={() => shareOnSocial("facebook")} variant="outline" size="sm" className="gap-2" data-testid="button-share-facebook">
+                          <Facebook className="h-4 w-4" /> Facebook
+                        </Button>
+                        <Button onClick={() => shareOnSocial("linkedin")} variant="outline" size="sm" className="gap-2" data-testid="button-share-linkedin">
+                          <Linkedin className="h-4 w-4" /> LinkedIn
+                        </Button>
+                        <Button onClick={() => shareOnSocial("email")} variant="outline" size="sm" className="gap-2" data-testid="button-share-email">
+                          <Mail className="h-4 w-4" /> Email
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Comments Section */}
+                  <Card className="border-0 shadow-lg">
+                    <CardHeader className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                      <CardTitle className="text-2xl flex items-center gap-2">
+                        <MessageCircle className="h-6 w-6 text-indigo-600" />
+                        Comments ({comments.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-6">
+                      {/* Add Comment Form */}
+                      <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">Share Your Thoughts</h3>
+                        <Input
+                          placeholder="Your name"
+                          value={newComment.name}
+                          onChange={(e) => setNewComment({...newComment, name: e.target.value})}
+                          data-testid="input-comment-name"
+                          className="border-slate-300 dark:border-slate-600"
+                        />
+                        <Input
+                          type="email"
+                          placeholder="Your email"
+                          value={newComment.email}
+                          onChange={(e) => setNewComment({...newComment, email: e.target.value})}
+                          data-testid="input-comment-email"
+                          className="border-slate-300 dark:border-slate-600"
+                        />
+                        <textarea
+                          placeholder="Share your thoughts..."
+                          className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white resize-none"
+                          rows={3}
+                          value={newComment.content}
+                          onChange={(e) => setNewComment({...newComment, content: e.target.value})}
+                          data-testid="textarea-comment"
+                        />
+                        <Button
+                          className="w-full bg-indigo-600 hover:bg-indigo-700"
+                          onClick={handleAddComment}
+                          data-testid="button-add-comment"
+                        >
+                          Submit for Review
+                        </Button>
+                      </div>
+
+                      {/* Display Comments */}
+                      {comments.length > 0 ? (
+                        <div className="space-y-4">
+                          {comments.map((comment) => (
+                            <div 
+                              key={comment.id} 
+                              className={`border-l-4 p-4 rounded-r-lg transition-all ${
+                                comment.status === "approved"
+                                  ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                                  : comment.status === "rejected"
+                                  ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                                  : "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
+                              }`}
+                              data-testid={`comment-${comment.id}`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div>
+                                  <p className="font-semibold text-slate-900 dark:text-white">{comment.authorName}</p>
+                                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                                    {new Date(comment.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <Badge className={`text-xs ${
+                                  comment.status === "approved"
+                                    ? "bg-green-600"
+                                    : comment.status === "rejected"
+                                    ? "bg-red-600"
+                                    : "bg-yellow-600"
+                                }`}>
+                                  {comment.status}
+                                </Badge>
+                              </div>
+                              <p className="text-slate-700 dark:text-slate-300">{comment.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-center text-slate-500 py-6">No comments yet. Be the first to share your thoughts!</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="text-center py-16 border-0 shadow-lg">
+                  <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <CardTitle className="text-2xl mb-2">No Article Selected</CardTitle>
+                </Card>
+              )}
+            </div>
+
+            {/* Right Sidebar - Articles List (25-30% width) */}
             <div className="lg:col-span-1 space-y-4">
               {/* Search Bar */}
               <div className="relative">
@@ -413,7 +650,7 @@ export default function PublicBlog() {
                       <Badge
                         key={tag}
                         variant={selectedTags.includes(tag) ? "default" : "outline"}
-                        className={`cursor-pointer transition-all ${
+                        className={`cursor-pointer transition-all text-xs ${
                           selectedTags.includes(tag)
                             ? "bg-indigo-600 hover:bg-indigo-700"
                             : "hover:border-indigo-500"
@@ -453,7 +690,7 @@ export default function PublicBlog() {
               </div>
 
               {/* Articles List */}
-              <div className="space-y-3 max-h-[calc(100vh-600px)] overflow-y-auto pr-4">
+              <div className="space-y-3 max-h-[calc(100vh-500px)] overflow-y-auto pr-4">
                 {filteredArticles.map((article) => (
                   <Card
                     key={article.id}
@@ -462,9 +699,10 @@ export default function PublicBlog() {
                         ? "ring-2 ring-indigo-500 shadow-lg"
                         : ""
                     }`}
-                    onClick={() => {
+                    onClick={async () => {
                       setSelectedArticle(article);
                       api.recordEvent(article.id, "pageview", {});
+                      fetchComments(article.id);
                     }}
                     data-testid={`card-article-${article.id}`}
                   >
@@ -488,355 +726,6 @@ export default function PublicBlog() {
                   </Card>
                 ))}
               </div>
-            </div>
-
-            {/* Right Content Area - Article Display */}
-            <div className="lg:col-span-2">
-              {selectedArticle ? (
-                <Card className="border-0 shadow-xl overflow-hidden">
-                  <CardHeader className="border-b border-slate-200 dark:border-slate-800 pb-6 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30">
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200">
-                        Published
-                      </Badge>
-                      {metrics && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                          <Zap className="h-3 w-3 text-yellow-500" />
-                          <span>{metrics.engagementScore}% Engagement</span>
-                        </div>
-                      )}
-                    </div>
-                    <CardTitle className="font-serif text-4xl line-clamp-3 text-slate-900 dark:text-white mb-4">
-                      {selectedArticle.title}
-                    </CardTitle>
-                    <CardDescription className="space-y-3">
-                      <div className="flex items-center gap-2 text-base">
-                        <span className="text-slate-600 dark:text-slate-400">
-                          {selectedArticle.publishedAt 
-                            ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })
-                            : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })
-                          }
-                        </span>
-                        <span className="text-slate-400">•</span>
-                        <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <Clock className="h-4 w-4" />
-                          {calculateReadTime(selectedArticle.content)} min read
-                        </div>
-                      </div>
-                      {selectedArticle.tags && selectedArticle.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {selectedArticle.tags.map((tag: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs cursor-pointer hover:border-indigo-500"
-                              onClick={() => {
-                                if (!selectedTags.includes(tag)) {
-                                  setSelectedTags([...selectedTags, tag]);
-                                }
-                              }}
-                              data-testid={`badge-article-tag-${tag}`}
-                            >
-                              #{tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-
-                  {/* Article Content */}
-                  <CardContent className="pt-8 space-y-6 max-h-[calc(100vh-500px)] overflow-y-auto">
-                    <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
-                      {typeof selectedArticle.content === 'string' && selectedArticle.content ? (
-                        <div 
-                          dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
-                          data-testid="text-article-content"
-                        />
-                      ) : (
-                        <p className="text-slate-500">No content available</p>
-                      )}
-                    </div>
-
-                    <Separator className="my-6" />
-
-                    {/* Author Bio */}
-                    {selectedArticle?.authorBio && (
-                      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 rounded-lg p-6 space-y-3 border border-indigo-200/50 dark:border-indigo-800/50">
-                        <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">About the Author</p>
-                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{selectedArticle.authorBio}</p>
-                      </div>
-                    )}
-
-                    {/* Advanced Engagement Metrics */}
-                    {metrics && (
-                      <div className="space-y-4 p-6 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-800 dark:to-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
-                        <div className="flex items-center gap-2 mb-4">
-                          <BarChart3 className="h-5 w-5 text-indigo-600" />
-                          <h3 className="font-semibold text-slate-900 dark:text-white">Article Performance</h3>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="text-2xl font-bold text-indigo-600">{metrics.views}</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
-                              <Eye className="h-3 w-3" /> Views
-                            </div>
-                          </div>
-                          
-                          <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="text-2xl font-bold text-pink-600">{metrics.likes}</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
-                              <Heart className="h-3 w-3" /> Likes
-                            </div>
-                          </div>
-                          
-                          <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="text-2xl font-bold text-blue-600">{metrics.shares}</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
-                              <Share2 className="h-3 w-3" /> Shares
-                            </div>
-                          </div>
-                          
-                          <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="text-2xl font-bold text-green-600">{metrics.uniqueVisitors}</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
-                              <Users className="h-3 w-3" /> Visitors
-                            </div>
-                          </div>
-                          
-                          <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="text-2xl font-bold text-orange-600">{metrics.avgScrollDepth}%</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
-                              <Flame className="h-3 w-3" /> Scroll
-                            </div>
-                          </div>
-                          
-                          <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="text-2xl font-bold text-red-600">{metrics.bounceRate}%</div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
-                              <X className="h-3 w-3" /> Bounce
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Reading Progress */}
-                        <div className="mt-4 p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Your Reading Progress</span>
-                            <span className="text-sm font-bold text-indigo-600">{scrollDepth}%</span>
-                          </div>
-                          <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all"
-                              style={{ width: `${scrollDepth}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Engagement Buttons */}
-                    <div className="flex flex-col gap-3">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-                          onClick={() => {
-                            api.recordEvent(selectedArticle.id, "like", {});
-                          }}
-                          data-testid="button-like"
-                        >
-                          <Heart className="h-4 w-4 mr-2" />
-                          Like Article
-                        </Button>
-                        <Button
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-700"
-                          onClick={() => {
-                            api.recordEvent(selectedArticle.id, "share", {});
-                          }}
-                          data-testid="button-share"
-                        >
-                          <Share2 className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
-                      </div>
-
-                      {/* Social Sharing */}
-                      <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Share on Social</p>
-                        <div className="grid grid-cols-4 gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-slate-200 dark:border-slate-700"
-                            onClick={() => shareOnSocial("twitter")}
-                            title="Share on Twitter"
-                            data-testid="button-share-twitter"
-                          >
-                            <Twitter className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-slate-200 dark:border-slate-700"
-                            onClick={() => shareOnSocial("facebook")}
-                            title="Share on Facebook"
-                            data-testid="button-share-facebook"
-                          >
-                            <Facebook className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-slate-200 dark:border-slate-700"
-                            onClick={() => shareOnSocial("linkedin")}
-                            title="Share on LinkedIn"
-                            data-testid="button-share-linkedin"
-                          >
-                            <Linkedin className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-slate-200 dark:border-slate-700"
-                            onClick={() => shareOnSocial("email")}
-                            title="Share via Email"
-                            data-testid="button-share-email"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full border-slate-200 dark:border-slate-700"
-                          onClick={copyShareLink}
-                          data-testid="button-copy-link"
-                        >
-                          {copiedLink ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                          {copiedLink ? "Copied!" : "Copy Link"}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Comments Section */}
-                    <div className="mt-8 space-y-6 border-t border-slate-200 dark:border-slate-700 pt-6">
-                      <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
-                        <MessageCircle className="h-5 w-5 text-indigo-600" />
-                        Comments ({comments.filter(c => c.status === "approved").length}/{comments.length})
-                      </h3>
-                      
-                      {/* Add Comment Form */}
-                      <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-lg p-4 space-y-3 border border-slate-200 dark:border-slate-700">
-                        <Input
-                          placeholder="Your name"
-                          value={newComment.name}
-                          onChange={(e) => setNewComment({...newComment, name: e.target.value})}
-                          data-testid="input-comment-name"
-                          className="border-slate-300 dark:border-slate-600"
-                        />
-                        <Input
-                          placeholder="Your email"
-                          type="email"
-                          value={newComment.email}
-                          onChange={(e) => setNewComment({...newComment, email: e.target.value})}
-                          data-testid="input-comment-email"
-                          className="border-slate-300 dark:border-slate-600"
-                        />
-                        <textarea
-                          placeholder="Share your thoughts..."
-                          className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white resize-none"
-                          rows={3}
-                          value={newComment.content}
-                          onChange={(e) => setNewComment({...newComment, content: e.target.value})}
-                          data-testid="textarea-comment"
-                        />
-                        <Button
-                          className="w-full bg-indigo-600 hover:bg-indigo-700"
-                          onClick={handleAddComment}
-                          data-testid="button-add-comment"
-                        >
-                          Submit for Review
-                        </Button>
-                      </div>
-
-                      {/* Display Comments */}
-                      {comments.length > 0 ? (
-                        <div className="space-y-4">
-                          {comments.map((comment) => (
-                            <div 
-                              key={comment.id} 
-                              className={`border-l-4 p-4 rounded-r-lg transition-all ${
-                                comment.status === "approved"
-                                  ? "border-l-green-500 bg-green-50 dark:bg-green-950/20"
-                                  : comment.status === "rejected"
-                                  ? "border-l-red-500 bg-red-50 dark:bg-red-950/20"
-                                  : "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
-                              }`}
-                              data-testid={`comment-${comment.id}`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <div>
-                                  <p className="font-semibold text-slate-900 dark:text-white">{comment.name}</p>
-                                  <p className="text-xs text-slate-600 dark:text-slate-400">{comment.email}</p>
-                                </div>
-                                <Badge variant="outline" className={`text-xs ${
-                                  comment.status === "approved" ? "border-green-500 text-green-700" :
-                                  comment.status === "rejected" ? "border-red-500 text-red-700" :
-                                  "border-yellow-500 text-yellow-700"
-                                }`}>
-                                  {comment.status.charAt(0).toUpperCase() + comment.status.slice(1)}
-                                </Badge>
-                              </div>
-                              
-                              <p className="text-slate-800 dark:text-slate-200 mt-3 mb-3">{comment.content}</p>
-                              
-                              {comment.status === "pending" && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    className="h-8 bg-green-600 hover:bg-green-700"
-                                    onClick={() => handleApproveComment(comment.id)}
-                                    data-testid={`button-approve-comment-${comment.id}`}
-                                  >
-                                    <ThumbsUp className="h-3 w-3 mr-1" /> Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                    onClick={() => handleRejectComment(comment.id)}
-                                    data-testid={`button-reject-comment-${comment.id}`}
-                                  >
-                                    <ThumbsDown className="h-3 w-3 mr-1" /> Reject
-                                  </Button>
-                                </div>
-                              )}
-                              
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                                {new Date(comment.createdAt).toLocaleDateString()} at {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-center text-slate-500 dark:text-slate-400 py-6">No comments yet. Be the first to comment!</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="text-center py-12 border-0 shadow-lg">
-                  <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <CardTitle>Select an article to read</CardTitle>
-                </Card>
-              )}
             </div>
           </div>
         )}
