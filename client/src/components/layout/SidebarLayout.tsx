@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from 'next-themes';
 import { 
   LayoutDashboard, 
   PenTool, 
@@ -14,7 +15,9 @@ import {
   Send,
   Trash2,
   Trophy,
-  Crown
+  Crown,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +39,7 @@ export function SidebarLayout({ children }: SidebarProps) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     await signOut();
@@ -95,6 +99,24 @@ export function SidebarLayout({ children }: SidebarProps) {
             </Link>
           ))}
         </nav>
+
+        <div className="px-2 py-4 border-t border-border">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className={cn("w-full justify-start", collapsed && "justify-center px-2")}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            data-testid="toggle-theme-sidebar"
+            title="Toggle dark mode"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            {!collapsed && <span className="ml-3 text-sm">{theme === "dark" ? "Light" : "Dark"} Mode</span>}
+          </Button>
+        </div>
 
         <div className="p-4 border-t border-border">
           <DropdownMenu>

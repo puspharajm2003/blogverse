@@ -13,7 +13,7 @@ BlogVerse is a modern SaaS blogging platform that enables users to create, publi
    - **Pro Plan**: Advanced features (scheduled publishing, PDF export, plagiarism checker, version history, collaborative editing, advanced analytics)
    - **Enterprise Plan**: All features including custom domain
    - **Admin Override**: Admin users bypass all feature gates and access all features
-3. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings
+3. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings and navbar with system preference detection
 4. **Scheduled Article Publishing** - Added `scheduledPublishAt` field to articles table for future publication
 5. **PDF/Document Export** - Integrated html2pdf library for exporting articles to PDF format
 6. **Plagiarism Checker** - Foundation for plagiarism detection with simulated checking and extensible API
@@ -38,6 +38,13 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS v4**: Utility-first CSS with custom design tokens
 - **Theme System**: next-themes for dark/light mode support with system preference detection
 - **Typography**: Multi-font stack (Inter for UI, Playfair Display for editorial content, JetBrains Mono for code)
+
+**Dark Mode Implementation**
+- **System**: Uses next-themes with Tailwind class strategy
+- **Locations**: Settings page toggle + Quick access toggles in navbar and sidebar
+- **Persistence**: Theme preference saved to localStorage
+- **System Detection**: Automatically detects system preference (light/dark) on first visit
+- **Smooth Transitions**: CSS transitions for theme changes
 
 **Rich Text Editor**
 - **TipTap**: Based on ProseMirror for extensible WYSIWYG editing
@@ -66,7 +73,7 @@ Preferred communication style: Simple, everyday language.
 - **PostgreSQL**: Primary data store via Neon serverless
 - **Drizzle ORM**: Type-safe database queries with schema migrations
 - **Schema Design**:
-  - Users: Authentication and profile data with plan tracking (free/pro/enterprise)
+  - Users: Authentication and profile data with plan tracking (free/pro/enterprise) and admin flag
   - Blogs: Multi-tenant blog instances with customizable themes
   - Articles: Content with draft/published/scheduled states, SEO metadata, scheduling support
   - Analytics Events: View tracking and engagement metrics
@@ -86,11 +93,13 @@ Preferred communication style: Simple, everyday language.
 - Token stored in localStorage
 - Demo account generation for quick access
 - User context via React Context API
+- Admin detection on signup for puspharaj.m2003@gmail.com
 
 **Security**
 - bcrypt for password hashing
 - JWT token verification on protected routes
 - Authorization headers for API requests
+- Admin privileges automatically assigned to designated email
 
 ### AI Integration
 
@@ -105,6 +114,7 @@ Preferred communication style: Simple, everyday language.
 - Chat-based interface for iterative content creation
 - Content brainstorming with niche-based idea generation
 - Persistent chat history per user
+- Fallback to demo content when API unavailable
 
 ### Document & Export Features
 
@@ -153,6 +163,7 @@ Preferred communication style: Simple, everyday language.
 - JSON responses with error/success indicators
 - Consistent error handling patterns
 - Request/response logging for debugging
+- User data includes plan, isAdmin, avatar, bio
 
 ### Key Design Patterns
 
@@ -160,6 +171,7 @@ Preferred communication style: Simple, everyday language.
 - Reusable UI components from shadcn/ui
 - Layout components (SidebarLayout) for consistent page structure
 - Feature-specific components (AiChatbot, ContentBrainstorm, RichTextEditor)
+- FeatureGate component for plan-based access control
 
 **Data Flow**
 - React Query for async state management with automatic refetching
@@ -197,6 +209,9 @@ Preferred communication style: Simple, everyday language.
 - cmdk (command palette)
 - input-otp (OTP input)
 
+**Theme & Dark Mode**
+- next-themes (theme management with system preference detection)
+
 **Editor & Export**
 - @tiptap/react and extensions
 - ProseMirror-based editing
@@ -215,7 +230,6 @@ Preferred communication style: Simple, everyday language.
 - bcryptjs (password hashing)
 - jsonwebtoken (JWT tokens)
 - date-fns (date manipulation)
-- next-themes (theme management)
 
 **Build & Dev**
 - @vitejs/plugin-react
