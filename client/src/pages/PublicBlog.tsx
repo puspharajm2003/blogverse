@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
+import { sanitizeContent, extractPlainText } from "@/lib/sanitize";
 import {
   ArrowLeft,
   Share2,
@@ -473,7 +474,7 @@ export default function PublicBlog() {
                           </div>
                         )}
                       </div>
-                      <CardTitle className="font-serif text-4xl line-clamp-3 text-slate-900 dark:text-white mb-4">
+                      <CardTitle className="font-serif text-4xl line-clamp-3 text-slate-900 dark:text-white mb-4" data-testid="text-article-title">
                         {selectedArticle.title}
                       </CardTitle>
                       <CardDescription className="space-y-3">
@@ -519,10 +520,10 @@ export default function PublicBlog() {
 
                     {/* Article Content */}
                     <CardContent className="pt-8 space-y-6">
-                      <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+                      <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 prose-h1:text-3xl prose-h1:font-serif prose-h1:font-bold prose-h2:text-2xl prose-h2:font-serif prose-h2:font-bold prose-h3:text-xl prose-h3:font-serif prose-h3:font-semibold">
                         {typeof selectedArticle.content === 'string' && selectedArticle.content ? (
                           <div 
-                            dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeContent(selectedArticle.content) }}
                             data-testid="text-article-content"
                           />
                         ) : (
