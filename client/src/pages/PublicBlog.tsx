@@ -30,6 +30,8 @@ import {
   Mail,
   Copy,
   Check,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -43,10 +45,9 @@ export default function PublicBlog() {
   const [isEditingBlog, setIsEditingBlog] = useState(false);
   const [blogTitle, setBlogTitle] = useState("");
   const [blogImage, setBlogImage] = useState("");
-  const [articleEngagement, setArticleEngagement] = useState<Record<string, any>>({"views": 0, "likes": 0, "shares": 0});
+  const [copiedLink, setCopiedLink] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState({ name: "", email: "", content: "" });
-  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -156,18 +157,21 @@ export default function PublicBlog() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">Loading your blog...</p>
+        </div>
       </div>
     );
   }
 
   if (!blog) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background flex flex-col items-center justify-center">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Blog Not Found</h1>
-        <p className="text-muted-foreground mb-6">The blog you're looking for doesn't exist.</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950 flex flex-col items-center justify-center p-4">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h1 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Blog Not Found</h1>
+        <p className="text-slate-600 dark:text-slate-400 mb-6">The blog you're looking for doesn't exist.</p>
         <Button onClick={() => setLocation("/my-blogs")} variant="outline">
           Back to My Blogs
         </Button>
@@ -175,185 +179,213 @@ export default function PublicBlog() {
     );
   }
 
+  const defaultImage = "https://images.unsplash.com/photo-1499750310159-57f0e1b013b6?auto=format&fit=crop&q=80&w=1200";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background">
-      {/* Header with Hero Image */}
-      <div className="relative h-80 bg-muted overflow-hidden">
-        <img
-          src={
-            blogImage ||
-            "https://images.unsplash.com/photo-1499750310159-57f0e1b013b6?auto=format&fit=crop&q=80&w=1200"
-          }
-          alt={blog.title}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
-        {/* Back Button & Controls */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/my-blogs")}
-            className="bg-background/50 backdrop-blur-sm hover:bg-background/70 text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          
-          <Dialog open={isEditingBlog} onOpenChange={setIsEditingBlog}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-background/50 backdrop-blur-sm hover:bg-background/70 text-foreground"
-              >
-                <Edit2 className="h-5 w-5" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit Blog Details</DialogTitle>
-                <DialogDescription>
-                  Customize how your blog appears publicly
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Blog Title</label>
-                  <Input
-                    value={blogTitle}
-                    onChange={(e) => setBlogTitle(e.target.value)}
-                    placeholder="Enter blog title"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Blog Image URL</label>
-                  <Input
-                    value={blogImage}
-                    onChange={(e) => setBlogImage(e.target.value)}
-                    placeholder="Enter image URL"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditingBlog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveBlogDetails}
-                  >
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      {/* Hero Section with Dynamic Image */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Blog Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <h1 className="text-4xl font-serif font-bold text-white tracking-tight">
-            {blog.title || "Untitled Blog"}
-          </h1>
-          <p className="text-gray-200 mt-2">{blog.description || ""}</p>
+        <div className="relative">
+          {/* Blog Cover Image */}
+          <div className="h-96 relative overflow-hidden">
+            <img
+              src={blogImage || defaultImage}
+              alt={blog.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = defaultImage;
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
+          </div>
+
+          {/* Header Controls */}
+          <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocation("/my-blogs")}
+              className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20"
+              data-testid="button-back"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            <Dialog open={isEditingBlog} onOpenChange={setIsEditingBlog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20"
+                  data-testid="button-edit-blog"
+                >
+                  <Edit2 className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Blog Details</DialogTitle>
+                  <DialogDescription>
+                    Customize how your blog appears publicly
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Blog Title</label>
+                    <Input
+                      value={blogTitle}
+                      onChange={(e) => setBlogTitle(e.target.value)}
+                      placeholder="Enter blog title"
+                      data-testid="input-blog-title"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Blog Image URL</label>
+                    <Input
+                      value={blogImage}
+                      onChange={(e) => setBlogImage(e.target.value)}
+                      placeholder="Enter image URL or paste from Unsplash"
+                      data-testid="input-blog-image"
+                    />
+                    <p className="text-xs text-slate-500 mt-2">
+                      Tip: Use Unsplash (unsplash.com) for free high-quality images
+                    </p>
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditingBlog(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveBlogDetails}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Blog Title Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-5 w-5 text-blue-300" />
+              <span className="text-sm font-semibold text-blue-200">Blog</span>
+            </div>
+            <h1 className="text-5xl font-serif font-bold tracking-tight leading-tight mb-2">
+              {blog.title || "Untitled Blog"}
+            </h1>
+            {blog.description && (
+              <p className="text-lg text-slate-200">{blog.description}</p>
+            )}
+          </div>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Articles List */}
-          <div className="lg:col-span-2 space-y-6">
-            {articles.length === 0 ? (
-              <Card className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <CardTitle>No Published Articles</CardTitle>
-                <CardDescription>
-                  No articles have been published yet. Publish some articles in the editor to display them here.
-                </CardDescription>
-              </Card>
-            ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
-                {articles.length > 0 ? articles.map((article) => (
-                  <Card
-                    key={article.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedArticle?.id === article.id
-                        ? "border-primary shadow-md"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedArticle(article)}
-                  >
-                    <CardHeader>
-                      <CardTitle className="font-serif text-xl">
-                        {article.title}
-                      </CardTitle>
-                      <CardDescription className="text-sm mt-2">
-                        Published on {new Date(article.publishedAt || article.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground line-clamp-2">
-                        {article.excerpt ||
-                          article.content?.replace(/<[^>]*>/g, "").slice(0, 160) || "No description"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )) : (
-                  <Card className="text-center py-12">
-                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <CardTitle>No Articles Yet</CardTitle>
-                    <CardDescription>
-                      Create and save articles in the editor to display them here
-                    </CardDescription>
-                  </Card>
-                )}
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-16 relative z-10">
+        {articles.length === 0 ? (
+          <Card className="text-center py-16 border-0 shadow-lg">
+            <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <CardTitle className="text-2xl mb-2">No Published Articles Yet</CardTitle>
+            <CardDescription>
+              Publish some articles in the editor to display them here.
+            </CardDescription>
+          </Card>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Articles Sidebar */}
+            <div className="lg:col-span-1 space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-4">
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
+                  <TrendingUp className="h-5 w-5 text-indigo-600" />
+                  {articles.length} Article{articles.length !== 1 ? 's' : ''}
+                </h2>
               </div>
-            )}
-          </div>
+              
+              {articles.map((article) => (
+                <Card
+                  key={article.id}
+                  className={`cursor-pointer transition-all border-0 shadow-md hover:shadow-lg ${
+                    selectedArticle?.id === article.id
+                      ? "ring-2 ring-indigo-500 shadow-lg"
+                      : "hover:shadow-lg"
+                  }`}
+                  onClick={() => {
+                    setSelectedArticle(article);
+                    api.recordEvent(article.id, "pageview", {});
+                  }}
+                  data-testid={`card-article-${article.id}`}
+                >
+                  <CardHeader className="pb-3">
+                    <CardTitle className="font-serif text-lg line-clamp-2 text-slate-900 dark:text-white">
+                      {article.title}
+                    </CardTitle>
+                    <CardDescription className="text-sm mt-2">
+                      {new Date(article.publishedAt || article.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                      {article.excerpt || article.content?.replace(/<[^>]*>/g, "").slice(0, 100) || "No description"}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-          {/* Article Preview */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-8">
+            {/* Article Content */}
+            <div className="lg:col-span-2">
               {selectedArticle ? (
-                <>
-                  <CardHeader>
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant={selectedArticle.status === "published" ? "default" : "outline"}>
-                        {selectedArticle.status === "published" ? "Published" : "Draft"}
+                <Card className="border-0 shadow-xl sticky top-8">
+                  <CardHeader className="border-b border-slate-200 dark:border-slate-800 pb-6">
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                      <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200">
+                        Published
                       </Badge>
                     </div>
-                    <CardTitle className="font-serif text-2xl line-clamp-2 mt-2">
+                    <CardTitle className="font-serif text-4xl line-clamp-3 text-slate-900 dark:text-white mb-4">
                       {selectedArticle.title}
                     </CardTitle>
-                    <CardDescription className="mt-2 space-y-2">
-                      <div>
-                        {selectedArticle.publishedAt 
-                          ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
-                          : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
-                        }
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4" />
-                        {calculateReadTime(selectedArticle.content)} min read
+                    <CardDescription className="space-y-3">
+                      <div className="flex items-center gap-2 text-base">
+                        <span className="text-slate-600 dark:text-slate-400">
+                          {selectedArticle.publishedAt 
+                            ? new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                            : new Date(selectedArticle.createdAt).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                          }
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                          <Clock className="h-4 w-4" />
+                          {calculateReadTime(selectedArticle.content)} min read
+                        </div>
                       </div>
                       {selectedArticle.tags && selectedArticle.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
+                        <div className="flex flex-wrap gap-2 pt-2">
                           {selectedArticle.tags.map((tag: string, i: number) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
+                            <Badge key={i} variant="outline" className="text-xs">
                               #{tag}
                             </Badge>
                           ))}
@@ -361,143 +393,152 @@ export default function PublicBlog() {
                       )}
                     </CardDescription>
                   </CardHeader>
-                  <Separator />
-                  <CardContent className="pt-6 space-y-4 max-h-96 overflow-y-auto">
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+
+                  {/* Article Content */}
+                  <CardContent className="pt-8 space-y-6 max-h-[calc(100vh-600px)] overflow-y-auto">
+                    <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
                       {typeof selectedArticle.content === 'string' && selectedArticle.content ? (
-                        <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                          data-testid="text-article-content"
+                        />
                       ) : (
-                        <p className="text-muted-foreground">No content available</p>
+                        <p className="text-slate-500">No content available</p>
                       )}
                     </div>
-                    <Separator className="my-4" />
-                    
-                    {/* Author Bio Section */}
+
+                    <Separator className="my-6" />
+
+                    {/* Author Bio */}
                     {selectedArticle?.authorBio && (
-                      <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">About the Author</p>
-                        <p className="text-sm leading-relaxed">{selectedArticle.authorBio}</p>
+                      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 rounded-lg p-6 space-y-3 border border-indigo-200/50 dark:border-indigo-800/50">
+                        <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">About the Author</p>
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{selectedArticle.authorBio}</p>
                       </div>
                     )}
 
-                    <div className="space-y-4 pt-4">
-                      <div className="grid grid-cols-3 gap-2 text-center py-3 bg-muted/30 rounded-lg">
-                        <div>
-                          <div className="text-lg font-semibold text-primary">0</div>
-                          <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Eye className="h-3 w-3" /> Views
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold text-primary">0</div>
-                          <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Heart className="h-3 w-3" /> Likes
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold text-primary">0</div>
-                          <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Share2 className="h-3 w-3" /> Shares
-                          </div>
+                    {/* Engagement Stats */}
+                    <div className="grid grid-cols-3 gap-3 p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">0</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center justify-center gap-1 mt-1">
+                          <Eye className="h-3 w-3" /> Views
                         </div>
                       </div>
-                      <div className="flex flex-col gap-3">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => {
-                              api.recordEvent(selectedArticle.id, "like", {});
-                              setArticleEngagement(prev => ({ ...prev, likes: (prev.likes || 0) + 1 }));
-                            }}
-                          >
-                            <Heart className="h-4 w-4 mr-2" />
-                            Like
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => {
-                              api.recordEvent(selectedArticle.id, "share", {});
-                              setArticleEngagement(prev => ({ ...prev, shares: (prev.shares || 0) + 1 }));
-                            }}
-                          >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Share
-                          </Button>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">0</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center justify-center gap-1 mt-1">
+                          <Heart className="h-3 w-3" /> Likes
                         </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">0</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center justify-center gap-1 mt-1">
+                          <Share2 className="h-3 w-3" /> Shares
+                        </div>
+                      </div>
+                    </div>
 
-                        {/* Social Sharing Buttons */}
-                        <div className="space-y-2 border-t pt-3">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase">Share on Social</p>
-                          <div className="grid grid-cols-4 gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8"
-                              onClick={() => shareOnSocial("twitter")}
-                              title="Share on Twitter"
-                            >
-                              <Twitter className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8"
-                              onClick={() => shareOnSocial("facebook")}
-                              title="Share on Facebook"
-                            >
-                              <Facebook className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8"
-                              onClick={() => shareOnSocial("linkedin")}
-                              title="Share on LinkedIn"
-                            >
-                              <Linkedin className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8"
-                              onClick={() => shareOnSocial("email")}
-                              title="Share via Email"
-                            >
-                              <Mail className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    {/* Engagement Buttons */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                          onClick={() => {
+                            api.recordEvent(selectedArticle.id, "like", {});
+                          }}
+                          data-testid="button-like"
+                        >
+                          <Heart className="h-4 w-4 mr-2" />
+                          Like Article
+                        </Button>
+                        <Button
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                          onClick={() => {
+                            api.recordEvent(selectedArticle.id, "share", {});
+                          }}
+                          data-testid="button-share"
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share
+                        </Button>
+                      </div>
+
+                      {/* Social Sharing */}
+                      <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-4">
+                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Share on Social</p>
+                        <div className="grid grid-cols-4 gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="w-full h-8"
-                            onClick={copyShareLink}
+                            className="border-slate-200 dark:border-slate-700"
+                            onClick={() => shareOnSocial("twitter")}
+                            title="Share on Twitter"
+                            data-testid="button-share-twitter"
                           >
-                            {copiedLink ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                            {copiedLink ? "Copied!" : "Copy Link"}
+                            <Twitter className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-200 dark:border-slate-700"
+                            onClick={() => shareOnSocial("facebook")}
+                            title="Share on Facebook"
+                            data-testid="button-share-facebook"
+                          >
+                            <Facebook className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-200 dark:border-slate-700"
+                            onClick={() => shareOnSocial("linkedin")}
+                            title="Share on LinkedIn"
+                            data-testid="button-share-linkedin"
+                          >
+                            <Linkedin className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-200 dark:border-slate-700"
+                            onClick={() => shareOnSocial("email")}
+                            title="Share via Email"
+                            data-testid="button-share-email"
+                          >
+                            <Mail className="h-4 w-4" />
                           </Button>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-slate-200 dark:border-slate-700"
+                          onClick={copyShareLink}
+                          data-testid="button-copy-link"
+                        >
+                          {copiedLink ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                          {copiedLink ? "Copied!" : "Copy Link"}
+                        </Button>
                       </div>
                     </div>
 
                     {/* Comments Section */}
-                    <div className="mt-8 space-y-6">
+                    <div className="mt-8 space-y-6 border-t border-slate-200 dark:border-slate-700 pt-6">
                       <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                          <MessageCircle className="h-5 w-5" />
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
+                          <MessageCircle className="h-5 w-5 text-indigo-600" />
                           Comments ({comments.length})
                         </h3>
                         
                         {/* Add Comment Form */}
-                        <div className="bg-muted/30 rounded-lg p-4 mb-6 space-y-3">
+                        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-lg p-4 mb-6 space-y-3 border border-slate-200 dark:border-slate-700">
                           <Input
                             placeholder="Your name"
                             value={newComment.name}
                             onChange={(e) => setNewComment({...newComment, name: e.target.value})}
                             data-testid="input-comment-name"
+                            className="border-slate-300 dark:border-slate-600"
                           />
                           <Input
                             placeholder="Your email"
@@ -505,17 +546,18 @@ export default function PublicBlog() {
                             value={newComment.email}
                             onChange={(e) => setNewComment({...newComment, email: e.target.value})}
                             data-testid="input-comment-email"
+                            className="border-slate-300 dark:border-slate-600"
                           />
                           <textarea
                             placeholder="Share your thoughts..."
-                            className="w-full p-2 rounded border border-border bg-background text-foreground resize-none"
+                            className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white resize-none"
                             rows={3}
                             value={newComment.content}
                             onChange={(e) => setNewComment({...newComment, content: e.target.value})}
                             data-testid="textarea-comment"
                           />
                           <Button
-                            className="w-full"
+                            className="w-full bg-indigo-600 hover:bg-indigo-700"
                             onClick={handleAddComment}
                             data-testid="button-add-comment"
                           >
@@ -527,35 +569,34 @@ export default function PublicBlog() {
                         {comments.length > 0 ? (
                           <div className="space-y-4">
                             {comments.map((comment) => (
-                              <div key={comment.id} className="border-l-2 border-primary pl-4 py-2">
+                              <div key={comment.id} className="border-l-4 border-indigo-500 pl-4 py-3 bg-slate-50 dark:bg-slate-800/30 rounded-r-lg p-4">
                                 <div className="flex items-center justify-between">
-                                  <p className="font-semibold text-sm">{comment.name}</p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="font-semibold text-slate-900 dark:text-white">{comment.name}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
                                     {new Date(comment.createdAt).toLocaleDateString()}
                                   </p>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">{comment.email}</p>
-                                <p className="text-sm mt-2">{comment.content}</p>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{comment.email}</p>
+                                <p className="text-slate-800 dark:text-slate-200 mt-3">{comment.content}</p>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-center text-muted-foreground text-sm py-4">
-                            No comments yet. Be the first to comment!
-                          </p>
+                          <p className="text-center text-slate-500 dark:text-slate-400 py-6">No comments yet. Be the first to comment!</p>
                         )}
                       </div>
                     </div>
                   </CardContent>
-                </>
+                </Card>
               ) : (
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  Select an article to preview
-                </CardContent>
+                <Card className="text-center py-12 border-0 shadow-lg">
+                  <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <CardTitle>Select an article to read</CardTitle>
+                </Card>
               )}
-            </Card>
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

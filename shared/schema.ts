@@ -20,6 +20,7 @@ export const blogs = pgTable("blogs", {
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description"),
+  image: text("image"), // Blog hero/cover image
   slug: varchar("slug").notNull().unique(),
   domain: varchar("domain"),
   status: varchar("status").notNull().default("active"), // active, draft
