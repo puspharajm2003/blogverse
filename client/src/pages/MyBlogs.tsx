@@ -103,6 +103,10 @@ export default function MyBlogs() {
   const [publishedLink, setPublishedLink] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   
+  // Publish states
+  const [currentPublishingArticleId, setCurrentPublishingArticleId] = useState<string | null>(null);
+  const [isScheduleMode, setIsScheduleMode] = useState(false);
+  
   // Create Blog States
   const [isCreateBlogOpen, setIsCreateBlogOpen] = useState(false);
   const [createBlogTitle, setCreateBlogTitle] = useState("");
@@ -248,10 +252,18 @@ export default function MyBlogs() {
     }
   };
 
-  const handlePublishArticle = async (articleId: string) => {
+  const handlePublishArticle = async (articleId: string, publishNow: boolean = false) => {
     try {
       setPublishingId(articleId);
-      const publishDateTime = new Date(`${publishDate}T${publishTime}`);
+      
+      let publishDateTime: Date;
+      if (publishNow) {
+        // Use current date and time
+        publishDateTime = new Date();
+      } else {
+        // Use selected date and time
+        publishDateTime = new Date(`${publishDate}T${publishTime}`);
+      }
       
       const updateResult = await api.updateArticle(articleId, {
         status: "published",
@@ -263,7 +275,13 @@ export default function MyBlogs() {
         if (article) {
           const shareLink = `${window.location.origin}/public-blog?blogId=${article.blogId}&articleId=${articleId}`;
           setPublishedLink(shareLink);
-          toast.success("Article published successfully!");
+          
+          if (publishNow) {
+            toast.success("Article published immediately! 🚀");
+          } else {
+            const scheduleDate = new Date(publishDateTime);
+            toast.success(`Article scheduled for ${scheduleDate.toLocaleString()}! 📅`);
+          }
           
           // Remove from drafts list
           if (expandedBlogId) {
@@ -283,6 +301,14 @@ export default function MyBlogs() {
       toast.error("Failed to publish article");
       setPublishingId(null);
     }
+  };
+
+  // Get current date and time
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+    const timeStr = now.toTimeString().slice(0, 5);
+    return { dateStr, timeStr };
   };
 
   const handleDeleteArticle = async (articleId: string) => {
@@ -913,9 +939,26 @@ export default function MyBlogs() {
                                     Edit
                                   </Button>
 
-                                  <Dialog>
+                                  <Dialog open={currentPublishingArticleId === article.id} onOpenChange={(open) => {
+                                    if (!open) {
+                                      setCurrentPublishingArticleId(null);
+                                      setIsScheduleMode(false);
+                                      setPublishedLink(null);
+                                    }
+                                  }}>
                                     <DialogTrigger asChild>
-                                      <Button size="sm" className="flex-1 h-8 text-xs gap-1 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-md hover:shadow-lg hover:shadow-primary/30 transition-all">
+                                      <Button 
+                                        size="sm" 
+                                        className="flex-1 h-8 text-xs gap-1 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-md hover:shadow-lg hover:shadow-primary/30 transition-all"
+                                        onClick={() => {
+                                          setCurrentPublishingArticleId(article.id);
+                                          const { dateStr, timeStr } = getCurrentDateTime();
+                                          setPublishDate(dateStr);
+                                          setPublishTime(timeStr);
+                                          setIsScheduleMode(false);
+                                          setPublishedLink(null);
+                                        }}
+                                      >
                                         <Zap className="h-3 w-3" />
                                         Publish
                                       </Button>
@@ -936,9 +979,9 @@ export default function MyBlogs() {
                                           <div className="p-4 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
                                             <div className="flex items-center gap-2 mb-2">
                                               <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                                              <p className="font-semibold text-emerald-900 dark:text-emerald-100">Published Successfully!</p>
+                                              <p className="font-semibold text-emerald-900 dark:text-emerald-100">Published Successfully! 🎉</p>
                                             </div>
-                                            <p className="text-sm text-emerald-700 dark:text-emerald-200">Your article is now live.</p>
+                                            <p className="text-sm text-emerald-700 dark:text-emerald-200">Your article is now live and visible on your blog.</p>
                                           </div>
 
                                           <div className="space-y-2">
@@ -981,51 +1024,121 @@ export default function MyBlogs() {
                                             <Button
                                               className="flex-1 bg-gradient-to-r from-primary to-primary/80"
                                               onClick={() => {
+                                                setCurrentPublishingArticleId(null);
+                                                setIsScheduleMode(false);
                                                 setPublishedLink(null);
-                                                setCopiedLink(false);
                                               }}
                                             >
                                               Done
                                             </Button>
                                           </div>
                                         </div>
+                                      ) : !isScheduleMode ? (
+                                        // Initial View - Publish Now vs Schedule
+                                        <div className="space-y-4 py-6">
+                                          <div className="p-4 rounded-lg bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <Clock className="h-4 w-4 text-muted-foreground" />
+                                              <p className="text-xs text-muted-foreground">Current Date & Time</p>
+                                            </div>
+                                            <p className="font-semibold text-sm">
+                                              {new Date(
+                                                `${publishDate}T${publishTime}`
+                                              ).toLocaleString()}
+                                            </p>
+                                          </div>
+
+                                          <Separator className="my-2" />
+
+                                          <div className="space-y-3">
+                                            <Button
+                                              onClick={() => handlePublishArticle(article.id, true)}
+                                              disabled={publishingId === article.id}
+                                              className="w-full gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all rounded-lg"
+                                            >
+                                              {publishingId === article.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <Zap className="h-4 w-4" />
+                                              )}
+                                              Publish Now
+                                            </Button>
+
+                                            <Button
+                                              onClick={() => setIsScheduleMode(true)}
+                                              disabled={publishingId === article.id}
+                                              variant="outline"
+                                              className="w-full gap-2 rounded-lg border-slate-200 dark:border-slate-700"
+                                            >
+                                              <Calendar className="h-4 w-4" />
+                                              Schedule for Later
+                                            </Button>
+                                          </div>
+                                        </div>
                                       ) : (
+                                        // Schedule Mode - Date & Time Picker
                                         <div className="space-y-4 py-4">
                                           <div className="space-y-3">
                                             <div className="space-y-2">
-                                              <Label htmlFor="pub-date" className="text-sm font-semibold">Publish Date</Label>
+                                              <Label htmlFor="pub-date-schedule" className="text-sm font-semibold flex items-center gap-2">
+                                                <Calendar className="h-4 w-4" />
+                                                Publish Date
+                                              </Label>
                                               <Input
-                                                id="pub-date"
+                                                id="pub-date-schedule"
                                                 type="date"
                                                 value={publishDate}
                                                 onChange={(e) => setPublishDate(e.target.value)}
+                                                className="rounded-lg"
                                               />
                                             </div>
                                             <div className="space-y-2">
-                                              <Label htmlFor="pub-time" className="text-sm font-semibold">Publish Time</Label>
+                                              <Label htmlFor="pub-time-schedule" className="text-sm font-semibold flex items-center gap-2">
+                                                <Clock className="h-4 w-4" />
+                                                Publish Time
+                                              </Label>
                                               <Input
-                                                id="pub-time"
+                                                id="pub-time-schedule"
                                                 type="time"
                                                 value={publishTime}
                                                 onChange={(e) => setPublishTime(e.target.value)}
+                                                className="rounded-lg"
                                               />
                                             </div>
                                           </div>
 
+                                          <div className="p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                                              <strong>Scheduled for:</strong> {new Date(
+                                                `${publishDate}T${publishTime}`
+                                              ).toLocaleString()}
+                                            </p>
+                                          </div>
+
                                           <Separator />
 
-                                          <Button
-                                            onClick={() => handlePublishArticle(article.id)}
-                                            disabled={publishingId === article.id}
-                                            className="w-full gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all"
-                                          >
-                                            {publishingId === article.id ? (
-                                              <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                              <Send className="h-4 w-4" />
-                                            )}
-                                            Publish Article
-                                          </Button>
+                                          <div className="flex gap-2">
+                                            <Button
+                                              variant="outline"
+                                              onClick={() => setIsScheduleMode(false)}
+                                              disabled={publishingId === article.id}
+                                              className="flex-1 rounded-lg"
+                                            >
+                                              Back
+                                            </Button>
+                                            <Button
+                                              onClick={() => handlePublishArticle(article.id, false)}
+                                              disabled={publishingId === article.id}
+                                              className="flex-1 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg rounded-lg"
+                                            >
+                                              {publishingId === article.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <Calendar className="h-4 w-4" />
+                                              )}
+                                              Schedule
+                                            </Button>
+                                          </div>
                                         </div>
                                       )}
                                     </DialogContent>
