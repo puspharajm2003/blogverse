@@ -142,28 +142,34 @@ export default function BlogPublish() {
       setPublishingId(articleId);
       const publishDateTime = new Date(`${publishDate}T${publishTime}`);
       
-      await api.updateArticle(articleId, {
+      const updateResult = await api.updateArticle(articleId, {
         status: "published",
         publishedAt: publishDateTime.toISOString(),
       });
       
-      toast.success("Article published! View it on your public blog.", {
-        action: {
-          label: "View Blog",
-          onClick: () => {
-            const blog = blogs.find(b => b.id === selectedBlog);
-            if (blog) {
-              setLocation(`/public-blog?blogId=${selectedBlog}`);
-            }
+      if (updateResult && !updateResult.error) {
+        toast.success("Article published! View it on your public blog.", {
+          action: {
+            label: "View Blog",
+            onClick: () => {
+              const blog = blogs.find(b => b.id === selectedBlog);
+              if (blog) {
+                setLocation(`/public-blog?blogId=${selectedBlog}`);
+              }
+            },
           },
-        },
-      });
+        });
+        
+        // Refresh articles to show updated status
+        await fetchArticles(selectedBlog);
+      } else {
+        toast.error(updateResult?.error || "Failed to publish article");
+      }
       
-      fetchArticles(selectedBlog);
       setPublishingId(null);
     } catch (error) {
       console.error("Failed to publish article:", error);
-      toast.error("Failed to publish article");
+      toast.error("Failed to publish article. Please try again.");
       setPublishingId(null);
     }
   };
