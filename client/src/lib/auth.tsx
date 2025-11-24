@@ -1,7 +1,17 @@
 import { createContext, useContext, ReactNode, useEffect, useState } from "react";
 
+export interface User {
+  id: string;
+  email: string;
+  displayName: string;
+  plan: "free" | "pro" | "enterprise";
+  isAdmin: boolean;
+  avatar?: string;
+  bio?: string;
+}
+
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
   logout?: () => Promise<void>;
@@ -18,7 +28,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }): React.ReactElement {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

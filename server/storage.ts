@@ -340,6 +340,8 @@ export class PostgresStorage implements IStorage {
         email: demoEmail,
         password: hashedPassword,
         displayName: "Demo Writer",
+        isAdmin: false,
+        plan: "free",
       });
 
       const blog1 = await this.createBlog({
@@ -420,7 +422,15 @@ export class PostgresStorage implements IStorage {
     const token = jwt.sign({ userId: demoUser.id }, JWT_SECRET, { expiresIn: "7d" });
 
     return {
-      user: { id: demoUser.id, email: demoUser.email, displayName: demoUser.displayName },
+      user: { 
+        id: demoUser.id, 
+        email: demoUser.email, 
+        displayName: demoUser.displayName,
+        plan: demoUser.plan,
+        isAdmin: demoUser.isAdmin,
+        avatar: demoUser.avatar,
+        bio: demoUser.bio
+      },
       token,
     };
   }

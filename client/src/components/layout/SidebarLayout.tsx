@@ -13,7 +13,8 @@ import {
   User,
   Send,
   Trash2,
-  Trophy
+  Trophy,
+  Crown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -105,9 +106,16 @@ export function SidebarLayout({ children }: SidebarProps) {
                     <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   {!collapsed && (
-                    <div className="flex flex-col items-start text-sm">
-                      <span className="font-medium">{user?.displayName || "User"}</span>
-                      <span className="text-xs text-muted-foreground capitalize">{(user?.plan || "free")} Plan</span>
+                    <div className="flex flex-col items-start text-sm flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{user?.displayName || "User"}</span>
+                        {user?.isAdmin && (
+                          <div title="Admin User" data-testid="badge-admin">
+                            <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground capitalize">{user?.isAdmin ? "Admin" : (user?.plan || "free")} Plan</span>
                     </div>
                   )}
                 </div>
