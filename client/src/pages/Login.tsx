@@ -18,7 +18,7 @@ export default function Login() {
   useEffect(() => {
     const savedUser = localStorage.getItem("stack_user");
     if (savedUser) {
-      setLocation("/");
+      setLocation("/dashboard");
     }
   }, [setLocation]);
 
@@ -40,7 +40,7 @@ export default function Login() {
       } else {
         localStorage.setItem("stack_user", JSON.stringify(response.user));
         localStorage.setItem("stack_token", response.token);
-        setLocation("/");
+        setLocation("/dashboard");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
