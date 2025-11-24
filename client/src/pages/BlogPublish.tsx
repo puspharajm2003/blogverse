@@ -147,7 +147,18 @@ export default function BlogPublish() {
         publishedAt: publishDateTime.toISOString(),
       });
       
-      toast.success("Article published successfully!");
+      toast.success("Article published! View it on your public blog.", {
+        action: {
+          label: "View Blog",
+          onClick: () => {
+            const blog = blogs.find(b => b.id === selectedBlog);
+            if (blog) {
+              setLocation(`/public-blog?blogId=${selectedBlog}`);
+            }
+          },
+        },
+      });
+      
       fetchArticles(selectedBlog);
       setPublishingId(null);
     } catch (error) {
@@ -656,7 +667,11 @@ export default function BlogPublish() {
 
                             {/* Actions */}
                             <div className="flex gap-3">
-                              <Button variant="outline" className="flex-1 gap-2">
+                              <Button 
+                                variant="outline" 
+                                className="flex-1 gap-2"
+                                onClick={() => setLocation(`/public-blog?blogId=${selectedBlog}`)}
+                              >
                                 <Eye className="h-4 w-4" />
                                 View Published
                               </Button>
