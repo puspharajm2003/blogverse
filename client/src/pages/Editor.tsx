@@ -48,6 +48,8 @@ import {
   } from "@/components/ui/select";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { VersionHistory } from '@/components/VersionHistory';
+import { CollaboratorsPanel } from '@/components/CollaboratorsPanel';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -195,6 +197,8 @@ export default function Editor() {
   const [showDraftPreviewLink, setShowDraftPreviewLink] = useState(false);
   const [authorBio, setAuthorBio] = useState("");
   const [user, setUser] = useState<any>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showCollaborators, setShowCollaborators] = useState(false);
 
   // Initialize blog and user profile on mount
   useEffect(() => {
@@ -666,6 +670,26 @@ export default function Editor() {
                 </div>
               </SheetContent>
             </Sheet>
+
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setShowVersionHistory(true)}
+                title="Version History"
+                data-testid="button-version-history"
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setShowCollaborators(!showCollaborators)}
+                title="Collaborators"
+                data-testid="button-collaborators"
+              >
+                <Users className="h-4 w-4" />
+              </Button>
 
               <Sheet>
                 <SheetTrigger asChild>
@@ -1155,7 +1179,36 @@ export default function Editor() {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Version History Modal */}
+        <VersionHistory 
+          articleId={articleId || undefined}
+          isOpen={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          onRestoreVersion={(version) => {
+            updateContent(version.content, version.title);
+          }}
+        />
       </div>
+
+      {/* Collaborators Panel - Slide-in from right */}
+      {showCollaborators && (
+        <div className="fixed right-0 top-0 h-full w-80 bg-background border-l border-border shadow-lg z-50 overflow-y-auto">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Collaboration</h3>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowCollaborators(false)}
+              >
+                ✕
+              </Button>
+            </div>
+            <CollaboratorsPanel articleId={articleId || undefined} />
+          </div>
+        </div>
+      )}
     </SidebarLayout>
   );
 }

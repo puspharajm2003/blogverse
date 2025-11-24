@@ -23,6 +23,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Achievements from "@/pages/Achievements";
 import MyArticles from "@/pages/MyArticles";
 import DraftPreview from "@/pages/DraftPreview";
+import ArticleMarketplace from "@/pages/ArticleMarketplace";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/trash" component={Trash} />
       <Route path="/achievements" component={Achievements} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/marketplace" component={ArticleMarketplace} />
       <Route component={NotFound} />
     </Switch>
   );
