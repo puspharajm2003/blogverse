@@ -105,7 +105,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                   {!collapsed && (
                     <div className="flex flex-col items-start text-sm">
                       <span className="font-medium">{user?.displayName || "User"}</span>
-                      <span className="text-xs text-muted-foreground">Pro Plan</span>
+                      <span className="text-xs text-muted-foreground capitalize">{(user?.plan || "free")} Plan</span>
                     </div>
                   )}
                 </div>

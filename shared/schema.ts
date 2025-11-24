@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   displayName: text("display_name").notNull(),
+  plan: varchar("plan").notNull().default("free"), // free, pro, enterprise
   bio: text("bio"),
   avatar: text("avatar"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
@@ -144,6 +145,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
   displayName: true,
+}).extend({
+  plan: z.enum(["free", "pro", "enterprise"]).default("free").optional(),
 });
 
 export const insertBlogSchema = createInsertSchema(blogs).omit({
