@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -11,33 +11,29 @@ import { Link, useLocation } from "wouter";
 import { 
   Globe, 
   Eye, 
-  MoreHorizontal, 
   Plus, 
   Edit2, 
   Trash2, 
-  Loader2, 
-  AlertCircle,
-  Upload,
-  X,
+  Loader2,
   RefreshCw,
   ChevronDown,
-  Calendar,
-  Clock,
   Zap,
   Send,
-  PenTool,
-  Pencil,
-  Sparkles,
+  Upload,
+  X,
   FileText,
-  ArrowRight
+  Copy,
+  Check,
+  Calendar,
+  Clock,
+  Share2,
+  AlertCircle,
+  Sparkles,
+  Pencil,
+  Flame,
+  BookOpen
 } from "lucide-react";
 import { api } from "@/lib/api";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -57,7 +53,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { PlagiarismChecker } from "@/components/PlagiarismChecker";
 
 interface Blog {
   id: string;
@@ -103,9 +98,10 @@ export default function MyBlogs() {
   const [editArticleTitle, setEditArticleTitle] = useState("");
   const [deletingArticleId, setDeletingArticleId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
-  const [plagiarismArticleId, setPlagiarismArticleId] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState(new Date().toISOString().split("T")[0]);
   const [publishTime, setPublishTime] = useState("12:00");
+  const [publishedLink, setPublishedLink] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     loadBlogs();
@@ -253,13 +249,19 @@ export default function MyBlogs() {
       });
       
       if (updateResult && !updateResult.error) {
-        toast.success("Article published successfully!");
-        const expandedId = expandedBlogId;
-        if (expandedId) {
-          setBlogArticles(prev => ({
-            ...prev,
-            [expandedId]: prev[expandedId].filter(a => a.id !== articleId)
-          }));
+        const article = expandedBlogId ? (blogArticles[expandedBlogId] || []).find(a => a.id === articleId) : null;
+        if (article) {
+          const shareLink = `${window.location.origin}/public-blog?blogId=${article.blogId}&articleId=${articleId}`;
+          setPublishedLink(shareLink);
+          toast.success("Article published successfully!");
+          
+          // Remove from drafts list
+          if (expandedBlogId) {
+            setBlogArticles(prev => ({
+              ...prev,
+              [expandedBlogId]: prev[expandedBlogId].filter(a => a.id !== articleId)
+            }));
+          }
         }
       } else {
         toast.error(updateResult?.error || "Failed to publish article");
@@ -270,30 +272,6 @@ export default function MyBlogs() {
       console.error("Failed to publish article:", error);
       toast.error("Failed to publish article");
       setPublishingId(null);
-    }
-  };
-
-  const handleEditArticle = async (articleId: string) => {
-    if (!editArticleTitle.trim()) {
-      toast.error("Article title cannot be empty");
-      return;
-    }
-    
-    try {
-      await api.updateArticle(articleId, { title: editArticleTitle });
-      if (expandedBlogId) {
-        setBlogArticles(prev => ({
-          ...prev,
-          [expandedBlogId]: prev[expandedBlogId].map(a => 
-            a.id === articleId ? { ...a, title: editArticleTitle } : a
-          )
-        }));
-      }
-      setEditingArticleId(null);
-      toast.success("Article title updated successfully");
-    } catch (error) {
-      console.error("Failed to update article:", error);
-      toast.error("Failed to update article");
     }
   };
 
@@ -329,6 +307,7 @@ export default function MyBlogs() {
   };
 
   const draftArticles = expandedBlogId ? (blogArticles[expandedBlogId] || []).filter(a => a.status === "draft") : [];
+  const selectedBlog = blogs.find(b => b.id === expandedBlogId);
 
   if (isLoading) {
     return (
@@ -343,7 +322,7 @@ export default function MyBlogs() {
   return (
     <SidebarLayout>
       <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
-        {/* Premium Hero Header */}
+        {/* Hero Header */}
         <div className="relative border-b border-border/40 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900/50 dark:via-background dark:to-slate-900/30 backdrop-blur-xl sticky top-0 z-40">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl"></div>
@@ -355,13 +334,13 @@ export default function MyBlogs() {
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
-                    <Sparkles className="h-6 w-6 text-primary" />
+                    <BookOpen className="h-6 w-6 text-primary" />
                   </div>
                   <h1 className="text-5xl font-serif font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                     My Blogs
                   </h1>
                 </div>
-                <p className="text-lg text-muted-foreground">Manage and publish articles across your blogs</p>
+                <p className="text-lg text-muted-foreground">Create, manage, and publish stunning content</p>
               </div>
               <div className="flex gap-3">
                 <Button 
@@ -383,7 +362,7 @@ export default function MyBlogs() {
           </div>
         </div>
 
-        {/* Content */}
+        {/* Main Content */}
         <div className="p-8 max-w-7xl mx-auto">
           {blogs.length === 0 ? (
             <div className="text-center py-20">
@@ -399,359 +378,507 @@ export default function MyBlogs() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-max">
-              {blogs.map((blog) => (
-                <div key={blog.id} className="group">
-                  {/* ID Card Style (9:16 ratio) */}
-                  <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 backdrop-blur hover:shadow-2xl transition-all duration-300 h-full flex flex-col" style={{ aspectRatio: '9/16' }}>
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                    
-                    {/* Blog Image Header */}
-                    <div className="relative w-full h-2/5 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                      {blog.image ? (
-                        <img 
-                          src={blog.image} 
-                          alt={blog.title}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                          <Globe className="h-12 w-12 text-primary/20" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="space-y-6">
+              {/* Blog Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {blogs.map((blog) => (
+                  <div key={blog.id} className="group">
+                    {/* ID Card Style (9:16) */}
+                    <div 
+                      className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-500 h-full flex flex-col cursor-pointer transform ${
+                        expandedBlogId === blog.id
+                          ? 'border-primary/50 shadow-2xl scale-105 ring-2 ring-primary/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:shadow-2xl hover:border-primary/30'
+                      }`}
+                      style={{ aspectRatio: '9/16' }}
+                      onClick={() => toggleBlogExpanded(blog.id)}
+                    >
+                      {/* Gradient Background */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/70 dark:to-slate-900/30"></div>
                       
-                      <div className="absolute top-3 right-3">
-                        <Badge 
-                          className="backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white border-0 shadow-lg text-xs"
-                        >
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></div>
-                          Active
-                        </Badge>
-                      </div>
-                    </div>
+                      {/* Animated Gradient Overlay */}
+                      <div className={`absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 transition-opacity duration-500 pointer-events-none ${
+                        expandedBlogId === blog.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}></div>
 
-                    {/* Card Content */}
-                    <div className="flex-1 p-4 space-y-3 flex flex-col">
-                      <div className="flex-1">
-                        <h3 className="font-serif text-sm font-bold text-slate-900 dark:text-white line-clamp-2 mb-1">
-                          {blog.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {blog.description || blog.slug}
-                        </p>
-                      </div>
-
-                      {/* Drafts Count */}
-                      <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs font-semibold">{(blogArticles[blog.id] || []).filter(a => a.status === "draft").length}</span>
+                      <div className="relative z-10 flex flex-col h-full">
+                        {/* Image Section */}
+                        <div className="relative w-full h-2/5 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
+                          {blog.image ? (
+                            <img 
+                              src={blog.image} 
+                              alt={blog.title}
+                              onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                              <Globe className="h-12 w-12 text-primary/20" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          
+                          {/* Status Badge */}
+                          <div className="absolute top-3 right-3 transform transition-all duration-500 group-hover:scale-110">
+                            <Badge className="backdrop-blur-md bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white border-0 shadow-lg text-xs">
+                              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></div>
+                              Active
+                            </Badge>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">Drafts</span>
-                      </div>
 
-                      {/* Quick Actions */}
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex-1 h-8 text-xs gap-1"
-                          onClick={() => toggleBlogExpanded(blog.id)}
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                          Manage
-                        </Button>
-                        <Link href={`/public-blog?blogId=${blog.id}`} className="flex-1">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="w-full h-8 text-xs gap-1 border-slate-200 dark:border-slate-700"
-                          >
-                            <Eye className="h-3 w-3" />
-                            View
-                          </Button>
-                        </Link>
-                      </div>
+                        {/* Content Section */}
+                        <div className="flex-1 p-4 space-y-3 flex flex-col">
+                          <div className="flex-1">
+                            <h3 className="font-serif text-sm font-bold text-slate-900 dark:text-white line-clamp-2 mb-1">
+                              {blog.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {blog.description || blog.slug}
+                            </p>
+                          </div>
 
-                      {/* More Actions */}
-                      <div className="flex gap-1.5 pt-1">
-                        <Dialog open={editingBlogId === blog.id} onOpenChange={(open) => !open && setEditingBlogId(null)}>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => openEditDialog(blog)}
+                          {/* Draft Counter */}
+                          <div className="flex items-center justify-between p-2.5 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700 group-hover:border-primary/30 transition-colors">
+                            <div className="flex items-center gap-1.5">
+                              <div className="p-1 bg-primary/10 rounded">
+                                <FileText className="h-3 w-3 text-primary" />
+                              </div>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white">{draftArticles.length}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">Drafts</span>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex-1 h-9 text-xs gap-2 rounded-lg hover:bg-primary/5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleBlogExpanded(blog.id);
+                              }}
                             >
-                              <Edit2 className="h-3 w-3" />
+                              <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${expandedBlogId === blog.id ? 'rotate-180' : ''}`} />
+                              Manage
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Edit Blog</DialogTitle>
-                              <DialogDescription>Update your blog details</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-6 py-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="blog-title">Blog Title</Label>
-                                <Input
-                                  id="blog-title"
-                                  value={editTitle}
-                                  onChange={(e) => setEditTitle(e.target.value)}
-                                  placeholder="Enter blog title"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="blog-desc">Description</Label>
-                                <Textarea
-                                  id="blog-desc"
-                                  value={editDescription}
-                                  onChange={(e) => setEditDescription(e.target.value)}
-                                  placeholder="Enter blog description"
-                                  rows={3}
-                                />
-                              </div>
-                              <div className="space-y-3">
-                                <Label>Blog Banner Image</Label>
-                                {imagePreview && (
-                                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted/20 border border-border">
-                                    <img 
-                                      src={imagePreview} 
-                                      alt="Preview"
-                                      className="w-full h-full object-cover"
-                                      onError={() => {
-                                        setImagePreview("");
-                                        toast.error("Invalid image URL");
-                                      }}
-                                    />
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      className="absolute top-2 right-2"
-                                      onClick={() => {
-                                        setImagePreview("");
-                                        setEditImageUrl("");
-                                        setEditImageLocal(null);
-                                      }}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                )}
-                                <Tabs value={imageTab} onValueChange={(v: any) => setImageTab(v)}>
-                                  <TabsList className="w-full">
-                                    <TabsTrigger value="url" className="flex-1">From URL</TabsTrigger>
-                                    <TabsTrigger value="upload" className="flex-1">Upload</TabsTrigger>
-                                  </TabsList>
-                                  <TabsContent value="url" className="space-y-3">
-                                    <Input
-                                      type="url"
-                                      placeholder="https://example.com/image.jpg"
-                                      value={editImageUrl}
-                                      onChange={(e) => handleUrlChange(e.target.value)}
-                                    />
-                                  </TabsContent>
-                                  <TabsContent value="upload" className="space-y-3">
-                                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleLocalImageSelect}
-                                        className="hidden"
-                                        id="image-upload"
-                                      />
-                                      <Label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                                        <Upload className="h-6 w-6 text-muted-foreground" />
-                                        <span className="font-medium text-sm">Upload image</span>
-                                      </Label>
-                                    </div>
-                                  </TabsContent>
-                                </Tabs>
-                              </div>
-                              <Separator />
-                              <div className="flex gap-2 justify-end">
-                                <Button variant="outline" onClick={() => setEditingBlogId(null)}>
-                                  Cancel
-                                </Button>
-                                <Button onClick={() => handleSaveBlog(blog.id)} disabled={isSaving}>
-                                  {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                  Save
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-
-                        <AlertDialog open={deletingBlogId === blog.id} onOpenChange={(open) => !open && setDeletingBlogId(null)}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={() => setDeletingBlogId(blog.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Blog?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete this blog and all its articles.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <div className="flex gap-2 justify-end">
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteBlog(blog.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            <Link href={`/public-blog?blogId=${blog.id}`} onClick={(e) => e.stopPropagation()}>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex-1 h-9 text-xs gap-2 border-slate-200 dark:border-slate-700"
                               >
-                                Delete
-                              </AlertDialogAction>
-                            </div>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Draft Articles Expandable Section */}
-                  {expandedBlogId === blog.id && (
-                    <div className="mt-4 space-y-3 col-span-full">
-                      <div className="p-4 rounded-lg bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-slate-900/20 dark:to-slate-800/20 border border-slate-200 dark:border-slate-700/50">
-                        <h4 className="font-semibold mb-3 text-sm">Draft Articles ({draftArticles.length})</h4>
-                        {draftArticles.length === 0 ? (
-                          <div className="text-center py-8">
-                            <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">No drafts yet</p>
-                            <Link href={`/editor?blogId=${blog.id}`}>
-                              <Button size="sm" variant="outline" className="mt-2 gap-2">
-                                <Plus className="h-3 w-3" /> Create Article
+                                <Eye className="h-3 w-3" />
+                                View
                               </Button>
                             </Link>
                           </div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {draftArticles.map((article) => (
-                              <div key={article.id} className="p-3 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <h5 className="font-semibold text-sm line-clamp-1 mb-1">{article.title}</h5>
-                                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
-                                  {article.excerpt || article.content?.substring(0, 50) || "No description"}
-                                </p>
-                                <div className="flex gap-1.5 flex-wrap">
+
+                          {/* Edit & Delete Buttons */}
+                          <div className="flex gap-1.5">
+                            <Dialog open={editingBlogId === blog.id} onOpenChange={(open) => !open && setEditingBlogId(null)}>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="flex-1 h-8 text-xs gap-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditDialog(blog);
+                                  }}
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                  Edit
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Blog</DialogTitle>
+                                  <DialogDescription>Update your blog details</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6 py-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="blog-title">Blog Title</Label>
+                                    <Input
+                                      id="blog-title"
+                                      value={editTitle}
+                                      onChange={(e) => setEditTitle(e.target.value)}
+                                      placeholder="Enter blog title"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="blog-desc">Description</Label>
+                                    <Textarea
+                                      id="blog-desc"
+                                      value={editDescription}
+                                      onChange={(e) => setEditDescription(e.target.value)}
+                                      placeholder="Enter blog description"
+                                      rows={3}
+                                    />
+                                  </div>
+                                  <div className="space-y-3">
+                                    <Label>Blog Banner Image</Label>
+                                    {imagePreview && (
+                                      <div className="relative aspect-video rounded-lg overflow-hidden bg-muted/20 border border-border">
+                                        <img 
+                                          src={imagePreview} 
+                                          alt="Preview"
+                                          className="w-full h-full object-cover"
+                                          onError={() => {
+                                            setImagePreview("");
+                                            toast.error("Invalid image URL");
+                                          }}
+                                        />
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          className="absolute top-2 right-2"
+                                          onClick={() => {
+                                            setImagePreview("");
+                                            setEditImageUrl("");
+                                            setEditImageLocal(null);
+                                          }}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                    <Tabs value={imageTab} onValueChange={(v: any) => setImageTab(v)}>
+                                      <TabsList className="w-full">
+                                        <TabsTrigger value="url" className="flex-1">From URL</TabsTrigger>
+                                        <TabsTrigger value="upload" className="flex-1">Upload</TabsTrigger>
+                                      </TabsList>
+                                      <TabsContent value="url" className="space-y-3">
+                                        <Input
+                                          type="url"
+                                          placeholder="https://example.com/image.jpg"
+                                          value={editImageUrl}
+                                          onChange={(e) => handleUrlChange(e.target.value)}
+                                        />
+                                      </TabsContent>
+                                      <TabsContent value="upload" className="space-y-3">
+                                        <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleLocalImageSelect}
+                                            className="hidden"
+                                            id="image-upload"
+                                          />
+                                          <Label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                                            <Upload className="h-6 w-6 text-muted-foreground" />
+                                            <span className="font-medium text-sm">Upload image</span>
+                                          </Label>
+                                        </div>
+                                      </TabsContent>
+                                    </Tabs>
+                                  </div>
+                                  <Separator />
+                                  <div className="flex gap-2 justify-end">
+                                    <Button variant="outline" onClick={() => setEditingBlogId(null)}>
+                                      Cancel
+                                    </Button>
+                                    <Button onClick={() => handleSaveBlog(blog.id)} disabled={isSaving}>
+                                      {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                      Save
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+
+                            <AlertDialog open={deletingBlogId === blog.id} onOpenChange={(open) => !open && setDeletingBlogId(null)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex-1 h-8 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-lg"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingBlogId(blog.id);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </Button>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Blog?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete this blog and all its articles. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="flex gap-2 justify-end">
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteBlog(blog.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </div>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right Side Expandable Panel - Draft Articles */}
+              {expandedBlogId && selectedBlog && (
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 perspective">
+                  <div className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-slate-50/80 via-white/80 to-slate-50/80 dark:from-slate-900/30 dark:via-slate-900/50 dark:to-slate-900/30 backdrop-blur-xl p-6 shadow-2xl [box-shadow:0_20px_60px_-12px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.1)]">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-primary/20">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                          <Flame className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">{selectedBlog.title}</h3>
+                          <p className="text-xs text-muted-foreground">{draftArticles.length} draft{draftArticles.length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setExpandedBlogId(null)}
+                        className="h-9 w-9 rounded-lg hover:bg-primary/10"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+
+                    {/* Articles List */}
+                    {loadingBlogId === expandedBlogId ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : draftArticles.length === 0 ? (
+                      <div className="text-center py-12">
+                        <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground mb-4">No draft articles yet</p>
+                        <Link href={`/editor?blogId=${expandedBlogId}`}>
+                          <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary/80">
+                            <Plus className="h-3 w-3" /> Create Article
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                        {draftArticles.map((article, idx) => (
+                          <div
+                            key={article.id}
+                            className="group animate-in fade-in slide-in-from-left-4 duration-500"
+                            style={{ animationDelay: `${idx * 50}ms` }}
+                          >
+                            <div className="relative p-4 rounded-xl border border-slate-200/50 dark:border-slate-700/50 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 transform hover:scale-102 hover:-translate-y-1">
+                              {/* Hover Glow Effect */}
+                              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                              
+                              <div className="relative z-10">
+                                <h4 className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                                  {article.title}
+                                </h4>
+                                
+                                {article.excerpt && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                                    {article.excerpt}
+                                  </p>
+                                )}
+
+                                {/* Date Info */}
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 pb-3 border-b border-slate-200/50 dark:border-slate-700/50">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2">
                                   <Button
                                     size="sm"
-                                    variant="ghost"
-                                    className="h-6 text-xs flex-1"
+                                    variant="outline"
+                                    className="flex-1 h-8 text-xs gap-1 rounded-lg border-slate-200/50 dark:border-slate-700/50"
                                     onClick={() => setLocation(`/editor?articleId=${article.id}`)}
                                   >
+                                    <Pencil className="h-3 w-3" />
                                     Edit
                                   </Button>
+
                                   <Dialog>
                                     <DialogTrigger asChild>
-                                      <Button size="sm" className="h-6 text-xs flex-1 gap-1">
+                                      <Button size="sm" className="flex-1 h-8 text-xs gap-1 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-md hover:shadow-lg hover:shadow-primary/30 transition-all">
                                         <Zap className="h-3 w-3" />
                                         Publish
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent>
+                                    <DialogContent className="max-w-md">
                                       <DialogHeader>
-                                        <DialogTitle>Publish Article</DialogTitle>
+                                        <DialogTitle className="flex items-center gap-2">
+                                          <Sparkles className="h-5 w-5 text-primary" />
+                                          Publish Article
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                          {article.title}
+                                        </DialogDescription>
                                       </DialogHeader>
-                                      <div className="space-y-4 py-4">
-                                        <div>
-                                          <label className="text-sm font-semibold">Date</label>
-                                          <Input
-                                            type="date"
-                                            value={publishDate}
-                                            onChange={(e) => setPublishDate(e.target.value)}
-                                            className="mt-1"
-                                          />
+
+                                      {publishedLink ? (
+                                        <div className="space-y-4 py-4">
+                                          <div className="p-4 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                              <p className="font-semibold text-emerald-900 dark:text-emerald-100">Published Successfully!</p>
+                                            </div>
+                                            <p className="text-sm text-emerald-700 dark:text-emerald-200">Your article is now live.</p>
+                                          </div>
+
+                                          <div className="space-y-2">
+                                            <Label className="text-sm font-semibold">Share Link</Label>
+                                            <div className="flex gap-2">
+                                              <Input
+                                                readOnly
+                                                value={publishedLink}
+                                                className="text-xs"
+                                              />
+                                              <Button
+                                                size="icon"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  navigator.clipboard.writeText(publishedLink);
+                                                  setCopiedLink(true);
+                                                  setTimeout(() => setCopiedLink(false), 2000);
+                                                }}
+                                              >
+                                                {copiedLink ? (
+                                                  <Check className="h-4 w-4 text-emerald-600" />
+                                                ) : (
+                                                  <Copy className="h-4 w-4" />
+                                                )}
+                                              </Button>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex gap-2">
+                                            <Button
+                                              variant="outline"
+                                              className="flex-1"
+                                              onClick={() => {
+                                                window.open(publishedLink, '_blank');
+                                              }}
+                                            >
+                                              <Share2 className="h-4 w-4 mr-2" />
+                                              View Article
+                                            </Button>
+                                            <Button
+                                              className="flex-1 bg-gradient-to-r from-primary to-primary/80"
+                                              onClick={() => {
+                                                setPublishedLink(null);
+                                                setCopiedLink(false);
+                                              }}
+                                            >
+                                              Done
+                                            </Button>
+                                          </div>
                                         </div>
-                                        <div>
-                                          <label className="text-sm font-semibold">Time</label>
-                                          <Input
-                                            type="time"
-                                            value={publishTime}
-                                            onChange={(e) => setPublishTime(e.target.value)}
-                                            className="mt-1"
-                                          />
+                                      ) : (
+                                        <div className="space-y-4 py-4">
+                                          <div className="space-y-3">
+                                            <div className="space-y-2">
+                                              <Label htmlFor="pub-date" className="text-sm font-semibold">Publish Date</Label>
+                                              <Input
+                                                id="pub-date"
+                                                type="date"
+                                                value={publishDate}
+                                                onChange={(e) => setPublishDate(e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="space-y-2">
+                                              <Label htmlFor="pub-time" className="text-sm font-semibold">Publish Time</Label>
+                                              <Input
+                                                id="pub-time"
+                                                type="time"
+                                                value={publishTime}
+                                                onChange={(e) => setPublishTime(e.target.value)}
+                                              />
+                                            </div>
+                                          </div>
+
+                                          <Separator />
+
+                                          <Button
+                                            onClick={() => handlePublishArticle(article.id)}
+                                            disabled={publishingId === article.id}
+                                            className="w-full gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all"
+                                          >
+                                            {publishingId === article.id ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <Send className="h-4 w-4" />
+                                            )}
+                                            Publish Article
+                                          </Button>
                                         </div>
-                                        <Button
-                                          onClick={() => handlePublishArticle(article.id)}
-                                          disabled={publishingId === article.id}
-                                          className="w-full gap-2"
-                                        >
-                                          {publishingId === article.id ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                          ) : (
-                                            <Send className="h-4 w-4" />
-                                          )}
-                                          Publish
-                                        </Button>
-                                      </div>
+                                      )}
                                     </DialogContent>
                                   </Dialog>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-6 text-xs"
-                                    onClick={() => setDeletingArticleId(article.id)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+
+                                  <AlertDialog open={deletingArticleId === article.id} onOpenChange={(open) => !open && setDeletingArticleId(null)}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/5 rounded-lg"
+                                      onClick={() => setDeletingArticleId(article.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Article?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This will move the article to trash.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <div className="flex gap-2 justify-end">
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteArticle(article.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </div>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        )}
+                        ))}
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Footer Action */}
+                    {draftArticles.length > 0 && (
+                      <div className="pt-4 mt-4 border-t border-primary/20">
+                        <Link href={`/editor?blogId=${expandedBlogId}`}>
+                          <Button variant="outline" className="w-full gap-2" size="sm">
+                            <Plus className="h-3 w-3" />
+                            Create New Article
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
       </div>
-
-      {/* Delete Article Dialog */}
-      {deletingArticleId && (
-        <Dialog open={!!deletingArticleId} onOpenChange={(open) => !open && setDeletingArticleId(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Article?</DialogTitle>
-              <DialogDescription>This will move the article to trash.</DialogDescription>
-            </DialogHeader>
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setDeletingArticleId(null)}>Cancel</Button>
-              <Button variant="destructive" onClick={() => handleDeleteArticle(deletingArticleId)}>
-                Delete
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Plagiarism Checker */}
-      {plagiarismArticleId && (
-        <Dialog open={!!plagiarismArticleId} onOpenChange={(open) => !open && setPlagiarismArticleId(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Plagiarism Checker</DialogTitle>
-            </DialogHeader>
-            {plagiarismArticleId && expandedBlogId && (
-              <PlagiarismChecker
-                articleId={plagiarismArticleId}
-                content={(blogArticles[expandedBlogId] || []).find(a => a.id === plagiarismArticleId)?.content || ""}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
     </SidebarLayout>
   );
 }
