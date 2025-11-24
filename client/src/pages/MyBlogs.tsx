@@ -102,6 +102,16 @@ export default function MyBlogs() {
   const [publishTime, setPublishTime] = useState("12:00");
   const [publishedLink, setPublishedLink] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  
+  // Create Blog States
+  const [isCreateBlogOpen, setIsCreateBlogOpen] = useState(false);
+  const [createBlogTitle, setCreateBlogTitle] = useState("");
+  const [createBlogDescription, setCreateBlogDescription] = useState("");
+  const [createBlogImageUrl, setCreateBlogImageUrl] = useState("");
+  const [createBlogImageLocal, setCreateBlogImageLocal] = useState<File | null>(null);
+  const [createBlogImagePreview, setCreateBlogImagePreview] = useState("");
+  const [createBlogImageTab, setCreateBlogImageTab] = useState<"url" | "upload">("url");
+  const [isCreatingBlog, setIsCreatingBlog] = useState(false);
 
   useEffect(() => {
     loadBlogs();
@@ -306,6 +316,67 @@ export default function MyBlogs() {
     }
   };
 
+  const handleCreateBlogImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCreateBlogImageLocal(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCreateBlogImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateBlogImageUrl = (url: string) => {
+    setCreateBlogImageUrl(url);
+    setCreateBlogImagePreview(url);
+    setCreateBlogImageLocal(null);
+  };
+
+  const handleCreateBlog = async () => {
+    if (!createBlogTitle.trim()) {
+      toast.error("Blog title cannot be empty");
+      return;
+    }
+
+    try {
+      setIsCreatingBlog(true);
+      const imageToUse = createBlogImageUrl || createBlogImagePreview;
+
+      const newBlog = await api.createBlog({
+        title: createBlogTitle,
+        description: createBlogDescription,
+        image: imageToUse,
+        slug: createBlogTitle.toLowerCase().replace(/\s+/g, '-'),
+        status: "active",
+        theme: "default",
+      });
+
+      if (newBlog && !newBlog.error) {
+        setBlogs([...blogs, newBlog]);
+        
+        // Reset form
+        setCreateBlogTitle("");
+        setCreateBlogDescription("");
+        setCreateBlogImageUrl("");
+        setCreateBlogImageLocal(null);
+        setCreateBlogImagePreview("");
+        setCreateBlogImageTab("url");
+        setIsCreateBlogOpen(false);
+        
+        toast.success("Blog created successfully! 🎉");
+      } else {
+        toast.error(newBlog?.error || "Failed to create blog");
+      }
+    } catch (error) {
+      console.error("Failed to create blog:", error);
+      toast.error("Failed to create blog");
+    } finally {
+      setIsCreatingBlog(false);
+    }
+  };
+
   const draftArticles = expandedBlogId ? (blogArticles[expandedBlogId] || []).filter(a => a.status === "draft") : [];
   const selectedBlog = blogs.find(b => b.id === expandedBlogId);
 
@@ -352,11 +423,145 @@ export default function MyBlogs() {
                   <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} /> 
                   Refresh
                 </Button>
-                <Link href="/dashboard">
-                  <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all">
-                    <Plus className="h-4 w-4" /> Create Blog
-                  </Button>
-                </Link>
+                <Dialog open={isCreateBlogOpen} onOpenChange={setIsCreateBlogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all">
+                      <Plus className="h-4 w-4" /> Create Blog
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        Create New Blog
+                      </DialogTitle>
+                      <DialogDescription>
+                        Start a new blog and begin publishing your content
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-6 py-4">
+                      {/* Blog Title */}
+                      <div className="space-y-2">
+                        <Label htmlFor="blog-title-create" className="text-sm font-semibold">Blog Title *</Label>
+                        <Input
+                          id="blog-title-create"
+                          placeholder="e.g., My Travel Adventures"
+                          value={createBlogTitle}
+                          onChange={(e) => setCreateBlogTitle(e.target.value)}
+                          className="rounded-lg"
+                        />
+                        {!createBlogTitle && <p className="text-xs text-muted-foreground">Blog title is required</p>}
+                      </div>
+
+                      {/* Blog Description */}
+                      <div className="space-y-2">
+                        <Label htmlFor="blog-desc-create" className="text-sm font-semibold">Description</Label>
+                        <Textarea
+                          id="blog-desc-create"
+                          placeholder="Describe your blog... What will it be about?"
+                          value={createBlogDescription}
+                          onChange={(e) => setCreateBlogDescription(e.target.value)}
+                          rows={3}
+                          className="rounded-lg"
+                        />
+                      </div>
+
+                      {/* Blog Banner Image */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold">Blog Banner Image (Optional)</Label>
+                        {createBlogImagePreview && (
+                          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted/20 border border-border shadow-md">
+                            <img 
+                              src={createBlogImagePreview} 
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                              onError={() => {
+                                setCreateBlogImagePreview("");
+                                toast.error("Invalid image URL");
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="absolute top-2 right-2 shadow-lg"
+                              onClick={() => {
+                                setCreateBlogImagePreview("");
+                                setCreateBlogImageUrl("");
+                                setCreateBlogImageLocal(null);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        
+                        <Tabs value={createBlogImageTab} onValueChange={(v: any) => setCreateBlogImageTab(v)}>
+                          <TabsList className="w-full rounded-lg">
+                            <TabsTrigger value="url" className="flex-1">From URL</TabsTrigger>
+                            <TabsTrigger value="upload" className="flex-1">Upload</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="url" className="space-y-3 mt-3">
+                            <Input
+                              type="url"
+                              placeholder="https://example.com/image.jpg"
+                              value={createBlogImageUrl}
+                              onChange={(e) => handleCreateBlogImageUrl(e.target.value)}
+                              className="rounded-lg"
+                            />
+                          </TabsContent>
+                          <TabsContent value="upload" className="space-y-3 mt-3">
+                            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleCreateBlogImageSelect}
+                                className="hidden"
+                                id="create-blog-image-upload"
+                              />
+                              <Label htmlFor="create-blog-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                                <Upload className="h-6 w-6 text-muted-foreground" />
+                                <span className="font-medium text-sm">Click to upload image</span>
+                                <span className="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</span>
+                              </Label>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </div>
+
+                      <Separator className="my-2" />
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 justify-end pt-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsCreateBlogOpen(false)}
+                          disabled={isCreatingBlog}
+                          className="rounded-lg"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleCreateBlog} 
+                          disabled={isCreatingBlog || !createBlogTitle.trim()}
+                          className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg rounded-lg"
+                        >
+                          {isCreatingBlog ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              Create Blog
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </div>
