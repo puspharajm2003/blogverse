@@ -885,6 +885,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize achievements on startup
+  app.get("/api/achievements/init", async (req, res) => {
+    try {
+      await storage.initializeDefaultAchievements();
+      res.json({ message: "Achievements initialized" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to initialize achievements" });
+    }
+  });
+
+  // Get all achievements
+  app.get("/api/achievements", async (req, res) => {
+    try {
+      const all = await storage.getAllAchievements();
+      res.json(all);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch achievements" });
+    }
+  });
+
+  // Get user achievements
+  app.get("/api/achievements/user", authenticateToken, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const userAchievements = await storage.getUserAchievements(user.id);
+      res.json(userAchievements);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user achievements" });
+    }
+  });
+
+  // Check and unlock achievements
+  app.post("/api/achievements/check", authenticateToken, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const unlockedIds = await storage.checkAndUnlockAchievements(user.id);
+      res.json({ unlockedIds, count: unlockedIds.length });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check achievements" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

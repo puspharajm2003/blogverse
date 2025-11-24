@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences } from "@shared/schema";
-import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences } from "@shared/schema";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements } from "@shared/schema";
+import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -55,6 +55,13 @@ export interface IStorage {
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences>;
   getPersonalizedFeed(userId: string, limit?: number): Promise<Article[]>;
+
+  // Achievements
+  getAllAchievements(): Promise<Achievement[]>;
+  getUserAchievements(userId: string): Promise<any[]>;
+  unlockAchievement(userId: string, achievementId: string): Promise<UserAchievement>;
+  initializeDefaultAchievements(): Promise<void>;
+  checkAndUnlockAchievements(userId: string): Promise<string[]>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -553,6 +560,195 @@ export class PostgresStorage implements IStorage {
         .orderBy(desc(articles.publishedAt))
         .limit(limit);
     }
+  }
+
+  // Achievements
+  async getAllAchievements(): Promise<Achievement[]> {
+    return db.select().from(achievements).orderBy(achievements.tier, achievements.requirement);
+  }
+
+  async getUserAchievements(userId: string): Promise<any[]> {
+    const result = await db.select({
+      id: userAchievements.id,
+      userId: userAchievements.userId,
+      achievementId: userAchievements.achievementId,
+      unlockedAt: userAchievements.unlockedAt,
+      progress: userAchievements.progress,
+      achievement: {
+        id: achievements.id,
+        title: achievements.title,
+        description: achievements.description,
+        icon: achievements.icon,
+        requirement: achievements.requirement,
+        requirementType: achievements.requirementType,
+        tier: achievements.tier,
+        points: achievements.points,
+      },
+    })
+      .from(userAchievements)
+      .innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
+      .where(eq(userAchievements.userId, userId));
+    
+    return result;
+  }
+
+  async unlockAchievement(userId: string, achievementId: string): Promise<UserAchievement> {
+    const existing = await db.select()
+      .from(userAchievements)
+      .where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementId, achievementId)))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    const result = await db.insert(userAchievements)
+      .values({ userId, achievementId, progress: 100 })
+      .returning();
+    return result[0];
+  }
+
+  async initializeDefaultAchievements(): Promise<void> {
+    const existingCount = await db.select().from(achievements);
+    if (existingCount.length > 0) return;
+
+    const defaultAchievements = [
+      {
+        title: "First Post",
+        description: "Publish your first article",
+        icon: "🎉",
+        requirement: 1,
+        requirementType: "articles_published",
+        tier: "bronze",
+        points: 10,
+      },
+      {
+        title: "Five Articles",
+        description: "Publish 5 articles",
+        icon: "✍️",
+        requirement: 5,
+        requirementType: "articles_published",
+        tier: "bronze",
+        points: 25,
+      },
+      {
+        title: "Ten Articles",
+        description: "Publish 10 articles",
+        icon: "📚",
+        requirement: 10,
+        requirementType: "articles_published",
+        tier: "silver",
+        points: 50,
+      },
+      {
+        title: "Twenty Five Articles",
+        description: "Publish 25 articles",
+        icon: "🏆",
+        requirement: 25,
+        requirementType: "articles_published",
+        tier: "gold",
+        points: 100,
+      },
+      {
+        title: "Fifty Articles",
+        description: "Publish 50 articles",
+        icon: "👑",
+        requirement: 50,
+        requirementType: "articles_published",
+        tier: "platinum",
+        points: 250,
+      },
+      {
+        title: "Consistency Champion",
+        description: "Publish articles for 7 consecutive days",
+        icon: "🔥",
+        requirement: 7,
+        requirementType: "consecutive_days",
+        tier: "silver",
+        points: 75,
+      },
+      {
+        title: "1000 Views",
+        description: "Get 1000 total views",
+        icon: "👀",
+        requirement: 1000,
+        requirementType: "total_views",
+        tier: "bronze",
+        points: 30,
+      },
+      {
+        title: "Popular Creator",
+        description: "Get 10000 total views",
+        icon: "⭐",
+        requirement: 10000,
+        requirementType: "total_views",
+        tier: "gold",
+        points: 150,
+      },
+    ];
+
+    for (const achievement of defaultAchievements) {
+      await db.insert(achievements).values(achievement);
+    }
+  }
+
+  async checkAndUnlockAchievements(userId: string): Promise<string[]> {
+    const unlockedIds: string[] = [];
+    
+    // Get user stats
+    const userArticles = await db.select()
+      .from(articles)
+      .where(and(
+        eq(articles.status, "published")
+      ));
+    
+    const articlesCount = userArticles.length;
+    const totalViews = await db.select({
+      total: drizzleSql`COUNT(*)::integer`
+    })
+      .from(analyticsEvents)
+      .innerJoin(articles, eq(analyticsEvents.articleId, articles.id))
+      .where(eq(articles.status, "published"));
+    
+    const views = (totalViews[0]?.total as number) || 0;
+
+    // Get all achievements
+    const allAchievements = await this.getAllAchievements();
+    const userAchievements = await this.getUserAchievements(userId);
+    const unlockedAchievementIds = new Set(userAchievements.map(ua => ua.achievementId));
+
+    // Check each achievement
+    for (const achievement of allAchievements) {
+      if (unlockedAchievementIds.has(achievement.id)) continue;
+
+      let shouldUnlock = false;
+
+      if (achievement.requirementType === "articles_published" && articlesCount >= achievement.requirement) {
+        shouldUnlock = true;
+      } else if (achievement.requirementType === "total_views" && views >= achievement.requirement) {
+        shouldUnlock = true;
+      } else if (achievement.requirementType === "consecutive_days") {
+        // Check if articles published on consecutive days
+        const dates = new Set<string>();
+        userArticles.forEach(article => {
+          if (article.publishedAt) {
+            const dateStr = new Date(article.publishedAt).toDateString();
+            dates.add(dateStr);
+          }
+        });
+        
+        if (dates.size >= achievement.requirement) {
+          shouldUnlock = true;
+        }
+      }
+
+      if (shouldUnlock) {
+        await this.unlockAchievement(userId, achievement.id);
+        unlockedIds.push(achievement.id);
+      }
+    }
+
+    return unlockedIds;
   }
 }
 
