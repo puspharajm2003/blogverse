@@ -16,8 +16,15 @@ BlogVerse is a modern SaaS blogging platform that enables users to create, publi
 3. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings and navbar with system preference detection
 4. **Scheduled Article Publishing** - Added `scheduledPublishAt` field to articles table for future publication
 5. **PDF/Document Export** - Integrated html2pdf library for exporting articles to PDF format
-6. **Plagiarism Checker** - Foundation for plagiarism detection with simulated checking and extensible API
+6. **Comprehensive Plagiarism Checker** - Full backend integration with:
+   - `plagiarismChecks` database table for storing check results
+   - Backend API endpoints: POST /api/plagiarism/check, GET /api/plagiarism/:articleId, GET /api/plagiarism/:articleId/latest
+   - PlagiarismChecker React component with score visualization
+   - Plagiarism/uniqueness scoring algorithm and match detection
+   - Check history and previous results tracking
+   - Integrated into BlogPublish page with modal dialog for easy access
 7. **Achievement System** - 8 achievements across 4 tiers (bronze/silver/gold/platinum) with progress tracking
+8. **MyBlogs Page Enhancement** - Added auto-refresh when page becomes visible and manual refresh button to ensure blog list stays synchronized
 
 ## User Preferences
 

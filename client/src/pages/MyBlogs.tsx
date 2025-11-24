@@ -18,7 +18,8 @@ import {
   Loader2, 
   AlertCircle,
   Upload,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -61,6 +62,7 @@ export default function MyBlogs() {
   const [, setLocation] = useLocation();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
   
@@ -75,18 +77,29 @@ export default function MyBlogs() {
 
   useEffect(() => {
     loadBlogs();
+    // Also reload when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadBlogs();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const loadBlogs = async () => {
     try {
-      setIsLoading(true);
+      setIsRefreshing(true);
       const data = await api.getBlogs();
-      setBlogs(Array.isArray(data) ? data : []);
+      const blogList = Array.isArray(data) ? data : [];
+      console.log(`[MyBlogs] Loaded ${blogList.length} blogs`, blogList);
+      setBlogs(blogList);
     } catch (error) {
       console.error("Failed to load blogs:", error);
       toast.error("Failed to load blogs");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -189,11 +202,22 @@ export default function MyBlogs() {
               <h1 className="text-4xl font-serif font-bold tracking-tight">My Blogs</h1>
               <p className="text-muted-foreground mt-2">Manage your publications and sites. ({blogs.length} blog{blogs.length !== 1 ? 's' : ''})</p>
             </div>
-            <Link href="/dashboard">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Create New Blog
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={loadBlogs}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} /> 
+                Refresh
               </Button>
-            </Link>
+              <Link href="/dashboard">
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> Create New Blog
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {blogs.length === 0 ? (
