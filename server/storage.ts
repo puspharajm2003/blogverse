@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, inArray, and, desc } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages, comments } from "@shared/schema";
-import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage } from "@shared/schema";
+import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences } from "@shared/schema";
+import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -48,6 +48,13 @@ export interface IStorage {
   updateCommentStatus(commentId: string, status: string): Promise<any>;
   deleteComment(commentId: string): Promise<void>;
   getCommentsByBlog(blogId: string): Promise<any[]>;
+
+  // Reading History & User Preferences
+  recordReadingHistory(userId: string, articleId: string, readingTimeSeconds: number, scrollDepth: number): Promise<ReadingHistory>;
+  getUserReadingHistory(userId: string, limit?: number): Promise<ReadingHistory[]>;
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences>;
+  getPersonalizedFeed(userId: string, limit?: number): Promise<Article[]>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -444,6 +451,101 @@ export class PostgresStorage implements IStorage {
     if (articleIds.length === 0) return [];
     
     return db.select().from(comments).where(inArray(comments.articleId, articleIds)).orderBy(desc(comments.createdAt));
+  }
+
+  // Reading History & Personalization
+  async recordReadingHistory(userId: string, articleId: string, readingTimeSeconds: number, scrollDepth: number): Promise<ReadingHistory> {
+    const result = await db.insert(readingHistory)
+      .values({
+        userId,
+        articleId,
+        readingTimeSeconds,
+        scrollDepth,
+        completed: scrollDepth >= 80,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async getUserReadingHistory(userId: string, limit: number = 50): Promise<ReadingHistory[]> {
+    return db.select()
+      .from(readingHistory)
+      .where(eq(readingHistory.userId, userId))
+      .orderBy(desc(readingHistory.createdAt))
+      .limit(limit);
+  }
+
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const result = await db.select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+    const existing = await this.getUserPreferences(userId);
+    
+    if (!existing) {
+      const result = await db.insert(userPreferences)
+        .values({ userId, ...preferences })
+        .returning();
+      return result[0];
+    }
+
+    const result = await db.update(userPreferences)
+      .set({ ...preferences, updatedAt: new Date() })
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+    return result[0];
+  }
+
+  async getPersonalizedFeed(userId: string, limit: number = 20): Promise<Article[]> {
+    try {
+      const userPrefs = await this.getUserPreferences(userId);
+      const history = await this.getUserReadingHistory(userId, 100);
+      
+      const readArticleIds = new Set(history.map(h => h.articleId));
+      const preferredTags = userPrefs?.preferredTags || [];
+      
+      let query = db.select()
+        .from(articles)
+        .where(and(
+          eq(articles.status, "published")
+        ));
+
+      const allArticles = await query;
+      
+      // Score articles based on preferred tags and reading history
+      const scoredArticles = allArticles
+        .filter(article => !readArticleIds.has(article.id))
+        .map(article => {
+          let score = 0;
+          if (article.tags && Array.isArray(article.tags)) {
+            article.tags.forEach(tag => {
+              if (preferredTags.includes(tag)) score += 10;
+            });
+          }
+          // Boost recently published articles
+          if (article.publishedAt) {
+            const daysOld = (Date.now() - new Date(article.publishedAt).getTime()) / (1000 * 60 * 60 * 24);
+            score += Math.max(0, 5 - daysOld * 0.5);
+          }
+          return { ...article, score };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
+      return scoredArticles.map(({ score, ...article }) => article);
+    } catch (error) {
+      console.error("Error getting personalized feed:", error);
+      // Fallback to recent published articles
+      return db.select()
+        .from(articles)
+        .where(eq(articles.status, "published"))
+        .orderBy(desc(articles.publishedAt))
+        .limit(limit);
+    }
   }
 }
 

@@ -828,6 +828,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Preferences
+  app.get("/api/user/preferences", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const prefs = await storage.getUserPreferences(user.id);
+      res.json(prefs || { userId: user.id, preferredTags: [], readingLevel: "intermediate" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get preferences" });
+    }
+  });
+
+  app.patch("/api/user/preferences", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const prefs = await storage.updateUserPreferences(user.id, req.body);
+      res.json(prefs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update preferences" });
+    }
+  });
+
+  // Reading History
+  app.post("/api/reading-history", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const { articleId, readingTimeSeconds, scrollDepth } = req.body;
+      const history = await storage.recordReadingHistory(user.id, articleId, readingTimeSeconds, scrollDepth);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to record reading history" });
+    }
+  });
+
+  // Personalized Feed
+  app.get("/api/feed/personalized", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const limit = parseInt(req.query.limit as string) || 20;
+      const feed = await storage.getPersonalizedFeed(user.id, limit);
+      res.json(feed);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get personalized feed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

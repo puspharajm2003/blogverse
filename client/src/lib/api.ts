@@ -216,4 +216,33 @@ export const api = {
       headers,
     }).then((r) => r.json());
   },
+
+  // Reading History & Personalization
+  recordReadingHistory: (articleId: string, readingTimeSeconds: number, scrollDepth: number) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/reading-history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ articleId, readingTimeSeconds, scrollDepth }),
+    }).then((r) => r.json());
+  },
+
+  getPersonalizedFeed: (limit: number = 20) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/feed/personalized?limit=${limit}`, { headers }).then((r) => r.json());
+  },
+
+  getUserPreferences: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/user/preferences`, { headers }).then((r) => r.json());
+  },
+
+  updateUserPreferences: (preferences: any) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/user/preferences`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(preferences),
+    }).then((r) => r.json());
+  },
 };

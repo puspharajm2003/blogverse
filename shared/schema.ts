@@ -115,6 +115,30 @@ export const advancedAnalyticsEvents = pgTable("advanced_analytics_events", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Reading history table for personalized feed
+export const readingHistory = pgTable("reading_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  readingTimeSeconds: integer("reading_time_seconds").default(0),
+  scrollDepth: integer("scroll_depth").default(0), // 0-100
+  completed: boolean("completed").default(false),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// User preferences table for personalized content
+export const userPreferences = pgTable("user_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  preferredTags: text("preferred_tags").array().default(sql`ARRAY[]::text[]`),
+  readingLevel: varchar("reading_level").default("intermediate"), // beginner, intermediate, advanced
+  emailNotifications: boolean("email_notifications").default(true),
+  weeklyDigest: boolean("weekly_digest").default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -154,6 +178,23 @@ export const insertCollaboratorSchema = createInsertSchema(collaborators).omit({
   addedAt: true,
 });
 
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReadingHistorySchema = createInsertSchema(readingHistory).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -175,3 +216,12 @@ export type InsertArticleVersion = z.infer<typeof insertArticleVersionSchema>;
 
 export type Collaborator = typeof collaborators.$inferSelect;
 export type InsertCollaborator = z.infer<typeof insertCollaboratorSchema>;
+
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+
+export type ReadingHistory = typeof readingHistory.$inferSelect;
+export type InsertReadingHistory = z.infer<typeof insertReadingHistorySchema>;
+
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
