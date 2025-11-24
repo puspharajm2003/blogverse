@@ -10,10 +10,85 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Palette, Layout, Type, Image as ImageIcon, User, Building, CreditCard, Globe, Lock, Bell } from "lucide-react";
+import { Palette, Layout, Type, Image as ImageIcon, User, Building, CreditCard, Globe, Lock, Bell, Crown } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [bio, setBio] = useState("");
+  const [siteTitle, setSiteTitle] = useState("");
+  const [siteDescription, setSiteDescription] = useState("");
+  const [siteIndexing, setSiteIndexing] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const profile = await api.getProfile();
+        if (profile) {
+          setDisplayName(profile.displayName || "");
+          setEmail(profile.email || "");
+          setBio(profile.bio || "");
+          setSiteTitle(profile.displayName ? `${profile.displayName}'s Blog` : "My Blog");
+          setSiteDescription("Share your thoughts and ideas with the world.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        toast.error("Failed to load profile settings");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const result = await api.updateProfile({
+        displayName,
+        bio,
+      });
+      if (result && !result.error) {
+        toast.success("Settings saved successfully");
+      } else {
+        toast.error("Failed to save settings");
+      }
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      toast.error("Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SidebarLayout>
+        <div className="p-8 max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-8">
+            <div className="h-10 w-40 bg-muted rounded"></div>
+            <div className="grid gap-4">
+              {[1,2,3].map(i => <div key={i} className="h-32 bg-muted rounded"></div>)}
+            </div>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
   return (
     <SidebarLayout>
       <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -22,7 +97,9 @@ export default function Settings() {
             <h1 className="text-3xl font-serif font-bold tracking-tight">Settings</h1>
             <p className="text-muted-foreground">Manage your account, billing, and blog preferences.</p>
           </div>
-          <Button>Save Changes</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
 
         <Tabs defaultValue="general" className="w-full space-y-6">
@@ -44,24 +121,41 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-6">
                         <Avatar className="h-24 w-24">
-                            <AvatarImage src="https://github.com/shadcn.png" />
-                            <AvatarFallback>CN</AvatarFallback>
+                            <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
+                            <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                         <Button variant="outline">Change Avatar</Button>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Display Name</Label>
-                            <Input id="name" defaultValue="Jane Doe" />
+                            <Input 
+                              id="name" 
+                              value={displayName} 
+                              onChange={(e) => setDisplayName(e.target.value)}
+                              data-testid="input-display-name"
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" defaultValue="jane@example.com" />
+                            <Input 
+                              id="email" 
+                              value={email} 
+                              disabled
+                              data-testid="input-email"
+                            />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="bio">Bio</Label>
-                        <Textarea id="bio" placeholder="Tell us about yourself..." className="h-32" />
+                        <Textarea 
+                          id="bio" 
+                          placeholder="Tell us about yourself..." 
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          className="h-32"
+                          data-testid="textarea-bio"
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -74,18 +168,32 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="site-title">Site Title</Label>
-                        <Input id="site-title" defaultValue="Jane's Blog" />
+                        <Input 
+                          id="site-title" 
+                          value={siteTitle}
+                          onChange={(e) => setSiteTitle(e.target.value)}
+                          data-testid="input-site-title"
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="site-desc">Site Description</Label>
-                        <Input id="site-desc" defaultValue="Thoughts on tech, design, and life." />
+                        <Input 
+                          id="site-desc" 
+                          value={siteDescription}
+                          onChange={(e) => setSiteDescription(e.target.value)}
+                          data-testid="input-site-description"
+                        />
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label className="text-base">Search Engine Indexing</Label>
                             <p className="text-sm text-muted-foreground">Allow search engines to index your site.</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch 
+                          checked={siteIndexing}
+                          onCheckedChange={setSiteIndexing}
+                          data-testid="toggle-site-indexing"
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -146,15 +254,15 @@ export default function Settings() {
                     </div>
                     <div className="flex-1 p-8 overflow-y-auto bg-background">
                          <article className="max-w-lg mx-auto">
-                            <span className="text-xs font-bold text-indigo-600 mb-2 block uppercase tracking-wider">Lifestyle</span>
-                            <h1 className="font-serif text-4xl font-bold mb-4 leading-tight">The Art of Digital Minimalism</h1>
+                            <span className="text-xs font-bold text-indigo-600 mb-2 block uppercase tracking-wider">Blog</span>
+                            <h1 className="font-serif text-4xl font-bold mb-4 leading-tight">{siteTitle || "My Blog"}</h1>
                             <div className="flex items-center gap-2 mb-6 text-xs text-muted-foreground">
                                 <div className="h-6 w-6 rounded-full bg-muted" />
-                                <span>By Jane Doe</span>
+                                <span>By {displayName || "Author"}</span>
                             </div>
                             <div className="prose prose-sm text-muted-foreground">
                                 <p className="mb-4">
-                                    In a world overflowing with notifications, tabs, and endless feeds, the ability to focus has become a superpower. Digital minimalism isn't just about deleting apps.
+                                    {siteDescription || "Share your thoughts and ideas with the world."}
                                 </p>
                                 <Button size="sm">Read More</Button>
                             </div>
@@ -173,27 +281,25 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-6">
-                        {[
-                            { name: "Jane Doe", email: "jane@example.com", role: "Owner", img: "CN" },
-                            { name: "John Smith", email: "john@example.com", role: "Editor", img: "JS" },
-                            { name: "Sarah Wilson", email: "sarah@example.com", role: "Writer", img: "SW" },
-                        ].map((member, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <Avatar>
-                                        <AvatarFallback>{member.img}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <div className="font-medium">{member.name}</div>
-                                        <div className="text-sm text-muted-foreground">{member.email}</div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <Avatar>
+                                    <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
+                                    <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <div className="font-medium flex items-center gap-2">
+                                      {user?.displayName}
+                                      {user?.isAdmin && <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <span className="text-sm text-muted-foreground">{member.role}</span>
-                                    <Button variant="ghost" size="sm">Manage</Button>
+                                    <div className="text-sm text-muted-foreground">{user?.email}</div>
                                 </div>
                             </div>
-                        ))}
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-muted-foreground">{user?.isAdmin ? "Admin" : "Owner"}</span>
+                                <Button variant="ghost" size="sm" disabled>Active</Button>
+                            </div>
+                        </div>
                         <Button variant="outline" className="w-full border-dashed">
                             <User className="mr-2 h-4 w-4" /> Invite Team Member
                         </Button>
@@ -208,37 +314,42 @@ export default function Settings() {
                 <Card className="col-span-2">
                     <CardHeader>
                         <CardTitle>Current Plan</CardTitle>
-                        <CardDescription>You are currently on the Pro Plan.</CardDescription>
+                        <CardDescription>You are currently on the {user?.isAdmin ? "Admin (Enterprise)" : user?.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1) : "Free"} Plan.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between p-4 border border-primary/20 bg-primary/5 rounded-lg">
                             <div>
-                                <div className="font-bold text-lg">Pro Plan</div>
-                                <div className="text-sm text-muted-foreground">$12/month, billed monthly</div>
+                                <div className="font-bold text-lg flex items-center gap-2">
+                                  {user?.isAdmin ? "Admin (Enterprise)" : user?.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1) : "Free"} Plan
+                                  {user?.isAdmin && <Crown className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {user?.isAdmin ? "Full access to all features" : user?.plan === "pro" ? "$12/month, billed monthly" : "Limited features"}
+                                </div>
                             </div>
                             <Badge variant="default" className="bg-primary">Active</Badge>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span>Storage Used</span>
-                                <span>4.2GB / 10GB</span>
+                                <span>4.2GB / {user?.plan === "enterprise" || user?.isAdmin ? "Unlimited" : "10GB"}</span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-500 w-[42%]" />
+                                <div className={`h-full ${user?.plan === "enterprise" || user?.isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${user?.plan === "free" ? "w-[30%]" : "w-[42%]"}`} />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span>AI Generations</span>
-                                <span>850 / 1000</span>
+                                <span>{user?.isAdmin ? "Unlimited" : user?.plan === "pro" ? "850 / 1000" : "10 / 100"}</span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-500 w-[85%]" />
+                                <div className={`h-full ${user?.isAdmin ? "bg-yellow-500 w-full" : "bg-indigo-500"} ${user?.plan === "free" ? "w-[10%]" : "w-[85%]"}`} />
                             </div>
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button variant="outline">Upgrade Plan</Button>
+                        {!user?.isAdmin && <Button variant="outline">Upgrade Plan</Button>}
                     </CardFooter>
                 </Card>
                 
@@ -247,14 +358,26 @@ export default function Settings() {
                         <CardTitle>Payment Method</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3 p-3 border border-border rounded-md">
-                            <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        {user?.isAdmin ? (
+                          <div className="flex items-center gap-3 p-3 border border-border rounded-md bg-yellow-50 dark:bg-yellow-950/20">
+                            <Crown className="h-5 w-5 text-yellow-500" />
                             <div className="flex-1">
-                                <div className="font-medium text-sm">Visa ending in 4242</div>
-                                <div className="text-xs text-muted-foreground">Expires 12/2026</div>
+                                <div className="font-medium text-sm">Admin Account</div>
+                                <div className="text-xs text-muted-foreground">No payment required</div>
                             </div>
-                        </div>
-                        <Button variant="ghost" size="sm" className="w-full text-muted-foreground">Update Payment</Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-3 p-3 border border-border rounded-md">
+                                <CreditCard className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex-1">
+                                    <div className="font-medium text-sm">Visa ending in 4242</div>
+                                    <div className="text-xs text-muted-foreground">Expires 12/2026</div>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="sm" className="w-full text-muted-foreground">Update Payment</Button>
+                          </>
+                        )}
                     </CardContent>
                 </Card>
              </div>
@@ -269,15 +392,25 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-2">
-                        <Input placeholder="www.yourdomain.com" />
-                        <Button>Verify</Button>
+                        <Input placeholder="www.yourdomain.com" disabled={!user?.isAdmin && user?.plan !== "enterprise"} />
+                        <Button disabled={!user?.isAdmin && user?.plan !== "enterprise"}>Verify</Button>
                     </div>
-                    <div className="p-4 bg-muted rounded-lg">
+                    {(!user?.isAdmin && user?.plan !== "enterprise") && (
+                      <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-100">
+                            <Lock className="h-4 w-4 mt-0.5" />
+                            <p>Custom domains are available on Enterprise plan.</p>
+                        </div>
+                      </div>
+                    )}
+                    {(user?.isAdmin || user?.plan === "enterprise") && (
+                      <div className="p-4 bg-muted rounded-lg">
                         <div className="flex items-start gap-2 text-sm text-muted-foreground">
                             <Globe className="h-4 w-4 mt-0.5" />
                             <p>Please add a CNAME record pointing to <strong>cname.blogverse.com</strong> in your DNS settings.</p>
                         </div>
-                    </div>
+                      </div>
+                    )}
                 </CardContent>
              </Card>
 
