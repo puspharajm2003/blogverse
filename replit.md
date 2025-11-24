@@ -6,7 +6,34 @@ BlogVerse is a modern SaaS blogging platform that enables users to create, publi
 
 ## Recent Changes (November 24, 2025)
 
-### New Features Implemented
+### Latest Feature Additions
+1. **Reading Time Estimation** - Automatic word count → reading time calculation:
+   - Displays in editor header next to word count
+   - Shows in draft preview and article views
+   - Calculated at 220 words per minute standard
+   - Utility functions in `lib/reading-time.ts`
+
+2. **Autosave with Visual Indicator** - Automatic draft saving:
+   - Autosaves every 30 seconds during editing
+   - Visual save status indicator in editor header (Saving... → Saved)
+   - Color-coded status: Amber (Draft), Blue (Saving), Green (Saved)
+   - Togglable autosave feature
+
+3. **Shareable Draft Preview Links** - Get feedback before publishing:
+   - Copy draft preview link directly from editor settings
+   - Public URL to preview drafts: `/draft-preview/:articleId`
+   - Share link with collaborators for feedback
+   - Displays article with reading time and tags
+   - Shows share link with copy-to-clipboard button
+
+4. **Tags & Categories Management** - Organize articles with topics:
+   - Add tags via input field with Enter key or Add button
+   - Click tags to remove them
+   - Visual badge display of all tags
+   - Tags persist with article in database
+   - Filter articles by tags in PublicBlog
+
+### Previously Implemented Features
 1. **Advanced Article Publishing System** - Two-mode publish workflow:
    - **Publish Now**: Immediate publication with current date/time
    - **Schedule for Later**: Custom date/time selection for future publication
