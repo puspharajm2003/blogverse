@@ -193,11 +193,17 @@ export default function Editor() {
   const [tagInput, setTagInput] = useState("");
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [showDraftPreviewLink, setShowDraftPreviewLink] = useState(false);
+  const [authorBio, setAuthorBio] = useState("");
+  const [user, setUser] = useState<any>(null);
 
-  // Initialize blog on mount
+  // Initialize blog and user profile on mount
   useEffect(() => {
     const initializeBlog = async () => {
       try {
+        // Load user profile for author bio
+        const userProfile = await api.getProfile();
+        setUser(userProfile);
+        
         const blogs = await api.getBlogs();
         let targetBlog = blogs[0];
         
@@ -318,6 +324,7 @@ export default function Editor() {
           scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
           status: scheduledPublishAt ? "scheduled" : "draft",
           tags: tags.length > 0 ? tags : null,
+          authorBio: authorBio.trim() || null,
         });
         console.log("Article updated:", updated);
       } else {
@@ -331,6 +338,7 @@ export default function Editor() {
           status: scheduledPublishAt ? "scheduled" : "draft",
           scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
           tags: tags.length > 0 ? tags : null,
+          authorBio: authorBio.trim() || null,
         });
         setArticleId(article.id);
         console.log("Article created:", article);
@@ -753,9 +761,14 @@ export default function Editor() {
                       <Textarea 
                         placeholder="Tell readers about yourself..." 
                         className="h-20"
+                        value={authorBio}
+                        onChange={(e) => setAuthorBio(e.target.value)}
                         data-testid="textarea-author-bio"
                       />
-                      <p className="text-xs text-muted-foreground">Optional: A brief bio for readers to know about the author</p>
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-muted-foreground">Optional: A brief bio for readers to know about the author</p>
+                        <p className="text-xs text-muted-foreground">{authorBio.length}/500</p>
+                      </div>
                     </div>
                     <Separator className="my-4" />
                     <div className="space-y-2">
