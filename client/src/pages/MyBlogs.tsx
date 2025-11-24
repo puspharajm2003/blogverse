@@ -26,7 +26,10 @@ import {
   Zap,
   Send,
   PenTool,
-  Pencil
+  Pencil,
+  Sparkles,
+  TrendingUp,
+  FileText
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -88,7 +91,6 @@ export default function MyBlogs() {
   const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
   const [loadingBlogId, setLoadingBlogId] = useState<string | null>(null);
   
-  // Edit form states
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
@@ -97,7 +99,6 @@ export default function MyBlogs() {
   const [imageTab, setImageTab] = useState<"url" | "upload">("url");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Article management states
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [editArticleTitle, setEditArticleTitle] = useState("");
   const [deletingArticleId, setDeletingArticleId] = useState<string | null>(null);
@@ -108,7 +109,6 @@ export default function MyBlogs() {
 
   useEffect(() => {
     loadBlogs();
-    // Also reload when page becomes visible
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         loadBlogs();
@@ -135,7 +135,7 @@ export default function MyBlogs() {
   };
 
   const loadBlogArticles = async (blogId: string) => {
-    if (blogArticles[blogId]) return; // Already loaded
+    if (blogArticles[blogId]) return;
     
     try {
       setLoadingBlogId(blogId);
@@ -251,7 +251,6 @@ export default function MyBlogs() {
       
       if (updateResult && !updateResult.error) {
         toast.success("Article published successfully!");
-        // Refresh articles
         const expandedId = expandedBlogId;
         if (expandedId) {
           setBlogArticles(prev => ({
@@ -340,48 +339,91 @@ export default function MyBlogs() {
 
   return (
     <SidebarLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background">
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-serif font-bold tracking-tight">My Blogs</h1>
-              <p className="text-muted-foreground mt-2">Manage your publications and sites. ({blogs.length} blog{blogs.length !== 1 ? 's' : ''})</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
+        {/* Premium Hero Header */}
+        <div className="relative border-b border-border/40 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900/50 dark:via-background dark:to-slate-900/30 backdrop-blur-xl sticky top-0 z-40">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-primary/3 to-transparent rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="relative p-8 max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <h1 className="text-5xl font-serif font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                    My Blogs
+                  </h1>
+                </div>
+                <p className="text-lg text-muted-foreground">Manage your publications and digital presence</p>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  className="gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  onClick={loadBlogs}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} /> 
+                  Refresh
+                </Button>
+                <Link href="/dashboard">
+                  <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all">
+                    <Plus className="h-4 w-4" /> New Blog
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={loadBlogs}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} /> 
-                Refresh
-              </Button>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-slate-800/30 backdrop-blur border border-slate-100 dark:border-slate-700/50">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">Total Blogs</p>
+                <p className="text-3xl font-bold text-primary mt-1">{blogs.length}</p>
+              </div>
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-slate-800/30 backdrop-blur border border-slate-100 dark:border-slate-700/50">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">Status</p>
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">Active</p>
+              </div>
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-slate-800/30 backdrop-blur border border-slate-100 dark:border-slate-700/50">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">Total Articles</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                  {Object.values(blogArticles).flat().length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-8 max-w-7xl mx-auto space-y-8">
+          {blogs.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 mb-6">
+                <Globe className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="font-serif text-2xl font-bold mb-2">No blogs yet</h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">Create your first blog to start publishing amazing content</p>
               <Link href="/dashboard">
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> Create New Blog
+                <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-primary/80">
+                  <Plus className="h-4 w-4" /> Create First Blog
                 </Button>
               </Link>
             </div>
-          </div>
-
-          {blogs.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="font-serif text-xl font-bold mb-2">No blogs yet</h3>
-              <p className="text-muted-foreground mb-6">Create your first blog to get started.</p>
-              <Link href="/dashboard">
-                <Button>Create First Blog</Button>
-              </Link>
-            </Card>
           ) : (
             <div className="space-y-6">
               {blogs.map((blog) => (
                 <div key={blog.id} className="space-y-4">
-                  <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300">
+                  {/* Blog Card */}
+                  <div className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 backdrop-blur hover:shadow-xl transition-all duration-300">
+                    {/* Gradient Border Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    
                     {/* Blog Image */}
-                    <div className="aspect-video relative bg-gradient-to-br from-muted/30 to-muted/10">
+                    <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 h-48">
                       {blog.image ? (
                         <img 
                           src={blog.image} 
@@ -392,38 +434,48 @@ export default function MyBlogs() {
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted/20">
-                          <Globe className="h-12 w-12 text-muted-foreground/30" />
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                          <Globe className="h-16 w-16 text-primary/20" />
                         </div>
                       )}
-                      <div className="absolute top-3 right-3">
+                      
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      
+                      <div className="absolute top-4 right-4 flex gap-2">
                         <Badge 
-                          variant={blog.status === "active" ? "default" : "secondary"}
-                          className="backdrop-blur-md bg-background/80 text-foreground"
+                          className="backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white border-0 shadow-lg"
                         >
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
                           {blog.status === "active" ? "Active" : "Draft"}
                         </Badge>
                       </div>
                     </div>
 
-                    {/* Blog Info */}
-                    <CardHeader>
-                      <CardTitle className="font-serif text-xl line-clamp-2">{blog.title}</CardTitle>
-                      <CardDescription className="flex items-center gap-1 mt-2">
-                        <Globe className="h-3 w-3" /> {blog.slug}
-                      </CardDescription>
+                    {/* Blog Content */}
+                    <div className="relative p-6 space-y-4">
+                      <div>
+                        <h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-white mb-1 line-clamp-2">
+                          {blog.title}
+                        </h2>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          {blog.slug}
+                        </p>
+                      </div>
+                      
                       {blog.description && (
-                        <CardDescription className="line-clamp-2 mt-2">
+                        <p className="text-slate-600 dark:text-slate-400 line-clamp-2">
                           {blog.description}
-                        </CardDescription>
+                        </p>
                       )}
-                    </CardHeader>
 
-                    {/* Actions */}
-                    <CardContent className="space-y-3">
-                      <div className="flex gap-2">
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-2">
                         <Link href={`/public-blog?blogId=${blog.id}`} className="flex-1">
-                          <Button variant="outline" className="w-full gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="w-full gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
                             <Eye className="h-4 w-4" /> Preview
                           </Button>
                         </Link>
@@ -433,6 +485,7 @@ export default function MyBlogs() {
                             <Button 
                               variant="outline" 
                               size="icon"
+                              className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                               onClick={() => openEditDialog(blog)}
                               data-testid={`button-edit-blog-${blog.id}`}
                             >
@@ -448,7 +501,6 @@ export default function MyBlogs() {
                             </DialogHeader>
 
                             <div className="space-y-6 py-4">
-                              {/* Blog Title */}
                               <div className="space-y-2">
                                 <Label htmlFor="blog-title">Blog Title</Label>
                                 <Input
@@ -459,7 +511,6 @@ export default function MyBlogs() {
                                 />
                               </div>
 
-                              {/* Blog Description */}
                               <div className="space-y-2">
                                 <Label htmlFor="blog-desc">Description</Label>
                                 <Textarea
@@ -471,11 +522,9 @@ export default function MyBlogs() {
                                 />
                               </div>
 
-                              {/* Blog Banner Image */}
                               <div className="space-y-3">
                                 <Label>Blog Banner Image</Label>
                                 
-                                {/* Image Preview */}
                                 {imagePreview && (
                                   <div className="relative aspect-video rounded-lg overflow-hidden bg-muted/20 border border-border">
                                     <img 
@@ -502,7 +551,6 @@ export default function MyBlogs() {
                                   </div>
                                 )}
 
-                                {/* Upload Tabs */}
                                 <Tabs value={imageTab} onValueChange={(v: any) => setImageTab(v)}>
                                   <TabsList className="w-full">
                                     <TabsTrigger value="url" className="flex-1">From URL</TabsTrigger>
@@ -550,7 +598,6 @@ export default function MyBlogs() {
 
                               <Separator />
 
-                              {/* Action Buttons */}
                               <div className="flex gap-2 justify-end">
                                 <Button 
                                   variant="outline"
@@ -573,12 +620,17 @@ export default function MyBlogs() {
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setLocation(`/performance?blogId=${blog.id}`)}>
+                              <TrendingUp className="h-4 w-4 mr-2" />
                               Performance
                             </DropdownMenuItem>
                             <DropdownMenuItem 
@@ -592,10 +644,10 @@ export default function MyBlogs() {
                         </DropdownMenu>
                       </div>
 
-                      {/* Expand Drafts Button */}
+                      {/* Drafts Expand Button */}
                       <Button
                         variant={expandedBlogId === blog.id ? "default" : "outline"}
-                        className="w-full gap-2"
+                        className="w-full gap-2 mt-4 border-slate-200 dark:border-slate-700"
                         onClick={() => toggleBlogExpanded(blog.id)}
                         disabled={loadingBlogId === blog.id}
                       >
@@ -604,83 +656,68 @@ export default function MyBlogs() {
                         ) : (
                           <ChevronDown className={`h-4 w-4 transition-transform ${expandedBlogId === blog.id ? 'rotate-180' : ''}`} />
                         )}
+                        <FileText className="h-4 w-4" />
                         Drafts ({(blogArticles[blog.id] || []).filter(a => a.status === "draft").length})
                       </Button>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
 
                   {/* Draft Articles */}
                   {expandedBlogId === blog.id && (
-                    <div className="space-y-4 ml-4">
+                    <div className="space-y-4 ml-0 bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-slate-900/20 dark:to-slate-800/20 rounded-lg p-6 border border-slate-200 dark:border-slate-700/50">
                       {draftArticles.length === 0 ? (
-                        <Card className="p-6 text-center border-dashed">
-                          <p className="text-muted-foreground">No draft articles yet. Create one to get started!</p>
+                        <div className="text-center py-12">
+                          <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-muted-foreground font-medium">No draft articles</p>
+                          <p className="text-sm text-muted-foreground mb-4">Create one to start writing</p>
                           <Link href={`/editor?blogId=${blog.id}`}>
-                            <Button className="mt-3 gap-2">
+                            <Button size="sm" variant="outline" className="gap-2">
                               <Plus className="h-4 w-4" /> Create Article
                             </Button>
                           </Link>
-                        </Card>
+                        </div>
                       ) : (
-                        draftArticles.map((article) => (
-                          <Card key={article.id} className="overflow-hidden">
-                            <CardHeader>
-                              <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-4">
+                          {draftArticles.map((article) => (
+                            <div 
+                              key={article.id} 
+                              className="p-4 rounded-lg bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 hover:shadow-md transition-all"
+                            >
+                              <div className="flex items-start justify-between gap-4 mb-3">
                                 <div className="flex-1">
-                                  <CardTitle className="text-lg line-clamp-2">{article.title}</CardTitle>
-                                  <CardDescription className="line-clamp-2 mt-2">
-                                    {article.excerpt || article.content?.substring(0, 100) || "No description"}
-                                  </CardDescription>
+                                  <h4 className="font-semibold text-slate-900 dark:text-white mb-1 line-clamp-1">
+                                    {article.title}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {article.excerpt || article.content?.substring(0, 80) || "No description"}
+                                  </p>
                                 </div>
-                                <Badge variant="outline">Draft</Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              {/* Article Meta */}
-                              <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
-                                <div>
-                                  <p className="font-semibold">Created</p>
-                                  <p>{new Date(article.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                                </div>
-                                <div>
-                                  <p className="font-semibold">Words</p>
-                                  <p>{(article.content?.split(/\s+/).length || 0).toLocaleString()}</p>
-                                </div>
-                                <div>
-                                  <p className="font-semibold">Read Time</p>
-                                  <p>{Math.ceil((article.content?.split(/\s+/).length || 0) / 200)} min</p>
-                                </div>
+                                <Badge variant="secondary" className="text-xs">Draft</Badge>
                               </div>
 
-                              {/* Article Actions */}
-                              <div className="flex gap-2 flex-wrap pt-2">
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(article.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                                <span>{(article.content?.split(/\s+/).length || 0).toLocaleString()} words</span>
+                              </div>
+
+                              <div className="flex gap-2 flex-wrap">
                                 <Button
-                                  variant="outline"
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setLocation(`/editor?articleId=${article.id}`)}
-                                  className="gap-2"
+                                  className="gap-2 h-8"
                                 >
-                                  <PenTool className="h-4 w-4" />
-                                  Edit Content
-                                </Button>
-
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingArticleId(article.id);
-                                    setEditArticleTitle(article.title);
-                                  }}
-                                  className="gap-2"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                  Edit Title
+                                  <PenTool className="h-3 w-3" />
+                                  Edit
                                 </Button>
 
                                 <Dialog>
                                   <DialogTrigger asChild>
-                                    <Button size="sm" className="gap-2 flex-1">
-                                      <Zap className="h-4 w-4" />
+                                    <Button size="sm" className="gap-2 h-8 bg-gradient-to-r from-primary to-primary/80">
+                                      <Zap className="h-3 w-3" />
                                       Publish
                                     </Button>
                                   </DialogTrigger>
@@ -728,7 +765,7 @@ export default function MyBlogs() {
                                       <Button
                                         onClick={() => handlePublishArticle(article.id)}
                                         disabled={publishingId === article.id}
-                                        className="w-full gap-2"
+                                        className="w-full gap-2 bg-gradient-to-r from-primary to-primary/80"
                                       >
                                         {publishingId === article.id ? (
                                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -742,26 +779,27 @@ export default function MyBlogs() {
                                 </Dialog>
 
                                 <Button
-                                  variant="outline"
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setPlagiarismArticleId(article.id)}
-                                  className="gap-2"
+                                  className="gap-2 h-8"
                                 >
-                                  <Eye className="h-4 w-4" />
-                                  Check Plagiarism
+                                  <Eye className="h-3 w-3" />
+                                  Check
                                 </Button>
 
                                 <Button
-                                  variant="destructive"
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setDeletingArticleId(article.id)}
+                                  className="gap-2 h-8 text-destructive hover:text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
-                            </CardContent>
-                          </Card>
-                        ))
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   )}
