@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { api } from "@/lib/api";
 import { useTheme } from "next-themes";
 import { exportArticleToPDF, exportArticleAsDocx } from "@/lib/pdf-export";
-import { simulatePlagiarismCheck } from "@/lib/plagiarism-checker";
+import { toast } from "sonner";
 import { 
     Save, 
     Send, 
@@ -340,11 +340,44 @@ export default function Editor() {
   const handleCheckPlagiarism = async () => {
     setIsCheckingPlagiarism(true);
     try {
-      const result = simulatePlagiarismCheck(content);
-      setPlagiarismResult(result);
+      // Save article first if not saved
+      if (!articleId) {
+        toast.info("Saving article before plagiarism check...");
+        await handleSaveArticle();
+        if (!articleId) {
+          toast.error("Please create an article first");
+          setIsCheckingPlagiarism(false);
+          return;
+        }
+      }
+
+      // Call real plagiarism API
+      const result = await api.checkPlagiarism(articleId, content);
+      
+      // Format result for display
+      const formattedResult = {
+        overallScore: result.overallScore,
+        uniqueScore: result.uniqueScore,
+        matchCount: result.matchCount,
+        matches: Array.isArray(result.matches) ? result.matches : [],
+        status: result.status,
+        checkedAt: result.createdAt
+      };
+      
+      setPlagiarismResult(formattedResult);
       setShowPlagiarismResult(true);
+      
+      // Show toast notification
+      if (result.overallScore < 15) {
+        toast.success(`✅ Great! Only ${result.overallScore}% plagiarism detected - Your content is highly original!`);
+      } else if (result.overallScore < 40) {
+        toast.warning(`⚠️ Moderate match: ${result.overallScore}% similarity detected. Review the sources and ensure proper attribution.`);
+      } else {
+        toast.error(`⛔ High plagiarism score: ${result.overallScore}%. Please revise your content before publishing.`);
+      }
     } catch (error) {
       console.error("Plagiarism check error:", error);
+      toast.error("Failed to check plagiarism. Please try again.");
     } finally {
       setIsCheckingPlagiarism(false);
     }

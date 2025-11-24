@@ -7,24 +7,52 @@ BlogVerse is a modern SaaS blogging platform that enables users to create, publi
 ## Recent Changes (November 24, 2025)
 
 ### New Features Implemented
-1. **Admin User System** - puspharaj.m2003@gmail.com marked as admin with `isAdmin` field in users table, gets enterprise plan and all features unlocked
-2. **Plan-Based Feature Access Control** - Three-tier system (free/pro/enterprise) with FeatureGate component:
+1. **Advanced Article Publishing System** - Two-mode publish workflow:
+   - **Publish Now**: Immediate publication with current date/time
+   - **Schedule for Later**: Custom date/time selection for future publication
+   - Real-time current date/time display in publish dialog
+   - Success notifications showing publication confirmation and shareable link
+   - Error notifications with detailed failure reasons
+
+2. **Draft Article Management** - Right-side expandable panel on MyBlogs page:
+   - Display only titles and dates (no content preview)
+   - Smooth fade-in animations with 3D shadow effects
+   - Quick access to Edit and Publish buttons for drafts
+   - Auto-removes drafts from panel after successful publication
+
+3. **Integrated Plagiarism Checker** - Full end-to-end implementation:
+   - **Backend**: Real plagiarism scoring algorithm analyzing content uniqueness
+   - **Storage**: `plagiarismChecks` database table for result history
+   - **API Endpoints**: 
+     - POST `/api/plagiarism/check` - Perform plagiarism check on article
+     - GET `/api/plagiarism/:articleId` - Get check history for article
+     - GET `/api/plagiarism/:articleId/latest` - Get latest check result
+   - **Frontend Integration**: Plagiarism checker button in article editor
+   - **Auto-Save**: Automatically saves article before checking plagiarism
+   - **Smart Notifications**: 
+     - ✅ Green notification for <15% plagiarism
+     - ⚠️ Yellow notification for 15-40% plagiarism
+     - ❌ Red notification for >40% plagiarism
+   - **Results Display**: Shows overall score, uniqueness percentage, match count, and source details
+   - **Check History**: Tracks all plagiarism checks performed on articles
+
+4. **Admin User System** - puspharaj.m2003@gmail.com marked as admin with `isAdmin` field, gets enterprise plan and all features unlocked
+
+5. **Plan-Based Feature Access Control** - Three-tier system:
    - **Free Plan**: Basic features (dark mode, limited articles)
-   - **Pro Plan**: Advanced features (scheduled publishing, PDF export, plagiarism checker, version history, collaborative editing, advanced analytics)
+   - **Pro Plan**: Advanced features (scheduled publishing, PDF export, plagiarism checker)
    - **Enterprise Plan**: All features including custom domain
-   - **Admin Override**: Admin users bypass all feature gates and access all features
-3. **Dark Mode Toggle** - Connected to next-themes for seamless light/dark mode switching in Settings and navbar with system preference detection
-4. **Scheduled Article Publishing** - Added `scheduledPublishAt` field to articles table for future publication
-5. **PDF/Document Export** - Integrated html2pdf library for exporting articles to PDF format
-6. **Comprehensive Plagiarism Checker** - Full backend integration with:
-   - `plagiarismChecks` database table for storing check results
-   - Backend API endpoints: POST /api/plagiarism/check, GET /api/plagiarism/:articleId, GET /api/plagiarism/:articleId/latest
-   - PlagiarismChecker React component with score visualization
-   - Plagiarism/uniqueness scoring algorithm and match detection
-   - Check history and previous results tracking
-   - Integrated into BlogPublish page with modal dialog for easy access
-7. **Achievement System** - 8 achievements across 4 tiers (bronze/silver/gold/platinum) with progress tracking
-8. **MyBlogs Page Enhancement** - Added auto-refresh when page becomes visible and manual refresh button to ensure blog list stays synchronized
+   - **Admin Override**: Admin users bypass all feature gates
+
+6. **Dark Mode** - Connected to next-themes with system preference detection
+
+7. **Scheduled Publishing** - Future publication with `scheduledPublishAt` field
+
+8. **PDF/Document Export** - html2pdf integration for articles
+
+9. **Achievement System** - 8 achievements across 4 tiers with progress tracking
+
+10. **Real-Time Dashboard** - Auto-refreshing metrics every 5 seconds with real database data
 
 ## User Preferences
 
