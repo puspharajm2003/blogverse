@@ -942,15 +942,9 @@ export default function MyBlogs() {
                               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                               
                               <div className="relative z-10">
-                                <h4 className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                                <h4 className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-2 mb-3 group-hover:text-primary transition-colors">
                                   {article.title}
                                 </h4>
-                                
-                                {article.excerpt && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                                    {article.excerpt}
-                                  </p>
-                                )}
 
                                 {/* Date Info */}
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 pb-3 border-b border-slate-200/50 dark:border-slate-700/50">
