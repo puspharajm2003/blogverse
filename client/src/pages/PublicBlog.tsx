@@ -56,24 +56,19 @@ export default function PublicBlog() {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState({ name: "", email: "", content: "" });
   
-  // Tag filtering
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [allTags, setAllTags] = useState<string[]>([]);
-  
-  // Advanced metrics
   const [articleMetrics, setArticleMetrics] = useState<any>({});
   const [scrollDepth, setScrollDepth] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const blogId = params.get("blogId");
-
     if (!blogId) {
       setLocation("/my-blogs");
       return;
     }
-
     fetchBlogData(blogId);
   }, [setLocation]);
 
@@ -92,7 +87,6 @@ export default function PublicBlog() {
       );
       setArticles(uniqueArticles);
       
-      // Extract all unique tags for filter
       const tags = new Set<string>();
       uniqueArticles.forEach((article: any) => {
         if (article.tags && Array.isArray(article.tags)) {
@@ -101,7 +95,6 @@ export default function PublicBlog() {
       });
       setAllTags(Array.from(tags).sort());
       
-      // Initialize metrics
       const metrics: any = {};
       uniqueArticles.forEach((article: any) => {
         metrics[article.id] = {
@@ -121,7 +114,6 @@ export default function PublicBlog() {
         setSelectedArticle(uniqueArticles[0]);
         api.recordEvent(uniqueArticles[0].id, "pageview", {});
         trackScrollDepth();
-        // Fetch comments for first article
         fetchComments(uniqueArticles[0].id);
       }
     } catch (error) {
@@ -135,7 +127,6 @@ export default function PublicBlog() {
   const fetchComments = async (articleId: string) => {
     try {
       const commentsData = await api.getCommentsByArticle(articleId);
-      // Only show approved comments in public view
       const approvedComments = (commentsData || []).filter((c: any) => c.status === "approved");
       setComments(approvedComments);
     } catch (error) {
@@ -151,7 +142,6 @@ export default function PublicBlog() {
       const depth = scrollHeight ? (scrollTop / scrollHeight) * 100 : 0;
       setScrollDepth(Math.round(depth));
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   };
@@ -160,10 +150,8 @@ export default function PublicBlog() {
     return articles.filter((article) => {
       const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         article.excerpt?.toLowerCase().includes(searchQuery.toLowerCase());
-      
       const matchesTags = selectedTags.length === 0 || 
         (article.tags && article.tags.some((tag: string) => selectedTags.includes(tag)));
-      
       return matchesSearch && matchesTags;
     });
   };
@@ -207,14 +195,12 @@ export default function PublicBlog() {
     if (!selectedArticle) return;
     const url = `${window.location.origin}${window.location.pathname}?article=${selectedArticle.id}`;
     const text = `Check out: ${selectedArticle.title}`;
-    
     const shares: any = {
       twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       email: `mailto:?subject=${encodeURIComponent(selectedArticle.title)}&body=${encodeURIComponent(text + "\n\n" + url)}`,
     };
-    
     if (shares[platform]) {
       window.open(shares[platform], "_blank");
       api.recordEvent(selectedArticle.id, "share", { platform });
@@ -223,15 +209,17 @@ export default function PublicBlog() {
 
   const handleSaveBlogDetails = async () => {
     if (!blog) return;
-    
     try {
-      await api.updateBlog(blog.id, {
+      const response = await api.updateBlog(blog.id, {
         title: blogTitle,
         image: blogImage,
       });
-      setBlog({ ...blog, title: blogTitle, image: blogImage });
-      setIsEditingBlog(false);
-      toast.success("Blog details updated successfully");
+      console.log("Blog update response:", response);
+      if (response) {
+        setBlog(response);
+        toast.success("Blog details updated successfully");
+        setIsEditingBlog(false);
+      }
     } catch (error) {
       console.error("Failed to update blog:", error);
       toast.error("Failed to update blog details");
@@ -275,7 +263,6 @@ export default function PublicBlog() {
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
         </div>
-
         <div className="relative">
           <div className="h-96 relative overflow-hidden">
             <img
@@ -288,7 +275,6 @@ export default function PublicBlog() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
           </div>
-
           <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-10">
             <Button
               variant="ghost"
@@ -299,7 +285,6 @@ export default function PublicBlog() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            
             <Dialog open={isEditingBlog} onOpenChange={setIsEditingBlog}>
               <DialogTrigger asChild>
                 <Button
@@ -314,9 +299,7 @@ export default function PublicBlog() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Edit Blog Details</DialogTitle>
-                  <DialogDescription>
-                    Customize how your blog appears publicly
-                  </DialogDescription>
+                  <DialogDescription>Customize how your blog appears publicly</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div>
@@ -338,18 +321,13 @@ export default function PublicBlog() {
                     />
                   </div>
                   <div className="flex gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsEditingBlog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveBlogDetails} className="bg-indigo-600 hover:bg-indigo-700">
-                      Save Changes
-                    </Button>
+                    <Button variant="outline" onClick={() => setIsEditingBlog(false)}>Cancel</Button>
+                    <Button onClick={handleSaveBlogDetails} className="bg-indigo-600 hover:bg-indigo-700">Save Changes</Button>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
-
           <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="h-5 w-5 text-blue-300" />
@@ -371,17 +349,117 @@ export default function PublicBlog() {
           <Card className="text-center py-16 border-0 shadow-lg">
             <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
             <CardTitle className="text-2xl mb-2">No Published Articles Yet</CardTitle>
-            <CardDescription>
-              Publish some articles in the editor to display them here.
-            </CardDescription>
+            <CardDescription>Publish some articles in the editor to display them here.</CardDescription>
           </Card>
         ) : (
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* Main Content - Article Display (70-75% width) */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* LEFT: Sidebar - Articles List (25-30% width) */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Input
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 border-slate-300 dark:border-slate-600"
+                  data-testid="input-search"
+                />
+                <div className="absolute left-3 top-2.5 text-slate-400">🔍</div>
+              </div>
+
+              {/* Tag Filter */}
+              {allTags.length > 0 && (
+                <div className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-2 font-semibold text-sm text-slate-900 dark:text-white">
+                    <Filter className="h-4 w-4 text-indigo-600" />
+                    Filter by Tags
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {allTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant={selectedTags.includes(tag) ? "default" : "outline"}
+                        className={`cursor-pointer transition-all text-xs ${
+                          selectedTags.includes(tag)
+                            ? "bg-indigo-600 hover:bg-indigo-700"
+                            : "hover:border-indigo-500"
+                        }`}
+                        onClick={() => {
+                          if (selectedTags.includes(tag)) {
+                            setSelectedTags(selectedTags.filter(t => t !== tag));
+                          } else {
+                            setSelectedTags([...selectedTags, tag]);
+                          }
+                        }}
+                        data-testid={`badge-tag-${tag}`}
+                      >
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  {selectedTags.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedTags([])}
+                      className="w-full text-xs text-slate-600 dark:text-slate-400"
+                    >
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Article Count */}
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-indigo-600" />
+                  {filteredArticles.length} Article{filteredArticles.length !== 1 ? 's' : ''}
+                </h2>
+              </div>
+
+              {/* Articles List */}
+              <div className="space-y-3 max-h-[calc(100vh-500px)] overflow-y-auto pr-4">
+                {filteredArticles.map((article) => (
+                  <Card
+                    key={article.id}
+                    className={`cursor-pointer transition-all border-0 shadow-md hover:shadow-lg ${
+                      selectedArticle?.id === article.id ? "ring-2 ring-indigo-500 shadow-lg" : ""
+                    }`}
+                    onClick={async () => {
+                      setSelectedArticle(article);
+                      api.recordEvent(article.id, "pageview", {});
+                      fetchComments(article.id);
+                    }}
+                    data-testid={`card-article-${article.id}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <CardTitle className="font-serif text-lg line-clamp-2 text-slate-900 dark:text-white">
+                        {article.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm mt-2">
+                        {new Date(article.publishedAt || article.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        {article.excerpt || article.content?.replace(/<[^>]*>/g, "").slice(0, 100) || "No description"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT: Main Content - Article Display (70-75% width) */}
             <div className="lg:col-span-3">
               {selectedArticle ? (
                 <div className="space-y-6">
-                  {/* Article Header */}
+                  {/* Article Card */}
                   <Card className="border-0 shadow-lg overflow-hidden">
                     <CardHeader className="border-b border-slate-200 dark:border-slate-800 pb-6 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30">
                       <div className="flex items-center justify-between gap-2 mb-4">
@@ -462,14 +540,13 @@ export default function PublicBlog() {
                         </div>
                       )}
 
-                      {/* Advanced Engagement Metrics */}
+                      {/* Metrics */}
                       {metrics && (
                         <div className="space-y-4 p-6 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-800 dark:to-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
                           <div className="flex items-center gap-2 mb-4">
                             <BarChart3 className="h-5 w-5 text-indigo-600" />
                             <h3 className="font-semibold text-slate-900 dark:text-white">Article Performance</h3>
                           </div>
-                          
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
                               <div className="text-2xl font-bold text-indigo-600">{metrics.views}</div>
@@ -477,21 +554,18 @@ export default function PublicBlog() {
                                 <Eye className="h-3 w-3" /> Views
                               </div>
                             </div>
-                            
                             <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
                               <div className="text-2xl font-bold text-pink-600">{metrics.likes}</div>
                               <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
                                 <Heart className="h-3 w-3" /> Likes
                               </div>
                             </div>
-                            
                             <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
                               <div className="text-2xl font-bold text-blue-600">{metrics.shares}</div>
                               <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
                                 <Share2 className="h-3 w-3" /> Shares
                               </div>
                             </div>
-                            
                             <div className="p-3 bg-white dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
                               <div className="text-2xl font-bold text-green-600">{metrics.uniqueVisitors}</div>
                               <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-1">
@@ -502,15 +576,9 @@ export default function PublicBlog() {
                         </div>
                       )}
 
-                      {/* Share Section */}
+                      {/* Share Buttons */}
                       <div className="flex gap-2 flex-wrap">
-                        <Button 
-                          onClick={copyShareLink} 
-                          variant="outline" 
-                          size="sm"
-                          className="gap-2"
-                          data-testid="button-copy-link"
-                        >
+                        <Button onClick={copyShareLink} variant="outline" size="sm" className="gap-2" data-testid="button-copy-link">
                           <Copy className="h-4 w-4" />
                           {copiedLink ? "Copied!" : "Copy Link"}
                         </Button>
@@ -522,9 +590,6 @@ export default function PublicBlog() {
                         </Button>
                         <Button onClick={() => shareOnSocial("linkedin")} variant="outline" size="sm" className="gap-2" data-testid="button-share-linkedin">
                           <Linkedin className="h-4 w-4" /> LinkedIn
-                        </Button>
-                        <Button onClick={() => shareOnSocial("email")} variant="outline" size="sm" className="gap-2" data-testid="button-share-email">
-                          <Mail className="h-4 w-4" /> Email
                         </Button>
                       </div>
                     </CardContent>
@@ -580,13 +645,7 @@ export default function PublicBlog() {
                           {comments.map((comment) => (
                             <div 
                               key={comment.id} 
-                              className={`border-l-4 p-4 rounded-r-lg transition-all ${
-                                comment.status === "approved"
-                                  ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                                  : comment.status === "rejected"
-                                  ? "border-red-500 bg-red-50 dark:bg-red-950/20"
-                                  : "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
-                              }`}
+                              className={`border-l-4 p-4 rounded-r-lg transition-all border-green-500 bg-green-50 dark:bg-green-950/20`}
                               data-testid={`comment-${comment.id}`}
                             >
                               <div className="flex items-start justify-between gap-2 mb-2">
@@ -596,15 +655,7 @@ export default function PublicBlog() {
                                     {new Date(comment.createdAt).toLocaleDateString()}
                                   </p>
                                 </div>
-                                <Badge className={`text-xs ${
-                                  comment.status === "approved"
-                                    ? "bg-green-600"
-                                    : comment.status === "rejected"
-                                    ? "bg-red-600"
-                                    : "bg-yellow-600"
-                                }`}>
-                                  {comment.status}
-                                </Badge>
+                                <Badge className="text-xs bg-green-600">approved</Badge>
                               </div>
                               <p className="text-slate-700 dark:text-slate-300">{comment.content}</p>
                             </div>
@@ -622,110 +673,6 @@ export default function PublicBlog() {
                   <CardTitle className="text-2xl mb-2">No Article Selected</CardTitle>
                 </Card>
               )}
-            </div>
-
-            {/* Right Sidebar - Articles List (25-30% width) */}
-            <div className="lg:col-span-1 space-y-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <Input
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-slate-300 dark:border-slate-600"
-                  data-testid="input-search"
-                />
-                <div className="absolute left-3 top-2.5 text-slate-400">🔍</div>
-              </div>
-
-              {/* Tag Filter */}
-              {allTags.length > 0 && (
-                <div className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-2 font-semibold text-sm text-slate-900 dark:text-white">
-                    <Filter className="h-4 w-4 text-indigo-600" />
-                    Filter by Tags
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {allTags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant={selectedTags.includes(tag) ? "default" : "outline"}
-                        className={`cursor-pointer transition-all text-xs ${
-                          selectedTags.includes(tag)
-                            ? "bg-indigo-600 hover:bg-indigo-700"
-                            : "hover:border-indigo-500"
-                        }`}
-                        onClick={() => {
-                          if (selectedTags.includes(tag)) {
-                            setSelectedTags(selectedTags.filter(t => t !== tag));
-                          } else {
-                            setSelectedTags([...selectedTags, tag]);
-                          }
-                        }}
-                        data-testid={`badge-tag-${tag}`}
-                      >
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  {selectedTags.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setSelectedTags([])}
-                      className="w-full text-xs text-slate-600 dark:text-slate-400"
-                    >
-                      Clear filters
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {/* Article Count */}
-              <div className="mb-4">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-indigo-600" />
-                  {filteredArticles.length} Article{filteredArticles.length !== 1 ? 's' : ''}
-                </h2>
-              </div>
-
-              {/* Articles List */}
-              <div className="space-y-3 max-h-[calc(100vh-500px)] overflow-y-auto pr-4">
-                {filteredArticles.map((article) => (
-                  <Card
-                    key={article.id}
-                    className={`cursor-pointer transition-all border-0 shadow-md hover:shadow-lg ${
-                      selectedArticle?.id === article.id
-                        ? "ring-2 ring-indigo-500 shadow-lg"
-                        : ""
-                    }`}
-                    onClick={async () => {
-                      setSelectedArticle(article);
-                      api.recordEvent(article.id, "pageview", {});
-                      fetchComments(article.id);
-                    }}
-                    data-testid={`card-article-${article.id}`}
-                  >
-                    <CardHeader className="pb-3">
-                      <CardTitle className="font-serif text-lg line-clamp-2 text-slate-900 dark:text-white">
-                        {article.title}
-                      </CardTitle>
-                      <CardDescription className="text-sm mt-2">
-                        {new Date(article.publishedAt || article.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                        {article.excerpt || article.content?.replace(/<[^>]*>/g, "").slice(0, 100) || "No description"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
             </div>
           </div>
         )}
