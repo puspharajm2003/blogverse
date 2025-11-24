@@ -256,6 +256,27 @@ export default function MyBlogs() {
     try {
       setPublishingId(articleId);
       
+      // Get the article to validate before publishing
+      const article = expandedBlogId ? (blogArticles[expandedBlogId] || []).find(a => a.id === articleId) : null;
+      if (!article) {
+        toast.error("Article not found");
+        setPublishingId(null);
+        return;
+      }
+      
+      // Validate article has content
+      if (!article.title || !article.title.trim()) {
+        toast.error("Cannot publish: Article needs a title");
+        setPublishingId(null);
+        return;
+      }
+      
+      if (!article.content || !article.content.trim()) {
+        toast.error("Cannot publish: Article needs content");
+        setPublishingId(null);
+        return;
+      }
+      
       let publishDateTime: Date;
       if (publishNow) {
         // Use current date and time
@@ -263,6 +284,13 @@ export default function MyBlogs() {
       } else {
         // Use selected date and time
         publishDateTime = new Date(`${publishDate}T${publishTime}`);
+        
+        // Validate scheduled time is in the future
+        if (publishDateTime <= new Date()) {
+          toast.error("Cannot schedule: Please select a future date and time");
+          setPublishingId(null);
+          return;
+        }
       }
       
       const updateResult = await api.updateArticle(articleId, {
@@ -271,34 +299,37 @@ export default function MyBlogs() {
       });
       
       if (updateResult && !updateResult.error) {
-        const article = expandedBlogId ? (blogArticles[expandedBlogId] || []).find(a => a.id === articleId) : null;
-        if (article) {
-          const shareLink = `${window.location.origin}/public-blog?blogId=${article.blogId}&articleId=${articleId}`;
-          setPublishedLink(shareLink);
-          
-          if (publishNow) {
-            toast.success("Article published immediately! 🚀");
-          } else {
-            const scheduleDate = new Date(publishDateTime);
-            toast.success(`Article scheduled for ${scheduleDate.toLocaleString()}! 📅`);
-          }
-          
-          // Remove from drafts list
-          if (expandedBlogId) {
-            setBlogArticles(prev => ({
-              ...prev,
-              [expandedBlogId]: prev[expandedBlogId].filter(a => a.id !== articleId)
-            }));
-          }
+        const shareLink = `${window.location.origin}/public-blog?blogId=${article.blogId}&articleId=${articleId}`;
+        setPublishedLink(shareLink);
+        
+        if (publishNow) {
+          toast.success("✨ Article published successfully! Your article is now live on your blog.", {
+            description: "Share it with your audience using the link below.",
+          });
+        } else {
+          const scheduleDate = new Date(publishDateTime);
+          toast.success(`📅 Article scheduled successfully! Publishing on ${scheduleDate.toLocaleDateString()} at ${scheduleDate.toLocaleTimeString()}`, {
+            description: "The article will be automatically published at the scheduled time.",
+          });
+        }
+        
+        // Remove from drafts list
+        if (expandedBlogId) {
+          setBlogArticles(prev => ({
+            ...prev,
+            [expandedBlogId]: prev[expandedBlogId].filter(a => a.id !== articleId)
+          }));
         }
       } else {
-        toast.error(updateResult?.error || "Failed to publish article");
+        const errorMessage = updateResult?.error || updateResult?.message || "Failed to publish article. Please try again.";
+        toast.error(`❌ Publishing failed: ${errorMessage}`);
       }
       
       setPublishingId(null);
     } catch (error) {
       console.error("Failed to publish article:", error);
-      toast.error("Failed to publish article");
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(`❌ Error: ${errorMessage}`);
       setPublishingId(null);
     }
   };
