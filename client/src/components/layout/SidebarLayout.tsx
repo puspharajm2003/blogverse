@@ -12,7 +12,8 @@ import {
   ChevronRight,
   User,
   Send,
-  Trash2
+  Trash2,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ export function SidebarLayout({ children }: SidebarProps) {
     { icon: Globe, label: 'My Blog', href: '/my-blogs' },
     { icon: Send, label: 'Publish', href: '/publish' },
     { icon: BarChart3, label: 'Performance', href: '/performance' },
+    { icon: Trophy, label: 'Achievements', href: '/achievements' },
     { icon: Settings, label: 'Settings', href: '/settings' },
     { icon: Trash2, label: 'Trash', href: '/trash' },
   ];

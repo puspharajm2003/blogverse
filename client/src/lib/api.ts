@@ -245,4 +245,24 @@ export const api = {
       body: JSON.stringify(preferences),
     }).then((r) => r.json());
   },
+
+  // Achievements
+  getAllAchievements: () =>
+    fetch(`${API_BASE}/api/achievements`).then((r) => r.json()),
+
+  getUserAchievements: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/achievements/user`, { headers }).then((r) => r.json());
+  },
+
+  checkAchievements: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/achievements/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+    }).then((r) => r.json());
+  },
+
+  initAchievements: () =>
+    fetch(`${API_BASE}/api/achievements/init`).then((r) => r.json()),
 };

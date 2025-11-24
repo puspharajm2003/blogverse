@@ -20,6 +20,7 @@ import PublicBlog from "@/pages/PublicBlog";
 import PersonalizedFeed from "@/pages/PersonalizedFeed";
 import Trash from "@/pages/Trash";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Achievements from "@/pages/Achievements";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/public-blog" component={PublicBlog} />
       <Route path="/feed" component={PersonalizedFeed} />
       <Route path="/trash" component={Trash} />
+      <Route path="/achievements" component={Achievements} />
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
