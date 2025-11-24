@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
 import { useTheme } from "next-themes";
+import { exportArticleToPDF, exportArticleAsDocx } from "@/lib/pdf-export";
+import { simulatePlagiarismCheck } from "@/lib/plagiarism-checker";
 import { 
     Save, 
     Send, 
@@ -31,7 +33,10 @@ import {
     Video,
     Clock,
     Share,
-    Users
+    Users,
+    FileText,
+    CheckCircle2,
+    AlertTriangle
 } from "lucide-react";
 import {
     Select,
@@ -179,6 +184,10 @@ export default function Editor() {
   const [blogId, setBlogId] = useState<string | null>(null);
   const [articleId, setArticleId] = useState<string | null>(null);
   const [isBrainstormOpen, setIsBrainstormOpen] = useState(false);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null);
+  const [showPlagiarismResult, setShowPlagiarismResult] = useState(false);
+  const [plagiarismResult, setPlagiarismResult] = useState<any>(null);
+  const [isCheckingPlagiarism, setIsCheckingPlagiarism] = useState(false);
 
   // Initialize blog on mount
   useEffect(() => {
@@ -288,6 +297,8 @@ export default function Editor() {
           title,
           content,
           slug,
+          scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
+          status: scheduledPublishAt ? "scheduled" : "draft",
         });
         console.log("Article updated:", updated);
       } else {
@@ -298,7 +309,8 @@ export default function Editor() {
           content,
           slug,
           excerpt: content.replace(/<[^>]*>/g, "").slice(0, 160),
-          status: "draft",
+          status: scheduledPublishAt ? "scheduled" : "draft",
+          scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
         });
         setArticleId(article.id);
         console.log("Article created:", article);
@@ -311,6 +323,30 @@ export default function Editor() {
       alert("Failed to save article. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Handle PDF export
+  const handleExportPDF = () => {
+    exportArticleToPDF(title, content, "", new Date().toLocaleDateString());
+  };
+
+  // Handle document export
+  const handleExportDocx = () => {
+    exportArticleAsDocx(title, content, "", new Date().toLocaleDateString());
+  };
+
+  // Handle plagiarism check
+  const handleCheckPlagiarism = async () => {
+    setIsCheckingPlagiarism(true);
+    try {
+      const result = simulatePlagiarismCheck(content);
+      setPlagiarismResult(result);
+      setShowPlagiarismResult(true);
+    } catch (error) {
+      console.error("Plagiarism check error:", error);
+    } finally {
+      setIsCheckingPlagiarism(false);
     }
   };
 
@@ -471,6 +507,35 @@ export default function Editor() {
               <Video className="h-4 w-4 text-green-500" />
             </Button>
 
+            {/* Plagiarism Checker */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleCheckPlagiarism}
+              disabled={isCheckingPlagiarism}
+              data-testid="button-plagiarism-check"
+              title="Check Plagiarism"
+              className="hover:bg-red-500/10"
+            >
+              {isCheckingPlagiarism ? (
+                <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+              )}
+            </Button>
+
+            {/* PDF Export */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleExportPDF}
+              data-testid="button-export-pdf"
+              title="Export as PDF"
+              className="hover:bg-indigo-500/10"
+            >
+              <FileText className="h-4 w-4 text-indigo-500" />
+            </Button>
+
             {/* Version History */}
             <Button 
               variant="ghost" 
@@ -586,6 +651,45 @@ export default function Editor() {
                       />
                       <p className="text-xs text-muted-foreground">Optional: A brief bio for readers to know about the author</p>
                     </div>
+                    <Separator className="my-4" />
+                    <div className="space-y-2">
+                      <Label>Schedule Publication</Label>
+                      <Input 
+                        type="datetime-local"
+                        value={scheduledPublishAt || ""}
+                        onChange={(e) => setScheduledPublishAt(e.target.value || null)}
+                        data-testid="input-scheduled-publish-at"
+                      />
+                      {scheduledPublishAt && (
+                        <p className="text-xs text-green-600">
+                          ✓ This article will be published on {new Date(scheduledPublishAt).toLocaleString()}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">Leave empty to save as draft</p>
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="space-y-3">
+                      <Label>Export Article</Label>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={handleExportPDF}
+                        data-testid="button-export-pdf-settings"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export as PDF
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={handleExportDocx}
+                        data-testid="button-export-docx"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export as Document
+                      </Button>
+                    </div>
+                    <Separator className="my-4" />
                     <Button 
                       variant="destructive" 
                       className="w-full"
@@ -830,6 +934,91 @@ export default function Editor() {
                 </p>
               </div>
             </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Plagiarism Check Results Dialog */}
+        <Sheet open={showPlagiarismResult} onOpenChange={setShowPlagiarismResult}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Plagiarism Check Results
+              </SheetTitle>
+            </SheetHeader>
+            {plagiarismResult && (
+              <div className="space-y-6 py-6">
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 p-6 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <div className="text-center">
+                    <div className={`text-5xl font-bold mb-2 ${
+                      plagiarismResult.overallScore < 10 ? 'text-green-600' :
+                      plagiarismResult.overallScore < 30 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {plagiarismResult.overallScore}%
+                    </div>
+                    <div className="text-sm text-muted-foreground">Overall Plagiarism Score</div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    {plagiarismResult.overallScore < 10 ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium text-green-900 dark:text-green-100">Original Content Detected</div>
+                          <div className="text-sm text-green-800 dark:text-green-200">Your content appears to be original and unique.</div>
+                        </div>
+                      </>
+                    ) : plagiarismResult.overallScore < 30 ? (
+                      <>
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium text-yellow-900 dark:text-yellow-100">Minor Similarities Found</div>
+                          <div className="text-sm text-yellow-800 dark:text-yellow-200">Some phrases may be similar to existing content. Consider reviewing the matches below.</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium text-red-900 dark:text-red-100">High Similarity Detected</div>
+                          <div className="text-sm text-red-800 dark:text-red-200">Your content has significant similarities to existing sources. Please review the matches below.</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {plagiarismResult.matches && plagiarismResult.matches.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Detected Matches</div>
+                    {plagiarismResult.matches.map((match: any, idx: number) => (
+                      <div key={idx} className="p-3 border border-border rounded-lg bg-muted/50">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-sm">{match.source}</div>
+                          <Badge variant="secondary">{match.similarity}% match</Badge>
+                        </div>
+                        {match.url && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {match.url}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Button 
+                  className="w-full" 
+                  onClick={() => setShowPlagiarismResult(false)}
+                  data-testid="button-close-plagiarism-results"
+                >
+                  Done
+                </Button>
+              </div>
+            )}
           </SheetContent>
         </Sheet>
       </div>
