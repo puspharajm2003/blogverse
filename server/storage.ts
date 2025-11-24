@@ -119,6 +119,9 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteBlog(id: string): Promise<void> {
+    // Delete articles first (cascading delete)
+    await db.delete(articles).where(eq(articles.blogId, id));
+    // Then delete the blog
     await db.delete(blogs).where(eq(blogs.id, id));
   }
 
