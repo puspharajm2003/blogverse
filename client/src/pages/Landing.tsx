@@ -16,7 +16,8 @@ export default function Landing() {
       if (result.token && result.user) {
         localStorage.setItem("stack_token", result.token);
         localStorage.setItem("stack_user", JSON.stringify(result.user));
-        setLocation("/dashboard");
+        setLocation("/");
+        window.location.reload();
       }
     } catch (error) {
       console.error("Failed to load demo:", error);
