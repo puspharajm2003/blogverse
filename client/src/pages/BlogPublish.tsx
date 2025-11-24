@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
+import { PlagiarismChecker } from "@/components/PlagiarismChecker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ export default function BlogPublish() {
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [editArticleTitle, setEditArticleTitle] = useState("");
   const [deletingArticleId, setDeletingArticleId] = useState<string | null>(null);
+  const [plagiarismArticleId, setPlagiarismArticleId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBlogs();
@@ -430,6 +432,26 @@ export default function BlogPublish() {
                   </DialogContent>
                 </Dialog>
               )}
+
+              {/* Plagiarism Check Dialog */}
+              {plagiarismArticleId && (
+                <Dialog open={!!plagiarismArticleId} onOpenChange={(open) => !open && setPlagiarismArticleId(null)}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Plagiarism Checker</DialogTitle>
+                      <DialogDescription>
+                        Check your article content for potential plagiarism
+                      </DialogDescription>
+                    </DialogHeader>
+                    {plagiarismArticleId && (
+                      <PlagiarismChecker
+                        articleId={plagiarismArticleId}
+                        content={articles.find(a => a.id === plagiarismArticleId)?.content || ""}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </div>
@@ -611,6 +633,16 @@ export default function BlogPublish() {
                                   </div>
                                 </DialogContent>
                               </Dialog>
+
+                              <Button
+                                variant="outline"
+                                onClick={() => setPlagiarismArticleId(article.id)}
+                                className="gap-2 flex-1 h-10 hover:bg-teal-50 dark:hover:bg-teal-950/50 hover:border-teal-300"
+                                title="Check plagiarism"
+                              >
+                                <Eye className="h-4 w-4" />
+                                Check Plagiarism
+                              </Button>
 
                               <Button
                                 variant="destructive"
