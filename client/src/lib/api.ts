@@ -128,18 +128,27 @@ export const api = {
   // Dashboard
   getDashboardStats: () => {
     const headers = getAuthHeader();
-    return fetch(`${API_BASE}/api/dashboard/stats`, { headers }).then((r) => r.json());
+    return fetch(`${API_BASE}/api/dashboard/stats`, { 
+      headers,
+      cache: "no-store"  // Disable HTTP caching for real-time data
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error(`HTTP error! status: ${r.status}`);
+        }
+        return r.json();
+      });
   },
 
   // Analytics
   getDetailedAnalytics: () => {
     const headers = getAuthHeader();
-    return fetch(`${API_BASE}/api/analytics/detailed`, { headers }).then((r) => r.json());
+    return fetch(`${API_BASE}/api/analytics/detailed`, { headers, cache: "no-store" }).then((r) => r.json());
   },
 
   getChartData: (days: number = 7) => {
     const headers = getAuthHeader();
-    return fetch(`${API_BASE}/api/analytics/chart?days=${days}`, { headers }).then((r) => r.json());
+    return fetch(`${API_BASE}/api/analytics/chart?days=${days}`, { headers, cache: "no-store" }).then((r) => r.json());
   },
 
   // Demo

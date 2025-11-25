@@ -38,40 +38,54 @@ export default function Dashboard() {
 
     const fetchDashboardStats = async () => {
       try {
-        const [statsData, chartDataRes, achievementsData] = await Promise.all([
-          api.getDashboardStats(),
-          api.getChartData(7),
-          api.getUserAchievements?.() || Promise.resolve([]),
-        ]);
+        const statsResponse = await api.getDashboardStats();
+        const chartResponse = await api.getChartData(7);
+        const achievementsResponse = await api.getUserAchievements?.() || [];
+        
+        // Log what we're receiving for debugging
+        console.log("Stats Response:", statsResponse);
+        console.log("Chart Response:", chartResponse);
+        
+        // Handle error responses
+        if (statsResponse?.error) {
+          console.error("Stats API error:", statsResponse.error);
+          setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
+          setIsLoading(false);
+          return;
+        }
         
         // Ensure stats has all expected properties
         const normalizedStats = {
-          totalBlogs: statsData?.totalBlogs || 0,
-          totalArticles: statsData?.totalArticles || 0,
-          totalViews: statsData?.totalViews || 0,
-          recentArticles: statsData?.recentArticles || []
+          totalBlogs: parseInt(statsResponse?.totalBlogs) || 0,
+          totalArticles: parseInt(statsResponse?.totalArticles) || 0,
+          totalViews: parseInt(statsResponse?.totalViews) || 0,
+          recentArticles: statsResponse?.recentArticles || []
         };
         
+        console.log("Normalized Stats:", normalizedStats);
         setStats(normalizedStats);
         
         // Calculate average views per post
         if (normalizedStats.totalArticles > 0) {
-          setAvgViews(Math.round(normalizedStats.totalViews / normalizedStats.totalArticles));
+          const avg = Math.round(normalizedStats.totalViews / normalizedStats.totalArticles);
+          setAvgViews(avg);
         } else {
           setAvgViews(0);
         }
         
-        setChartData(chartDataRes || []);
-        setUserAchievements(achievementsData || []);
+        setChartData(chartResponse || []);
         
-        // Show only the 3 most recently unlocked achievements
-        const sorted = (achievementsData || []).sort((a: any, b: any) => 
-          new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
-        );
-        setRecentUnlocked(sorted.slice(0, 3));
+        if (achievementsResponse) {
+          setUserAchievements(achievementsResponse);
+          
+          // Show only the 3 most recently unlocked achievements
+          const sorted = achievementsResponse.sort((a: any, b: any) => 
+            new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
+          );
+          setRecentUnlocked(sorted.slice(0, 3));
+        }
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
-        // Set default values on error
         setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
       } finally {
         setIsLoading(false);
