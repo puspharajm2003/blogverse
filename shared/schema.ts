@@ -178,6 +178,70 @@ export const plagiarismChecks = pgTable("plagiarism_checks", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// User feedback table
+export const feedback = pgTable("feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  category: varchar("category").notNull(), // bug, feature, improvement, other
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  attachments: text("attachments").array().default(sql`ARRAY[]::text[]`),
+  status: varchar("status").notNull().default("open"), // open, in-progress, resolved, closed
+  priority: varchar("priority").default("normal"), // low, normal, high, urgent
+  rating: integer("rating"), // 1-5 star rating
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Article bookmarks table
+export const bookmarks = pgTable("bookmarks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  collectionName: varchar("collection_name").default("reading-list"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(), // comment_new, article_update, achievement_unlocked, etc
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  relatedArticleId: varchar("related_article_id").references(() => articles.id),
+  relatedCommentId: varchar("related_comment_id"),
+  read: boolean("read").default(false),
+  actionUrl: text("action_url"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+// User notification preferences table
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  newComments: boolean("new_comments").default(true),
+  articleUpdates: boolean("article_updates").default(true),
+  achievementUnlocked: boolean("achievement_unlocked").default(true),
+  emailNotifications: boolean("email_notifications").default(true),
+  pushNotifications: boolean("push_notifications").default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Learning path/onboarding progress table
+export const learningProgress = pgTable("learning_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  completedLessons: text("completed_lessons").array().default(sql`ARRAY[]::text[]`),
+  currentLesson: varchar("current_lesson"),
+  progressPercent: integer("progress_percent").default(0),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -290,3 +354,41 @@ export const insertPlagiarismCheckSchema = createInsertSchema(plagiarismChecks).
   createdAt: true,
 });
 export type InsertPlagiarismCheck = z.infer<typeof insertPlagiarismCheckSchema>;
+
+export type Feedback = typeof feedback.$inferSelect;
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
+export type Bookmark = typeof bookmarks.$inferSelect;
+export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertBookmark = z.infer<typeof insertBookmarkSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
+
+export type LearningProgress = typeof learningProgress.$inferSelect;
+export const insertLearningProgressSchema = createInsertSchema(learningProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertLearningProgress = z.infer<typeof insertLearningProgressSchema>;

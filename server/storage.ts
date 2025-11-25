@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, plagiarismChecks } from "@shared/schema";
-import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck } from "@shared/schema";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress } from "@shared/schema";
+import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -67,6 +67,33 @@ export interface IStorage {
   checkArticlePlagiarism(articleId: string, userId: string, content: string): Promise<PlagiarismCheck>;
   getPlagiarismChecksByArticle(articleId: string): Promise<PlagiarismCheck[]>;
   getLatestPlagiarismCheck(articleId: string): Promise<PlagiarismCheck | undefined>;
+
+  // Feedback
+  submitFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  getUserFeedback(userId: string): Promise<Feedback[]>;
+  getAllFeedback(): Promise<Feedback[]>;
+  updateFeedback(id: string, updates: Partial<Feedback>): Promise<Feedback | undefined>;
+
+  // Bookmarks
+  addBookmark(userId: string, articleId: string, collectionName?: string): Promise<Bookmark>;
+  removeBookmark(id: string): Promise<void>;
+  getUserBookmarks(userId: string, collection?: string): Promise<any[]>;
+  isArticleBookmarked(userId: string, articleId: string): Promise<boolean>;
+
+  // Notifications
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: string, unreadOnly?: boolean): Promise<Notification[]>;
+  markNotificationAsRead(id: string): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
+  deleteNotification(id: string): Promise<void>;
+  getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined>;
+  updateNotificationPreferences(userId: string, preferences: Partial<NotificationPreference>): Promise<NotificationPreference>;
+
+  // Learning Path
+  initializeLearningProgress(userId: string): Promise<LearningProgress>;
+  getLearningProgress(userId: string): Promise<LearningProgress | undefined>;
+  completeLessonStep(userId: string, lessonId: string): Promise<LearningProgress | undefined>;
+  getOnboardingStatus(userId: string): Promise<{ completed: boolean; progress: number; currentLesson?: string }>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -826,6 +853,162 @@ export class PostgresStorage implements IStorage {
     }
 
     return unlockedIds;
+  }
+
+  // Feedback Methods
+  async submitFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
+    const result = await db.insert(feedback).values(feedbackData).returning();
+    return result[0];
+  }
+
+  async getUserFeedback(userId: string): Promise<Feedback[]> {
+    return db.select().from(feedback).where(eq(feedback.userId, userId)).orderBy(desc(feedback.createdAt));
+  }
+
+  async getAllFeedback(): Promise<Feedback[]> {
+    return db.select().from(feedback).orderBy(desc(feedback.createdAt));
+  }
+
+  async updateFeedback(id: string, updates: Partial<Feedback>): Promise<Feedback | undefined> {
+    const result = await db.update(feedback).set(updates).where(eq(feedback.id, id)).returning();
+    return result[0];
+  }
+
+  // Bookmark Methods
+  async addBookmark(userId: string, articleId: string, collectionName = "reading-list"): Promise<Bookmark> {
+    const result = await db.insert(bookmarks).values({ userId, articleId, collectionName }).returning();
+    return result[0];
+  }
+
+  async removeBookmark(id: string): Promise<void> {
+    await db.delete(bookmarks).where(eq(bookmarks.id, id));
+  }
+
+  async getUserBookmarks(userId: string, collection?: string): Promise<any[]> {
+    let query = db.select({
+      id: bookmarks.id,
+      userId: bookmarks.userId,
+      articleId: bookmarks.articleId,
+      collectionName: bookmarks.collectionName,
+      notes: bookmarks.notes,
+      createdAt: bookmarks.createdAt,
+      article: {
+        id: articles.id,
+        title: articles.title,
+        slug: articles.slug,
+        excerpt: articles.excerpt,
+        coverImage: articles.coverImage,
+        publishedAt: articles.publishedAt,
+      }
+    }).from(bookmarks)
+      .leftJoin(articles, eq(bookmarks.articleId, articles.id))
+      .where(eq(bookmarks.userId, userId));
+
+    if (collection) {
+      query = query.where(eq(bookmarks.collectionName, collection));
+    }
+
+    return query.orderBy(desc(bookmarks.createdAt));
+  }
+
+  async isArticleBookmarked(userId: string, articleId: string): Promise<boolean> {
+    const result = await db.select().from(bookmarks)
+      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.articleId, articleId)))
+      .limit(1);
+    return result.length > 0;
+  }
+
+  // Notification Methods
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const result = await db.insert(notifications).values(notificationData).returning();
+    return result[0];
+  }
+
+  async getUserNotifications(userId: string, unreadOnly = false): Promise<Notification[]> {
+    let query = db.select().from(notifications).where(eq(notifications.userId, userId));
+    if (unreadOnly) {
+      query = query.where(eq(notifications.read, false));
+    }
+    return query.orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: string): Promise<Notification | undefined> {
+    const result = await db.update(notifications).set({ read: true }).where(eq(notifications.id, id)).returning();
+    return result[0];
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    await db.update(notifications).set({ read: true }).where(eq(notifications.userId, userId));
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    await db.delete(notifications).where(eq(notifications.id, id));
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined> {
+    const result = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId)).limit(1);
+    return result[0];
+  }
+
+  async updateNotificationPreferences(userId: string, prefs: Partial<NotificationPreference>): Promise<NotificationPreference> {
+    const existing = await this.getNotificationPreferences(userId);
+    if (existing) {
+      const result = await db.update(notificationPreferences).set(prefs).where(eq(notificationPreferences.userId, userId)).returning();
+      return result[0];
+    } else {
+      const result = await db.insert(notificationPreferences).values({ userId, ...prefs }).returning();
+      return result[0];
+    }
+  }
+
+  // Learning Path Methods
+  async initializeLearningProgress(userId: string): Promise<LearningProgress> {
+    const existing = await this.getLearningProgress(userId);
+    if (existing) return existing;
+
+    const result = await db.insert(learningProgress).values({
+      userId,
+      completedLessons: [],
+      currentLesson: "welcome",
+      progressPercent: 0,
+    }).returning();
+    return result[0];
+  }
+
+  async getLearningProgress(userId: string): Promise<LearningProgress | undefined> {
+    const result = await db.select().from(learningProgress).where(eq(learningProgress.userId, userId)).limit(1);
+    return result[0];
+  }
+
+  async completeLessonStep(userId: string, lessonId: string): Promise<LearningProgress | undefined> {
+    const current = await this.getLearningProgress(userId);
+    if (!current) return undefined;
+
+    const completed = new Set(current.completedLessons || []);
+    completed.add(lessonId);
+    const progressPercent = Math.min(100, completed.size * 20); // 5 lessons = 100%
+
+    const result = await db.update(learningProgress)
+      .set({
+        completedLessons: Array.from(completed),
+        progressPercent,
+        currentLesson: progressPercent >= 100 ? "completed" : lessonId,
+        completedAt: progressPercent >= 100 ? new Date() : null,
+      })
+      .where(eq(learningProgress.userId, userId))
+      .returning();
+
+    return result[0];
+  }
+
+  async getOnboardingStatus(userId: string): Promise<{ completed: boolean; progress: number; currentLesson?: string }> {
+    const lp = await this.getLearningProgress(userId);
+    if (!lp) return { completed: false, progress: 0, currentLesson: "welcome" };
+    return {
+      completed: lp.progressPercent >= 100,
+      progress: lp.progressPercent,
+      currentLesson: lp.currentLesson || undefined,
+    };
   }
 }
 

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema, insertChatMessageSchema } from "@shared/schema";
+import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema, insertChatMessageSchema, insertFeedbackSchema, insertBookmarkSchema, insertNotificationSchema, insertNotificationPreferenceSchema, insertLearningProgressSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 // Generate professional prompts based on generation type
@@ -1082,6 +1082,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get latest plagiarism check error:", error);
       res.status(500).json({ error: "Failed to fetch latest plagiarism check" });
+    }
+  });
+
+  // Feedback Routes
+  app.post("/api/feedback", authenticateToken, async (req: any, res) => {
+    try {
+      const parsed = insertFeedbackSchema.safeParse({ ...req.body, userId: req.userId });
+      if (!parsed.success) return res.status(400).json({ error: "Invalid input" });
+      const result = await storage.submitFeedback(parsed.data);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to submit feedback" });
+    }
+  });
+
+  app.get("/api/feedback", authenticateToken, async (req: any, res) => {
+    try {
+      const fb = await storage.getUserFeedback(req.userId);
+      res.json(fb);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  // Bookmark Routes
+  app.post("/api/bookmarks", authenticateToken, async (req: any, res) => {
+    try {
+      const { articleId, collectionName } = req.body;
+      if (!articleId) return res.status(400).json({ error: "Article ID required" });
+      const result = await storage.addBookmark(req.userId, articleId, collectionName);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add bookmark" });
+    }
+  });
+
+  app.delete("/api/bookmarks/:id", authenticateToken, async (req: any, res) => {
+    try {
+      await storage.removeBookmark(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove bookmark" });
+    }
+  });
+
+  app.get("/api/bookmarks", authenticateToken, async (req: any, res) => {
+    try {
+      const collection = req.query.collection as string | undefined;
+      const bookmarks = await storage.getUserBookmarks(req.userId, collection);
+      res.json(bookmarks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bookmarks" });
+    }
+  });
+
+  app.get("/api/bookmarks/check/:articleId", authenticateToken, async (req: any, res) => {
+    try {
+      const isBookmarked = await storage.isArticleBookmarked(req.userId, req.params.articleId);
+      res.json({ isBookmarked });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check bookmark" });
+    }
+  });
+
+  // Notification Routes
+  app.get("/api/notifications", authenticateToken, async (req: any, res) => {
+    try {
+      const unreadOnly = req.query.unread === 'true';
+      const notifs = await storage.getUserNotifications(req.userId, unreadOnly);
+      res.json(notifs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", authenticateToken, async (req: any, res) => {
+    try {
+      const result = await storage.markNotificationAsRead(req.params.id);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.patch("/api/notifications/read-all", authenticateToken, async (req: any, res) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark all as read" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", authenticateToken, async (req: any, res) => {
+    try {
+      await storage.deleteNotification(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete notification" });
+    }
+  });
+
+  app.get("/api/notification-preferences", authenticateToken, async (req: any, res) => {
+    try {
+      const prefs = await storage.getNotificationPreferences(req.userId);
+      res.json(prefs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+
+  app.patch("/api/notification-preferences", authenticateToken, async (req: any, res) => {
+    try {
+      const result = await storage.updateNotificationPreferences(req.userId, req.body);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update preferences" });
+    }
+  });
+
+  // Learning Path Routes
+  app.post("/api/learning/init", authenticateToken, async (req: any, res) => {
+    try {
+      const result = await storage.initializeLearningProgress(req.userId);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to initialize learning" });
+    }
+  });
+
+  app.get("/api/learning/progress", authenticateToken, async (req: any, res) => {
+    try {
+      const progress = await storage.getLearningProgress(req.userId);
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch progress" });
+    }
+  });
+
+  app.get("/api/learning/status", authenticateToken, async (req: any, res) => {
+    try {
+      const status = await storage.getOnboardingStatus(req.userId);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch status" });
+    }
+  });
+
+  app.post("/api/learning/complete", authenticateToken, async (req: any, res) => {
+    try {
+      const { lessonId } = req.body;
+      if (!lessonId) return res.status(400).json({ error: "Lesson ID required" });
+      const result = await storage.completeLessonStep(req.userId, lessonId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to complete lesson" });
     }
   });
 

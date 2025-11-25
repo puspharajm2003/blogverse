@@ -28,6 +28,10 @@ const Achievements = lazy(() => import("@/pages/Achievements"));
 const MyArticles = lazy(() => import("@/pages/MyArticles"));
 const DraftPreview = lazy(() => import("@/pages/DraftPreview"));
 const ArticleMarketplace = lazy(() => import("@/pages/ArticleMarketplace"));
+const Feedback = lazy(() => import("@/pages/Feedback"));
+const Bookmarks = lazy(() => import("@/pages/Bookmarks"));
+const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
+const LearningPath = lazy(() => import("@/pages/LearningPath"));
 
 // Preload critical routes
 const preloadRoute = (Component: any) => {
@@ -66,6 +70,10 @@ function Router() {
         <Route path="/achievements" component={Achievements} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/marketplace" component={ArticleMarketplace} />
+        <Route path="/feedback" component={Feedback} />
+        <Route path="/bookmarks" component={Bookmarks} />
+        <Route path="/notifications" component={NotificationSettings} />
+        <Route path="/learning" component={LearningPath} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
