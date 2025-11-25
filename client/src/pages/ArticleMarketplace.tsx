@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ShoppingCart, Search, Star, Heart, MessageCircle, Download, 
-  TrendingUp, Filter, Sparkles, Clock, Users, DollarSign, Eye 
+  TrendingUp, Filter, Sparkles, Clock, Users, DollarSign, Eye, BookOpen 
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -324,6 +324,3 @@ export default function ArticleMarketplace() {
     </SidebarLayout>
   );
 }
-
-// Import needed icon
-import { BookOpen } from "lucide-react";

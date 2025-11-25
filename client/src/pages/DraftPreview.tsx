@@ -10,12 +10,17 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Copy, Check, Clock } from "lucide-react";
 import { toast } from "sonner";
 
-export default function DraftPreview({ params }: { params: { articleId: string } }) {
+interface DraftPreviewProps {
+  params?: { articleId: string };
+  articleId?: string;
+}
+
+export default function DraftPreview({ params, articleId: propArticleId }: DraftPreviewProps) {
   const [, setLocation] = useLocation();
   const [article, setArticle] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
-  const articleId = params.articleId;
+  const articleId = propArticleId || params?.articleId || "";
 
   useEffect(() => {
     const fetchArticle = async () => {
