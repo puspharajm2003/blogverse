@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress, importBatches, seoMetrics } from "@shared/schema";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, userStreaks, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress, importBatches, seoMetrics } from "@shared/schema";
 import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress, ImportBatch, InsertImportBatch, SeoMetric, InsertSeoMetric } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -183,6 +183,14 @@ export class PostgresStorage implements IStorage {
 
   async updateArticle(id: string, updates: Partial<Article>): Promise<Article | undefined> {
     const result = await db.update(articles).set({ ...updates, updatedAt: new Date() }).where(eq(articles.id, id)).returning();
+    if (result[0] && updates.status === "published" && updates.publishedAt) {
+      // Track streak when article is published
+      const article = result[0];
+      const blog = await db.select().from(blogs).where(eq(blogs.id, article.blogId)).limit(1);
+      if (blog[0]) {
+        await this.updateStreak(blog[0].userId);
+      }
+    }
     return result[0];
   }
 
@@ -660,6 +668,43 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async getStreak(userId: string): Promise<{ currentStreak: number; longestStreak: number; lastPublishDate: Date | null }> {
+    const result = await db.select().from(userStreaks).where(eq(userStreaks.userId, userId)).limit(1);
+    if (result[0]) {
+      return { currentStreak: result[0].currentStreak || 0, longestStreak: result[0].longestStreak || 0, lastPublishDate: result[0].lastPublishDate || null };
+    }
+    return { currentStreak: 0, longestStreak: 0, lastPublishDate: null };
+  }
+
+  async updateStreak(userId: string): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const streakData = await db.select().from(userStreaks).where(eq(userStreaks.userId, userId)).limit(1);
+    
+    if (!streakData[0]) {
+      await db.insert(userStreaks).values({ userId, currentStreak: 1, longestStreak: 1, lastPublishDate: today });
+      return;
+    }
+    
+    const lastPublish = streakData[0].lastPublishDate ? new Date(streakData[0].lastPublishDate) : null;
+    lastPublish?.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    let newStreak = 1;
+    if (lastPublish && lastPublish.getTime() === yesterday.getTime()) {
+      newStreak = (streakData[0].currentStreak || 0) + 1;
+    }
+    
+    const newLongest = Math.max(newStreak, streakData[0].longestStreak || 0);
+    
+    await db.update(userStreaks)
+      .set({ currentStreak: newStreak, longestStreak: newLongest, lastPublishDate: today, updatedAt: new Date() })
+      .where(eq(userStreaks.userId, userId));
+  }
+
   async initializeDefaultAchievements(): Promise<void> {
     const existingCount = await db.select().from(achievements);
     if (existingCount.length > 0) return;
@@ -711,6 +756,15 @@ export class PostgresStorage implements IStorage {
         points: 250,
       },
       {
+        title: "Getting Started",
+        description: "Publish articles for 3 consecutive days",
+        icon: "🚀",
+        requirement: 3,
+        requirementType: "consecutive_days",
+        tier: "bronze",
+        points: 25,
+      },
+      {
         title: "Consistency Champion",
         description: "Publish articles for 7 consecutive days",
         icon: "🔥",
@@ -718,6 +772,24 @@ export class PostgresStorage implements IStorage {
         requirementType: "consecutive_days",
         tier: "silver",
         points: 75,
+      },
+      {
+        title: "Unstoppable Writer",
+        description: "Publish articles for 14 consecutive days",
+        icon: "⚡",
+        requirement: 14,
+        requirementType: "consecutive_days",
+        tier: "gold",
+        points: 150,
+      },
+      {
+        title: "Content Machine",
+        description: "Publish articles for 30 consecutive days",
+        icon: "💪",
+        requirement: 30,
+        requirementType: "consecutive_days",
+        tier: "platinum",
+        points: 300,
       },
       {
         title: "1000 Views",
@@ -839,16 +911,11 @@ export class PostgresStorage implements IStorage {
       } else if (achievement.requirementType === "total_views" && views >= achievement.requirement) {
         shouldUnlock = true;
       } else if (achievement.requirementType === "consecutive_days") {
-        // Check if articles published on consecutive days
-        const dates = new Set<string>();
-        userArticles.forEach(article => {
-          if (article.publishedAt) {
-            const dateStr = new Date(article.publishedAt).toDateString();
-            dates.add(dateStr);
-          }
-        });
+        // Check user streak
+        const streakData = await db.select().from(userStreaks).where(eq(userStreaks.userId, userId)).limit(1);
+        const streak = streakData[0]?.currentStreak || 0;
         
-        if (dates.size >= achievement.requirement) {
+        if (streak >= achievement.requirement) {
           shouldUnlock = true;
         }
       }

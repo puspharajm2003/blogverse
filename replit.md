@@ -8,7 +8,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 25, 2025)
 
-### Five Major Features Implemented
+### Achievement System - Consistency Rewards
+- **Streak Tracking**: Tracks consecutive days of article publication
+- **Consistency Achievements**: 4-tier system rewarding sustained content creation
+  - 🚀 "Getting Started" - 3 consecutive days (Bronze, 25 pts)
+  - 🔥 "Consistency Champion" - 7 consecutive days (Silver, 75 pts)
+  - ⚡ "Unstoppable Writer" - 14 consecutive days (Gold, 150 pts)
+  - 💪 "Content Machine" - 30 consecutive days (Platinum, 300 pts)
+- **Database Tables**: `user_streaks` tracks current/longest streaks per user
+- **Smart Streaking Logic**: Resets if no publication on consecutive day; tracks longest streak
+- **Dashboard Display**: Beautiful "Your Streak" card showing current streak and personal best
+- **API Endpoints**: POST/GET `/api/user/streak`, enhanced `/api/achievements/check`
+- **Auto-unlock**: Achievements unlock automatically when streak milestones are reached
+
+### Six Major Features Implemented
 
 #### 1. User Feedback System
 - Dedicated feedback form at `/feedback` with rich input options

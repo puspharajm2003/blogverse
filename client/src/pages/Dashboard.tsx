@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [userAchievements, setUserAchievements] = useState<any[]>([]);
   const [recentUnlocked, setRecentUnlocked] = useState<any[]>([]);
   const [avgViews, setAvgViews] = useState(0);
+  const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0, lastPublishDate: null });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -41,10 +42,9 @@ export default function Dashboard() {
         const statsResponse = await api.getDashboardStats();
         const chartResponse = await api.getChartData(7);
         const achievementsResponse = await api.getUserAchievements?.() || [];
+        const streakResponse = await api.getStreak?.() || { currentStreak: 0, longestStreak: 0, lastPublishDate: null };
         
-        // Log what we're receiving for debugging
-        console.log("Stats Response:", statsResponse);
-        console.log("Chart Response:", chartResponse);
+        setStreak(streakResponse);
         
         // Handle error responses
         if (statsResponse?.error) {
@@ -197,9 +197,29 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Reading Challenge & Achievements Widget */}
+        {/* Reading Challenge & Streak & Achievements Widget */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-3">
+          <div className="col-span-2">
+            <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🔥</span>
+                  <CardTitle className="text-lg">Your Streak</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-baseline gap-2">
+                  <div className="text-4xl font-bold text-orange-600 dark:text-orange-400">{streak.currentStreak}</div>
+                  <span className="text-sm text-muted-foreground">consecutive days</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Best: <span className="font-semibold text-foreground">{streak.longestStreak} days</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="col-span-2">
             <ReadingChallenge
               weeklyGoal={10}
               monthlyGoal={40}

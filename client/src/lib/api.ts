@@ -264,6 +264,11 @@ export const api = {
     return fetch(`${API_BASE}/api/achievements/user`, { headers }).then((r) => r.json());
   },
 
+  getStreak: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/user/streak`, { headers }).then((r) => r.json());
+  },
+
   checkAchievements: () => {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/achievements/check`, {

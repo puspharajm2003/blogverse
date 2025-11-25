@@ -1003,6 +1003,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user streak for consistency achievements
+  app.get("/api/user/streak", authenticateToken, async (req: any, res) => {
+    try {
+      const streak = await storage.getStreak(req.userId);
+      res.json(streak);
+    } catch (error) {
+      console.error("Failed to fetch streak:", error);
+      res.status(500).json({ error: "Failed to fetch streak" });
+    }
+  });
+
   // Plagiarism Checker Endpoints
   app.post("/api/plagiarism/check", authenticateToken, async (req: any, res) => {
     try {

@@ -164,6 +164,16 @@ export const userAchievements = pgTable("user_achievements", {
   progress: integer("progress").default(0), // 0-100 for partial progress
 });
 
+// User streaks table for tracking consecutive content creation days
+export const userStreaks = pgTable("user_streaks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  currentStreak: integer("current_streak").default(0), // consecutive days
+  longestStreak: integer("longest_streak").default(0), // best streak ever
+  lastPublishDate: timestamp("last_publish_date"), // when they last published
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 // Plagiarism check results table
 export const plagiarismChecks = pgTable("plagiarism_checks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
