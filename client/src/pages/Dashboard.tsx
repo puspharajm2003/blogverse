@@ -12,6 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
+import { ReadingChallenge } from "@/components/ReadingChallenge";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -133,6 +134,21 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Reading Challenge Widget */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="col-span-3">
+            <ReadingChallenge
+              weeklyGoal={10}
+              monthlyGoal={40}
+              articlesReadThisWeek={3}
+              articlesReadThisMonth={12}
+            />
+          </div>
+          
+          {/* Placeholder for future widget */}
+          <div className="col-span-4" />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

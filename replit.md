@@ -6,6 +6,33 @@ BlogVerse is a modern SaaS blogging platform designed for creating, publishing, 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (November 25, 2025)
+
+### My Articles & Dashboard Enhancements
+1. **Quick Edit Button** - Added on each article card:
+   - Inline modal for editing title and tags
+   - No need to go to full editor for minor changes
+   - Data-testid: `button-quick-edit-{articleId}`
+
+2. **Reading Challenge Widget** - New dashboard component:
+   - Weekly and monthly reading goal tracking
+   - Visual progress bar with percentage
+   - Challenge selector (weekly/monthly toggle)
+   - Stats overview showing articles read vs goal
+   - Motivational messages based on progress
+   - Auto-calculates remaining articles needed
+
+3. **QuickEditModal Component** - Reusable modal for quick edits:
+   - Edit article title inline
+   - Add/remove tags with visual badges
+   - Tag management with Enter key support
+   - Uses updateArticle API endpoint
+
+### Dark Mode Enhancement (Previous)
+- DarkModeToggle component with multiple variants
+- Enhanced ThemeSettings page with dedicated dark mode section
+- Landing page navbar integration with dropdown theme selector
+
 ## System Architecture
 
 ### Frontend Architecture

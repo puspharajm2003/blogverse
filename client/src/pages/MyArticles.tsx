@@ -27,7 +27,8 @@ import {
   Share2,
   MoreVertical,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Pencil
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -45,6 +46,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { QuickEditModal } from "@/components/QuickEditModal";
 
 interface Article {
   id: string;
@@ -502,6 +504,7 @@ function EmptyState({ activeTab }: { activeTab: string }) {
 }
 
 function ArticleCard({ article, setLocation, onRefresh }: any) {
+  const [quickEditOpen, setQuickEditOpen] = useState(false);
   const readingTime = calculateReadingTime(article.content || "");
   const wordCount = (article.content || "").split(/\s+/).filter((w: string) => w.length > 0).length;
 
@@ -611,6 +614,16 @@ function ArticleCard({ article, setLocation, onRefresh }: any) {
               <Edit2 className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
               Edit
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 group/btn border-border/50 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all"
+              onClick={() => setQuickEditOpen(true)}
+              data-testid={`button-quick-edit-${article.id}`}
+              title="Quick edit title and tags"
+            >
+              <Pencil className="h-4 w-4 group-hover/btn:text-amber-600 transition-colors" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-muted/80 transition-colors">
@@ -633,6 +646,13 @@ function ArticleCard({ article, setLocation, onRefresh }: any) {
             </DropdownMenu>
           </div>
         </div>
+
+        <QuickEditModal
+          open={quickEditOpen}
+          onOpenChange={setQuickEditOpen}
+          article={article}
+          onSave={onRefresh}
+        />
       </Card>
     </div>
   );
