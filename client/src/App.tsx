@@ -32,6 +32,7 @@ const Feedback = lazy(() => import("@/pages/Feedback"));
 const Bookmarks = lazy(() => import("@/pages/Bookmarks"));
 const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
 const LearningPath = lazy(() => import("@/pages/LearningPath"));
+const Import = lazy(() => import("@/pages/Import"));
 
 // Preload critical routes
 const preloadRoute = (Component: any) => {
@@ -74,6 +75,7 @@ function Router() {
         <Route path="/bookmarks" component={Bookmarks} />
         <Route path="/notifications" component={NotificationSettings} />
         <Route path="/learning" component={LearningPath} />
+        <Route path="/import" component={Import} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

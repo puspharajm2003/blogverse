@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress } from "@shared/schema";
-import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress } from "@shared/schema";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress, importBatches, seoMetrics } from "@shared/schema";
+import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress, ImportBatch, InsertImportBatch, SeoMetric, InsertSeoMetric } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -94,6 +94,14 @@ export interface IStorage {
   getLearningProgress(userId: string): Promise<LearningProgress | undefined>;
   completeLessonStep(userId: string, lessonId: string): Promise<LearningProgress | undefined>;
   getOnboardingStatus(userId: string): Promise<{ completed: boolean; progress: number; currentLesson?: string }>;
+
+  // Import & SEO
+  createImportBatch(batch: InsertImportBatch): Promise<ImportBatch>;
+  getImportBatch(id: string): Promise<ImportBatch | undefined>;
+  getUserImportBatches(userId: string, limit?: number): Promise<ImportBatch[]>;
+  updateImportBatch(id: string, updates: Partial<ImportBatch>): Promise<ImportBatch | undefined>;
+  createSeoMetric(metric: InsertSeoMetric): Promise<SeoMetric>;
+  getArticleSeoMetric(articleId: string): Promise<SeoMetric | undefined>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -1011,6 +1019,40 @@ export class PostgresStorage implements IStorage {
       progress: lp.progressPercent || 0,
       currentLesson: lp.currentLesson || undefined,
     };
+  }
+
+  // Import & SEO Methods
+  async createImportBatch(batch: InsertImportBatch): Promise<ImportBatch> {
+    const result = await db.insert(importBatches).values(batch).returning();
+    return result[0];
+  }
+
+  async getImportBatch(id: string): Promise<ImportBatch | undefined> {
+    const result = await db.select().from(importBatches).where(eq(importBatches.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserImportBatches(userId: string, limit = 10): Promise<ImportBatch[]> {
+    return db.select()
+      .from(importBatches)
+      .where(eq(importBatches.userId, userId))
+      .orderBy(desc(importBatches.createdAt))
+      .limit(limit);
+  }
+
+  async updateImportBatch(id: string, updates: Partial<ImportBatch>): Promise<ImportBatch | undefined> {
+    const result = await db.update(importBatches).set(updates).where(eq(importBatches.id, id)).returning();
+    return result[0];
+  }
+
+  async createSeoMetric(metric: InsertSeoMetric): Promise<SeoMetric> {
+    const result = await db.insert(seoMetrics).values(metric).returning();
+    return result[0];
+  }
+
+  async getArticleSeoMetric(articleId: string): Promise<SeoMetric | undefined> {
+    const result = await db.select().from(seoMetrics).where(eq(seoMetrics.articleId, articleId)).limit(1);
+    return result[0];
   }
 }
 

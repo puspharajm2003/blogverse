@@ -392,3 +392,49 @@ export const insertLearningProgressSchema = createInsertSchema(learningProgress)
   updatedAt: true,
 });
 export type InsertLearningProgress = z.infer<typeof insertLearningProgressSchema>;
+
+// Article import batches table
+export const importBatches = pgTable("import_batches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  blogId: varchar("blog_id").references(() => blogs.id),
+  fileName: text("file_name").notNull(),
+  totalCount: integer("total_count").notNull().default(0),
+  importedCount: integer("imported_count").notNull().default(0),
+  status: varchar("status").notNull().default("pending"), // pending, processing, completed, failed
+  errorMessage: text("error_message"),
+  parsedData: jsonb("parsed_data").default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  completedAt: timestamp("completed_at"),
+});
+
+// SEO metrics table
+export const seoMetrics = pgTable("seo_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  titleScore: integer("title_score").default(0), // 0-100
+  contentScore: integer("content_score").default(0), // 0-100
+  keywordScore: integer("keyword_score").default(0), // 0-100
+  readabilityScore: integer("readability_score").default(0), // 0-100
+  overallScore: integer("overall_score").default(0), // 0-100
+  suggestedKeywords: text("suggested_keywords").array().default(sql`ARRAY[]::text[]`),
+  suggestions: jsonb("suggestions").default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export type ImportBatch = typeof importBatches.$inferSelect;
+export const insertImportBatchSchema = createInsertSchema(importBatches).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+export type InsertImportBatch = z.infer<typeof insertImportBatchSchema>;
+
+export type SeoMetric = typeof seoMetrics.$inferSelect;
+export const insertSeoMetricSchema = createInsertSchema(seoMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertSeoMetric = z.infer<typeof insertSeoMetricSchema>;

@@ -8,7 +8,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 25, 2025)
 
-### Four Major Features Implemented
+### Five Major Features Implemented
 
 #### 1. User Feedback System
 - Dedicated feedback form at `/feedback` with rich input options
@@ -42,6 +42,24 @@ Preferred communication style: Simple, everyday language.
 - Lesson completion tracking and timestamps
 - Auto-completion detection when all lessons done
 - API endpoints: POST/GET `/api/learning/*` for initialization, progress, status, and completion
+
+#### 5. Article Import with SEO Analysis & Quality Metrics
+- Bulk import articles from exported content at `/import`
+- Parse text/plain articles exported from other platforms
+- **SEO Analysis**: Automatic scoring for title, content, keywords, readability
+- **Quality Metrics**: Overall SEO score (0-100), word count, reading time estimates
+- **Actionable Suggestions**: AI-powered recommendations for SEO optimization
+- **Batch Processing**: Import multiple articles with progress tracking
+- **Visual Dashboard**: Cards showing parsed articles with individual SEO scores
+- Statistics: Total articles, average SEO score, total words
+- Database tables: `import_batches` (tracking import sessions), `seo_metrics` (storing analysis)
+- API endpoints: POST `/api/articles/import`, GET `/api/import/batches`, GET `/api/articles/:articleId/seo`
+- Features:
+  - Automatic keyword extraction
+  - Title optimization scoring (30-60 character sweet spot)
+  - Content depth analysis (500+ word recommendation)
+  - Readability assessment
+  - Customizable import status (draft/published)
 
 ### Advanced UI Enhancements & AI Features (Previous)
 

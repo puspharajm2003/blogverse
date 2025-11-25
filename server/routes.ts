@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema, insertChatMessageSchema, insertFeedbackSchema, insertBookmarkSchema, insertNotificationSchema, insertNotificationPreferenceSchema, insertLearningProgressSchema } from "@shared/schema";
+import { insertUserSchema, insertBlogSchema, insertArticleSchema, insertAnalyticsEventSchema, insertChatMessageSchema, insertFeedbackSchema, insertBookmarkSchema, insertNotificationSchema, insertNotificationPreferenceSchema, insertLearningProgressSchema, insertImportBatchSchema, insertSeoMetricSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 // Generate professional prompts based on generation type
@@ -351,9 +351,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isAdminEmail = parsed.data.email === "puspharaj.m2003@gmail.com";
       
       const user = await storage.createUser({
-        ...parsed.data,
+        email: parsed.data.email,
         password: hashedPassword,
-        isAdmin: isAdminEmail,
+        displayName: parsed.data.displayName,
         plan: isAdminEmail ? "enterprise" : "free",
       });
 
@@ -1238,6 +1238,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       res.status(500).json({ error: "Failed to complete lesson" });
+    }
+  });
+
+  // Import & SEO Routes
+  app.post("/api/articles/import", authenticateToken, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.userId);
+      if (!user) return res.status(401).json({ error: "User not found" });
+
+      const blogs = await storage.getBlogsByUser(req.userId);
+      if (!blogs.length) return res.status(400).json({ error: "No blog found" });
+
+      const { title, content, excerpt, status, tags } = req.body;
+      if (!title || !content) return res.status(400).json({ error: "Title and content required" });
+
+      // Create article
+      const article = await storage.createArticle({
+        blogId: blogs[0].id,
+        title,
+        content,
+        excerpt: excerpt || content.substring(0, 150),
+        slug: title.toLowerCase().replace(/\s+/g, "-"),
+        tags: tags || [],
+        status: status || "draft",
+      });
+
+      // Calculate and create SEO metrics
+      const titleLength = title.length;
+      const contentLength = content.length;
+      const wordCount = content.split(/\s+/).length;
+
+      let titleScore = 0;
+      if (titleLength >= 30 && titleLength <= 60) titleScore = 100;
+      else if (titleLength >= 20 && titleLength <= 70) titleScore = 80;
+      else if (titleLength > 0) titleScore = 60;
+
+      let contentScore = 0;
+      if (wordCount >= 800) contentScore = 100;
+      else if (wordCount >= 500) contentScore = 80;
+      else if (wordCount >= 300) contentScore = 60;
+      else contentScore = 40;
+
+      const keywords = tags || [];
+      const keywordScore = Math.min(100, keywords.length * 12);
+      const readabilityScore = Math.min(100, Math.round((contentLength / 5000) * 100));
+      const overallScore = Math.round((titleScore + contentScore + keywordScore + readabilityScore) / 4);
+
+      const suggestions: string[] = [];
+      if (titleLength < 30 || titleLength > 60) suggestions.push("Title should be between 30-60 characters for optimal SEO");
+      if (wordCount < 500) suggestions.push("Increase content to at least 500 words for better ranking");
+      if (keywords.length < 5) suggestions.push("Add more relevant keywords throughout the content");
+
+      await storage.createSeoMetric({
+        articleId: article.id,
+        titleScore,
+        contentScore,
+        keywordScore,
+        readabilityScore,
+        overallScore,
+        suggestedKeywords: keywords,
+        suggestions: suggestions as any,
+      });
+
+      res.status(201).json({ article, seo: { titleScore, contentScore, keywordScore, readabilityScore, overallScore } });
+    } catch (error) {
+      console.error("Import error:", error);
+      res.status(500).json({ error: "Failed to import article" });
+    }
+  });
+
+  app.get("/api/import/batches", authenticateToken, async (req: any, res) => {
+    try {
+      const batches = await storage.getUserImportBatches(req.userId);
+      res.json(batches);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch import batches" });
+    }
+  });
+
+  app.get("/api/articles/:articleId/seo", authenticateToken, async (req: any, res) => {
+    try {
+      const seo = await storage.getArticleSeoMetric(req.params.articleId);
+      if (!seo) return res.status(404).json({ error: "SEO metrics not found" });
+      res.json(seo);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch SEO metrics" });
     }
   });
 
