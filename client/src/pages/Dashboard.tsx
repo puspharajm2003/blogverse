@@ -5,7 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ArrowUpRight, Eye, BookOpen, Zap, MoreHorizontal, PenTool, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,24 +14,54 @@ import {
   } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { ReadingChallenge } from "@/components/ReadingChallenge";
+import { useAuth } from "@/lib/auth";
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<any>(null);
+  const { user, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [stats, setStats] = useState<any>({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
   const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userAchievements, setUserAchievements] = useState<any[]>([]);
   const [recentUnlocked, setRecentUnlocked] = useState<any[]>([]);
+  const [avgViews, setAvgViews] = useState(0);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/login");
+    }
+  }, [user, authLoading, setLocation]);
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchDashboardStats = async () => {
       try {
         const [statsData, chartDataRes, achievementsData] = await Promise.all([
           api.getDashboardStats(),
           api.getChartData(7),
-          api.get("/api/achievements/user"),
+          api.getUserAchievements?.() || Promise.resolve([]),
         ]);
-        setStats(statsData);
-        setChartData(chartDataRes);
+        
+        // Ensure stats has all expected properties
+        const normalizedStats = {
+          totalBlogs: statsData?.totalBlogs || 0,
+          totalArticles: statsData?.totalArticles || 0,
+          totalViews: statsData?.totalViews || 0,
+          recentArticles: statsData?.recentArticles || []
+        };
+        
+        setStats(normalizedStats);
+        
+        // Calculate average views per post
+        if (normalizedStats.totalArticles > 0) {
+          setAvgViews(Math.round(normalizedStats.totalViews / normalizedStats.totalArticles));
+        } else {
+          setAvgViews(0);
+        }
+        
+        setChartData(chartDataRes || []);
         setUserAchievements(achievementsData || []);
         
         // Show only the 3 most recently unlocked achievements
@@ -41,6 +71,8 @@ export default function Dashboard() {
         setRecentUnlocked(sorted.slice(0, 3));
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
+        // Set default values on error
+        setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
       } finally {
         setIsLoading(false);
       }
@@ -48,12 +80,12 @@ export default function Dashboard() {
 
     fetchDashboardStats();
 
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(fetchDashboardStats, 5000);
+    // Auto-refresh every 3 seconds for real-time updates
+    const interval = setInterval(fetchDashboardStats, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <SidebarLayout>
         <div className="p-8 max-w-7xl mx-auto">
@@ -66,6 +98,10 @@ export default function Dashboard() {
         </div>
       </SidebarLayout>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -137,11 +173,11 @@ export default function Dashboard() {
               <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {stats?.totalArticles > 0 ? Math.round(stats.totalViews / stats.totalArticles) : "0"}
-              </div>
+              <div className="text-2xl font-bold">{avgViews.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
-                 <span className="text-muted-foreground">Per article average</span>
+                <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
+                <span className="text-green-500 font-medium">Per article</span>
+                <span className="ml-1">average</span>
               </p>
             </CardContent>
           </Card>
