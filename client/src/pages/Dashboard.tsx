@@ -86,7 +86,7 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
-        setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
+        // Don't reset to 0 on error - keep the previous values
       } finally {
         setIsLoading(false);
       }
