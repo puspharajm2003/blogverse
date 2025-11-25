@@ -1,11 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star, X, Loader2, Moon, Sun } from "lucide-react";
+import { ArrowRight, Check, Globe, Sparkles, Zap, Shield, BarChart3, Star, X, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { useTheme } from "next-themes";
+import { DarkModeToggle } from "@/components/DarkModeToggle";
 import heroImage from "@assets/generated_images/abstract_modern_digital_publishing_hero_background.png";
 
 export default function Landing() {
@@ -14,7 +14,6 @@ export default function Landing() {
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [showDemoPanel, setShowDemoPanel] = useState(false);
   const [demoUser, setDemoUser] = useState<any>(null);
-  const { theme, setTheme } = useTheme();
 
   // Redirect logged-in users to dashboard
   useEffect(() => {
@@ -69,20 +68,8 @@ export default function Landing() {
             <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
             <a href="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Success Stories</a>
           </nav>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              data-testid="toggle-theme-navbar"
-              title="Toggle dark mode"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
+          <div className="flex items-center gap-3">
+            <DarkModeToggle variant="dropdown" size="md" />
             <Link href="/login">
               <Button variant="ghost">Sign in</Button>
             </Link>
