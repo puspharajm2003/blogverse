@@ -127,6 +127,16 @@ export default function ArticleMarketplace() {
 
   const cartArticles = articles.filter(a => cart.includes(a.id));
 
+  const handleCheckout = () => {
+    if (cart.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+    toast.success(`Order placed! Total: $${cartTotal.toFixed(2)}. You will receive the articles via email.`);
+    setCart([]);
+    setShowCart(false);
+  };
+
   return (
     <SidebarLayout>
       <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
@@ -246,7 +256,7 @@ export default function ArticleMarketplace() {
                         <span className="text-xl font-semibold">Total:</span>
                         <span className="text-3xl font-bold text-primary">${cartTotal.toFixed(2)}</span>
                       </div>
-                      <Button className="w-full gap-2" size="lg" data-testid="button-checkout">
+                      <Button className="w-full gap-2" size="lg" data-testid="button-checkout" onClick={handleCheckout}>
                         <DollarSign className="h-5 w-5" />
                         Proceed to Checkout
                       </Button>
