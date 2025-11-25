@@ -20,13 +20,6 @@ import { useAuth } from "@/lib/auth";
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const [stats, setStats] = useState<any>({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userAchievements, setUserAchievements] = useState<any[]>([]);
-  const [recentUnlocked, setRecentUnlocked] = useState<any[]>([]);
-  const [avgViews, setAvgViews] = useState(0);
-  const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0, lastPublishDate: null });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -35,11 +28,11 @@ export default function Dashboard() {
     }
   }, [user, authLoading, setLocation]);
 
-  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+  const { data: statsResponse } = useQuery({
     queryKey: ["dashboard", "stats", user?.id],
     queryFn: () => api.getDashboardStats(),
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
   });
 
@@ -64,62 +57,29 @@ export default function Dashboard() {
     staleTime: 1000 * 60 * 5,
   });
 
-  useEffect(() => {
-    if (!statsResponse) {
-      setIsLoading(true);
-      return;
-    }
-
-    try {
-      // Handle error responses
-      if (statsResponse?.error) {
-        console.error("Stats API error:", statsResponse.error);
-        setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
-        setIsLoading(false);
-        return;
-      }
-      
-      // Normalize stats
-      const normalizedStats = {
-        totalBlogs: parseInt(statsResponse?.totalBlogs) || 0,
-        totalArticles: parseInt(statsResponse?.totalArticles) || 0,
-        totalViews: parseInt(statsResponse?.totalViews) || 0,
-        recentArticles: statsResponse?.recentArticles || []
-      };
-      
-      setStats(normalizedStats);
-      
-      // Calculate average views per post
-      if (normalizedStats.totalArticles > 0) {
-        const avg = Math.round(normalizedStats.totalViews / normalizedStats.totalArticles);
-        setAvgViews(avg);
-      } else {
-        setAvgViews(0);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  // Memoize computed values
+  const stats = useMemo(() => {
+    if (!statsResponse) return { totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] };
+    return {
+      totalBlogs: parseInt(statsResponse?.totalBlogs) || 0,
+      totalArticles: parseInt(statsResponse?.totalArticles) || 0,
+      totalViews: parseInt(statsResponse?.totalViews) || 0,
+      recentArticles: statsResponse?.recentArticles || []
+    };
   }, [statsResponse]);
 
-  useEffect(() => {
-    if (chartResponse) setChartData(chartResponse || []);
-  }, [chartResponse]);
+  const avgViews = useMemo(() => {
+    return stats.totalArticles > 0 ? Math.round(stats.totalViews / stats.totalArticles) : 0;
+  }, [stats.totalArticles, stats.totalViews]);
 
-  useEffect(() => {
-    if (streakResponse) setStreak(streakResponse);
-  }, [streakResponse]);
-
-  useEffect(() => {
-    if (achievementsResponse && Array.isArray(achievementsResponse)) {
-      setUserAchievements(achievementsResponse);
-      const sorted = achievementsResponse.sort((a: any, b: any) => 
-        new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
-      );
-      setRecentUnlocked(sorted.slice(0, 3));
-    }
+  const recentUnlocked = useMemo(() => {
+    if (!achievementsResponse || !Array.isArray(achievementsResponse)) return [];
+    return achievementsResponse
+      .sort((a: any, b: any) => new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime())
+      .slice(0, 3);
   }, [achievementsResponse]);
 
-  if (authLoading || isLoading) {
+  if (authLoading || !user) {
     return (
       <SidebarLayout>
         <div className="p-8 max-w-7xl mx-auto">
@@ -132,10 +92,6 @@ export default function Dashboard() {
         </div>
       </SidebarLayout>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (
@@ -229,11 +185,11 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-baseline gap-2">
-                  <div className="text-4xl font-bold text-orange-600 dark:text-orange-400">{streak.currentStreak}</div>
+                  <div className="text-4xl font-bold text-orange-600 dark:text-orange-400">{streakResponse?.currentStreak || 0}</div>
                   <span className="text-sm text-muted-foreground">consecutive days</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Best: <span className="font-semibold text-foreground">{streak.longestStreak} days</span>
+                  Best: <span className="font-semibold text-foreground">{streakResponse?.longestStreak || 0} days</span>
                 </div>
               </CardContent>
             </Card>
@@ -261,7 +217,7 @@ export default function Dashboard() {
                 </Link>
               </div>
               <CardDescription className="text-xs">
-                {userAchievements.length} achievements unlocked
+                {achievementsResponse?.length || 0} achievements unlocked
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -303,7 +259,7 @@ export default function Dashboard() {
             <CardContent className="pl-2">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <AreaChart data={chartResponse || []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -373,11 +329,11 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Auto-refresh indicator */}
+        {/* Data freshness indicator */}
         <div className="text-xs text-muted-foreground text-center">
           <span className="inline-flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Live data • Updates every 5 seconds
+            Live data • Cached for optimal performance
           </span>
         </div>
       </div>

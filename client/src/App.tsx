@@ -34,20 +34,8 @@ const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
 const LearningPath = lazy(() => import("@/pages/LearningPath"));
 const Import = lazy(() => import("@/pages/Import"));
 
-// Preload critical routes
-const preloadRoute = (Component: any) => {
-  setTimeout(() => {
-    Component?.render?.({}, document.createElement("div"));
-  }, 2000);
-};
-
 function Router() {
   const [location] = useLocation();
-
-  // Preload dashboard on app load
-  useEffect(() => {
-    setTimeout(() => preloadRoute(Dashboard), 3000);
-  }, []);
 
   return (
     <Suspense fallback={<LoadingFallback />}>
