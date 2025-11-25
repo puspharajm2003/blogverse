@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { sanitizeForDisplay } from "@/lib/sanitize";
 
 interface QuickEditModalProps {
   open: boolean;
@@ -126,6 +128,15 @@ export function QuickEditModal({
                 ))}
               </div>
             )}
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-2">
+            <Label>Content Preview</Label>
+            <div className="max-h-[200px] overflow-y-auto p-3 bg-muted/30 rounded-lg border border-border/50 text-sm text-muted-foreground line-clamp-6">
+              {article?.content ? sanitizeForDisplay(article.content) : "No content"}
+            </div>
           </div>
         </div>
 

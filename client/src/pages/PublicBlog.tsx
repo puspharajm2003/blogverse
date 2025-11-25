@@ -520,14 +520,13 @@ export default function PublicBlog() {
 
                     {/* Article Content */}
                     <CardContent className="pt-8 space-y-6">
-                      <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                      <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed">
                         {typeof selectedArticle.content === 'string' && selectedArticle.content ? (
-                          <p 
-                            className="text-base leading-relaxed text-slate-800 dark:text-slate-200"
+                          <div 
+                            className="text-base leading-relaxed text-slate-800 dark:text-slate-200 article-content"
+                            dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
                             data-testid="text-article-content"
-                          >
-                            {sanitizeForDisplay(selectedArticle.content)}
-                          </p>
+                          />
                         ) : (
                           <p className="text-slate-500">No content available</p>
                         )}
