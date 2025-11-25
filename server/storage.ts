@@ -375,7 +375,6 @@ export class PostgresStorage implements IStorage {
         email: demoEmail,
         password: hashedPassword,
         displayName: "Demo Writer",
-        isAdmin: false,
         plan: "free",
       });
 
@@ -495,7 +494,7 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateCommentStatus(commentId: string, status: string): Promise<any> {
-    const result = await db.update(comments).set({ status }).where(eq(comments.id, commentId)).returning();
+    const result = await db.update(comments).set({ approved: status === "approved" }).where(eq(comments.id, commentId)).returning();
     return result[0];
   }
 
@@ -885,7 +884,12 @@ export class PostgresStorage implements IStorage {
   }
 
   async getUserBookmarks(userId: string, collection?: string): Promise<any[]> {
-    let query = db.select({
+    const conditions = [eq(bookmarks.userId, userId)];
+    if (collection) {
+      conditions.push(eq(bookmarks.collectionName, collection));
+    }
+
+    return db.select({
       id: bookmarks.id,
       userId: bookmarks.userId,
       articleId: bookmarks.articleId,
@@ -902,13 +906,8 @@ export class PostgresStorage implements IStorage {
       }
     }).from(bookmarks)
       .leftJoin(articles, eq(bookmarks.articleId, articles.id))
-      .where(eq(bookmarks.userId, userId));
-
-    if (collection) {
-      query = query.where(eq(bookmarks.collectionName, collection));
-    }
-
-    return query.orderBy(desc(bookmarks.createdAt));
+      .where(and(...conditions))
+      .orderBy(desc(bookmarks.createdAt));
   }
 
   async isArticleBookmarked(userId: string, articleId: string): Promise<boolean> {
@@ -925,11 +924,14 @@ export class PostgresStorage implements IStorage {
   }
 
   async getUserNotifications(userId: string, unreadOnly = false): Promise<Notification[]> {
-    let query = db.select().from(notifications).where(eq(notifications.userId, userId));
+    const conditions = [eq(notifications.userId, userId)];
     if (unreadOnly) {
-      query = query.where(eq(notifications.read, false));
+      conditions.push(eq(notifications.read, false));
     }
-    return query.orderBy(desc(notifications.createdAt));
+    return db.select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt));
   }
 
   async markNotificationAsRead(id: string): Promise<Notification | undefined> {
@@ -1005,8 +1007,8 @@ export class PostgresStorage implements IStorage {
     const lp = await this.getLearningProgress(userId);
     if (!lp) return { completed: false, progress: 0, currentLesson: "welcome" };
     return {
-      completed: lp.progressPercent >= 100,
-      progress: lp.progressPercent,
+      completed: (lp.progressPercent || 0) >= 100,
+      progress: lp.progressPercent || 0,
       currentLesson: lp.currentLesson || undefined,
     };
   }

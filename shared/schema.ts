@@ -91,7 +91,7 @@ export const comments = pgTable("comments", {
   authorName: text("author_name").notNull(),
   authorEmail: text("author_email").notNull(),
   content: text("content").notNull(),
-  status: varchar("status").notNull().default("pending"), // pending, approved, rejected
+  approved: boolean("approved").notNull().default(false), // approved status for moderation
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
