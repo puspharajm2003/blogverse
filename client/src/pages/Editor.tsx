@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
 import { useTheme } from "next-themes";
+import { useLocation } from "wouter";
 import { exportArticleToPDF, exportArticleAsDocx } from "@/lib/pdf-export";
 import { toast } from "sonner";
 import { calculateReadingTime, formatReadingTime } from "@/lib/reading-time";
@@ -177,6 +178,8 @@ interface HistoryEntry {
 
 export default function Editor() {
   const { theme, setTheme } = useTheme();
+  const [, setLocation] = useLocation();
+  
   const [title, setTitle] = useState("Untitled Draft");
   const [content, setContent] = useState("<p>Start writing...</p>");
   const [isAiOpen, setIsAiOpen] = useState(false);
@@ -199,15 +202,21 @@ export default function Editor() {
   const [user, setUser] = useState<any>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showCollaborators, setShowCollaborators] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize blog and user profile on mount
+  // Initialize blog, user profile, and load article if editing
   useEffect(() => {
-    const initializeBlog = async () => {
+    const initializeEditor = async () => {
       try {
+        // Get query parameter for articleId
+        const params = new URLSearchParams(window.location.search);
+        const queryArticleId = params.get('articleId');
+        
         // Load user profile for author bio
         const userProfile = await api.getProfile();
         setUser(userProfile);
         
+        // Load or create blog
         const blogs = await api.getBlogs();
         let targetBlog = blogs[0];
         
@@ -220,12 +229,30 @@ export default function Editor() {
         }
         
         setBlogId(targetBlog.id);
+        
+        // Load existing article if articleId provided
+        if (queryArticleId) {
+          setIsLoading(true);
+          const article = await api.getArticle(queryArticleId);
+          if (article) {
+            setArticleId(article.id);
+            setTitle(article.title || "Untitled Draft");
+            setContent(article.content || "<p>Start writing...</p>");
+            setTags(article.tags || []);
+            setAuthorBio(article.authorBio || "");
+            if (article.scheduledPublishAt) {
+              setScheduledPublishAt(article.scheduledPublishAt.substring(0, 16));
+            }
+          }
+          setIsLoading(false);
+        }
       } catch (error) {
-        console.error("Failed to initialize blog:", error);
+        console.error("Failed to initialize editor:", error);
+        setIsLoading(false);
       }
     };
     
-    initializeBlog();
+    initializeEditor();
   }, []);
 
   // Autosave functionality
@@ -453,6 +480,22 @@ export default function Editor() {
   };
 
   const wordCount = countWords(content);
+  
+  // Show loading state while article is being loaded
+  if (isLoading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center space-y-4">
+            <div className="inline-block animate-spin">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+            <p className="text-muted-foreground">Loading article...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
   const readingTime = calculateReadingTime(content);
 
   return (
