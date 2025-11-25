@@ -128,10 +128,8 @@ export const api = {
   // Dashboard
   getDashboardStats: () => {
     const headers = getAuthHeader();
-    return fetch(`${API_BASE}/api/dashboard/stats`, { 
-      headers,
-      cache: "no-store"  // Disable HTTP caching for real-time data
-    })
+    const timestamp = Date.now();  // Cache buster
+    return fetch(`${API_BASE}/api/dashboard/stats?t=${timestamp}`, { headers })
       .then((r) => {
         if (!r.ok) {
           throw new Error(`HTTP error! status: ${r.status}`);
@@ -143,12 +141,14 @@ export const api = {
   // Analytics
   getDetailedAnalytics: () => {
     const headers = getAuthHeader();
-    return fetch(`${API_BASE}/api/analytics/detailed`, { headers, cache: "no-store" }).then((r) => r.json());
+    const timestamp = Date.now();
+    return fetch(`${API_BASE}/api/analytics/detailed?t=${timestamp}`, { headers }).then((r) => r.json());
   },
 
   getChartData: (days: number = 7) => {
     const headers = getAuthHeader();
-    return fetch(`${API_BASE}/api/analytics/chart?days=${days}`, { headers, cache: "no-store" }).then((r) => r.json());
+    const timestamp = Date.now();
+    return fetch(`${API_BASE}/api/analytics/chart?days=${days}&t=${timestamp}`, { headers }).then((r) => r.json());
   },
 
   // Demo
