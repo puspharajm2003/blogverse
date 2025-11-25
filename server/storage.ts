@@ -765,10 +765,17 @@ export class PostgresStorage implements IStorage {
   async checkAndUnlockAchievements(userId: string): Promise<string[]> {
     const unlockedIds: string[] = [];
     
-    // Get user stats
+    // Get user stats - filter by user's blogs
+    const userBlogs = await db.select({ id: blogs.id })
+      .from(blogs)
+      .where(eq(blogs.userId, userId));
+    
+    const blogIds = userBlogs.map(b => b.id);
+    
     const userArticles = await db.select()
       .from(articles)
       .where(and(
+        inArray(articles.blogId, blogIds.length > 0 ? blogIds : [""]),
         eq(articles.status, "published")
       ));
     
@@ -778,7 +785,7 @@ export class PostgresStorage implements IStorage {
     })
       .from(analyticsEvents)
       .innerJoin(articles, eq(analyticsEvents.articleId, articles.id))
-      .where(eq(articles.status, "published"));
+      .where(inArray(articles.blogId, blogIds.length > 0 ? blogIds : [""]));
     
     const views = (totalViews[0]?.total as number) || 0;
 

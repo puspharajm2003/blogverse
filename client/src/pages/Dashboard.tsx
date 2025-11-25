@@ -2,7 +2,7 @@ import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowUpRight, Eye, BookOpen, Zap, MoreHorizontal, PenTool } from "lucide-react";
+import { ArrowUpRight, Eye, BookOpen, Zap, MoreHorizontal, PenTool, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Link } from "wouter";
@@ -12,22 +12,33 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { ReadingChallenge } from "@/components/ReadingChallenge";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userAchievements, setUserAchievements] = useState<any[]>([]);
+  const [recentUnlocked, setRecentUnlocked] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const [statsData, chartDataRes] = await Promise.all([
+        const [statsData, chartDataRes, achievementsData] = await Promise.all([
           api.getDashboardStats(),
           api.getChartData(7),
+          api.get("/api/achievements/user"),
         ]);
         setStats(statsData);
         setChartData(chartDataRes);
+        setUserAchievements(achievementsData || []);
+        
+        // Show only the 3 most recently unlocked achievements
+        const sorted = (achievementsData || []).sort((a: any, b: any) => 
+          new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
+        );
+        setRecentUnlocked(sorted.slice(0, 3));
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
       } finally {
@@ -136,7 +147,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Reading Challenge Widget */}
+        {/* Reading Challenge & Achievements Widget */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <div className="col-span-3">
             <ReadingChallenge
@@ -147,8 +158,50 @@ export default function Dashboard() {
             />
           </div>
           
-          {/* Placeholder for future widget */}
-          <div className="col-span-4" />
+          {/* Recent Achievements */}
+          <Card className="col-span-4">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-500" />
+                  <CardTitle>Recent Achievements</CardTitle>
+                </div>
+                <Link href="/achievements">
+                  <Button variant="ghost" size="sm">View All</Button>
+                </Link>
+              </div>
+              <CardDescription className="text-xs">
+                {userAchievements.length} achievements unlocked
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentUnlocked.length > 0 ? (
+                <div className="space-y-3">
+                  {recentUnlocked.map((ua: any) => (
+                    <div key={ua.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
+                      <div className="text-2xl">{ua.achievement?.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{ua.achievement?.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ua.achievement?.points} pts • {new Date(ua.unlockedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                        {ua.achievement?.tier}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground">Publish articles to unlock achievements!</p>
+                  <Link href="/editor">
+                    <Button variant="ghost" size="sm" className="mt-2">Write Your First Post</Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

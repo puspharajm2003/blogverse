@@ -329,6 +329,13 @@ async function callOpenRouterAPI(messages: any[], maxTokens: number, type: strin
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize default achievements on startup
+  try {
+    await storage.initializeDefaultAchievements();
+  } catch (error) {
+    console.error("Failed to initialize achievements:", error);
+  }
+
   // Auth Routes
   app.post("/api/auth/signup", async (req, res) => {
     try {
@@ -542,6 +549,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updated = await storage.updateArticle(req.params.id, updates);
+      
+      // Check for achievement unlocks when article is published
+      if (updated && updated.status === "published" && (!article.status || article.status !== "published")) {
+        try {
+          await storage.checkAndUnlockAchievements(req.userId);
+        } catch (error) {
+          console.error("[WARNING] Failed to check achievements:", error);
+        }
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("[ERROR] Failed to update article:", error);

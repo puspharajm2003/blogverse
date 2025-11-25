@@ -22,15 +22,15 @@ export default function Achievements() {
   const loadAchievements = async () => {
     try {
       setLoading(true);
-      const [all, user] = await Promise.all([
+      const [all, userAch] = await Promise.all([
         api.get("/api/achievements"),
         api.get("/api/achievements/user"),
       ]);
       
       setAllAchievements(all || []);
-      setUserAchievements(user || []);
+      setUserAchievements(userAch || []);
       
-      const points = (user || []).reduce((sum: number, ua: any) => sum + (ua.achievement?.points || 0), 0);
+      const points = (userAch || []).reduce((sum: number, ua: any) => sum + (ua.achievement?.points || 0), 0);
       setTotalPoints(points);
     } catch (error) {
       console.error("Failed to load achievements:", error);
@@ -58,20 +58,20 @@ export default function Achievements() {
   const getTierBadgeVariant = (tier: string) => {
     switch (tier) {
       case "bronze":
-        return "secondary";
+        return "secondary" as const;
       case "silver":
-        return "outline";
+        return "outline" as const;
       case "gold":
-        return "default";
+        return "default" as const;
       case "platinum":
-        return "default";
+        return "default" as const;
       default:
-        return "outline";
+        return "outline" as const;
     }
   };
 
   const isUnlocked = (achievementId: string) => {
-    return userAchievements.some(ua => ua.achievementId === achievementId);
+    return userAchievements.some((ua: any) => ua.achievementId === achievementId);
   };
 
   const unlockedCount = userAchievements.length;
@@ -92,7 +92,7 @@ export default function Achievements() {
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-l-amber-500">
+            <Card className="border-l-4 border-l-amber-500" data-testid="stat-total-achievements">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Achievements</CardTitle>
               </CardHeader>
@@ -102,7 +102,7 @@ export default function Achievements() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-yellow-500">
+            <Card className="border-l-4 border-l-yellow-500" data-testid="stat-total-points">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Points</CardTitle>
               </CardHeader>
@@ -112,7 +112,7 @@ export default function Achievements() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-blue-500">
+            <Card className="border-l-4 border-l-blue-500" data-testid="stat-remaining">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Next Milestone</CardTitle>
               </CardHeader>
@@ -122,7 +122,7 @@ export default function Achievements() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-green-500">
+            <Card className="border-l-4 border-l-green-500" data-testid="stat-completion">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Completion</CardTitle>
               </CardHeader>
@@ -144,23 +144,23 @@ export default function Achievements() {
           ) : (
             <div className="space-y-6">
               {["bronze", "silver", "gold", "platinum"].map((tier) => {
-                const tierAchievements = allAchievements.filter(a => a.tier === tier);
+                const tierAchievements = allAchievements.filter((a: any) => a.tier === tier);
                 if (tierAchievements.length === 0) return null;
 
                 return (
-                  <div key={tier}>
+                  <div key={tier} data-testid={`tier-${tier}`}>
                     <div className="flex items-center gap-2 mb-4">
                       <div className={`h-3 w-3 rounded-full bg-gradient-to-r ${getTierColor(tier)}`} />
                       <h2 className="text-xl font-semibold capitalize">{tier} Tier</h2>
                       <span className="text-sm text-muted-foreground">
-                        ({tierAchievements.filter(a => isUnlocked(a.id)).length}/{tierAchievements.length})
+                        ({tierAchievements.filter((a: any) => isUnlocked(a.id)).length}/{tierAchievements.length})
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {tierAchievements.map((achievement) => {
+                      {tierAchievements.map((achievement: any) => {
                         const unlocked = isUnlocked(achievement.id);
-                        const userAch = userAchievements.find(ua => ua.achievementId === achievement.id);
+                        const userAch = userAchievements.find((ua: any) => ua.achievementId === achievement.id);
 
                         return (
                           <Card 
@@ -176,10 +176,10 @@ export default function Achievements() {
                               <div className="flex items-start justify-between mb-2">
                                 <div className="text-4xl">{achievement.icon}</div>
                                 {unlocked && (
-                                  <Trophy className="h-5 w-5 text-amber-500" />
+                                  <Trophy className="h-5 w-5 text-amber-500" data-testid={`unlocked-icon-${achievement.id}`} />
                                 )}
                                 {!unlocked && (
-                                  <Lock className="h-5 w-5 text-muted-foreground" />
+                                  <Lock className="h-5 w-5 text-muted-foreground" data-testid={`locked-icon-${achievement.id}`} />
                                 )}
                               </div>
                               <CardTitle className="text-lg">{achievement.title}</CardTitle>
@@ -200,7 +200,7 @@ export default function Achievements() {
                                   </Badge>
                                 </div>
                                 {unlocked && userAch && (
-                                  <div className="text-xs text-green-600 font-medium">
+                                  <div className="text-xs text-green-600 font-medium" data-testid={`unlocked-date-${achievement.id}`}>
                                     ✓ Unlocked {new Date(userAch.unlockedAt).toLocaleDateString()}
                                   </div>
                                 )}
