@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowUpRight, Eye, BookOpen, Zap, MoreHorizontal, PenTool, Trophy } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -34,70 +35,89 @@ export default function Dashboard() {
     }
   }, [user, authLoading, setLocation]);
 
+  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+    queryKey: ["dashboard", "stats", user?.id],
+    queryFn: () => api.getDashboardStats(),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    gcTime: 1000 * 60 * 10,
+  });
+
+  const { data: chartResponse } = useQuery({
+    queryKey: ["dashboard", "chart", user?.id],
+    queryFn: () => api.getChartData(7),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: achievementsResponse } = useQuery({
+    queryKey: ["achievements", "user", user?.id],
+    queryFn: () => api.getUserAchievements?.() || [],
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: streakResponse } = useQuery({
+    queryKey: ["streak", user?.id],
+    queryFn: () => api.getStreak?.() || { currentStreak: 0, longestStreak: 0, lastPublishDate: null },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
   useEffect(() => {
-    if (!user) return;
+    if (!statsResponse) {
+      setIsLoading(true);
+      return;
+    }
 
-    const fetchDashboardStats = async () => {
-      try {
-        const statsResponse = await api.getDashboardStats();
-        const chartResponse = await api.getChartData(7);
-        const achievementsResponse = await api.getUserAchievements?.() || [];
-        const streakResponse = await api.getStreak?.() || { currentStreak: 0, longestStreak: 0, lastPublishDate: null };
-        
-        setStreak(streakResponse);
-        
-        // Handle error responses
-        if (statsResponse?.error) {
-          console.error("Stats API error:", statsResponse.error);
-          setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
-          setIsLoading(false);
-          return;
-        }
-        
-        // Ensure stats has all expected properties
-        const normalizedStats = {
-          totalBlogs: parseInt(statsResponse?.totalBlogs) || 0,
-          totalArticles: parseInt(statsResponse?.totalArticles) || 0,
-          totalViews: parseInt(statsResponse?.totalViews) || 0,
-          recentArticles: statsResponse?.recentArticles || []
-        };
-        
-        console.log("Normalized Stats:", normalizedStats);
-        setStats(normalizedStats);
-        
-        // Calculate average views per post
-        if (normalizedStats.totalArticles > 0) {
-          const avg = Math.round(normalizedStats.totalViews / normalizedStats.totalArticles);
-          setAvgViews(avg);
-        } else {
-          setAvgViews(0);
-        }
-        
-        setChartData(chartResponse || []);
-        
-        if (achievementsResponse) {
-          setUserAchievements(achievementsResponse);
-          
-          // Show only the 3 most recently unlocked achievements
-          const sorted = achievementsResponse.sort((a: any, b: any) => 
-            new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
-          );
-          setRecentUnlocked(sorted.slice(0, 3));
-        }
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-        // Don't reset to 0 on error - keep the previous values
-      } finally {
+    try {
+      // Handle error responses
+      if (statsResponse?.error) {
+        console.error("Stats API error:", statsResponse.error);
+        setStats({ totalBlogs: 0, totalArticles: 0, totalViews: 0, recentArticles: [] });
         setIsLoading(false);
+        return;
       }
-    };
+      
+      // Normalize stats
+      const normalizedStats = {
+        totalBlogs: parseInt(statsResponse?.totalBlogs) || 0,
+        totalArticles: parseInt(statsResponse?.totalArticles) || 0,
+        totalViews: parseInt(statsResponse?.totalViews) || 0,
+        recentArticles: statsResponse?.recentArticles || []
+      };
+      
+      setStats(normalizedStats);
+      
+      // Calculate average views per post
+      if (normalizedStats.totalArticles > 0) {
+        const avg = Math.round(normalizedStats.totalViews / normalizedStats.totalArticles);
+        setAvgViews(avg);
+      } else {
+        setAvgViews(0);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statsResponse]);
 
-    fetchDashboardStats();
+  useEffect(() => {
+    if (chartResponse) setChartData(chartResponse || []);
+  }, [chartResponse]);
 
-    // Auto-refresh every 3 seconds for real-time updates
-    const interval = setInterval(fetchDashboardStats, 3000);
-    return () => clearInterval(interval);
-  }, [user]);
+  useEffect(() => {
+    if (streakResponse) setStreak(streakResponse);
+  }, [streakResponse]);
+
+  useEffect(() => {
+    if (achievementsResponse && Array.isArray(achievementsResponse)) {
+      setUserAchievements(achievementsResponse);
+      const sorted = achievementsResponse.sort((a: any, b: any) => 
+        new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
+      );
+      setRecentUnlocked(sorted.slice(0, 3));
+    }
+  }, [achievementsResponse]);
 
   if (authLoading || isLoading) {
     return (

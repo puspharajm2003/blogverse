@@ -93,8 +93,6 @@ export default function Analytics() {
     };
 
     fetchAnalytics();
-    const interval = setInterval(fetchAnalytics, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   const engagementData = Array.from({ length: 7 }).map((_, i) => {

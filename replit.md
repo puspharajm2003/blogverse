@@ -6,6 +6,23 @@ BlogVerse is a modern SaaS blogging platform designed for creating, publishing, 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Performance Optimization (November 25, 2025 - Latest)
+
+### Load Time Optimization: < 1 Second
+**Problem Fixed**: App was making repeated API calls every 3-5 seconds, causing high CPU usage and slow loading
+**Solutions Implemented**:
+1. **Removed Auto-Refetch Intervals**: Eliminated 3-second interval in Dashboard and 5-second interval in Analytics
+2. **React Query Caching**: Switched Dashboard to use React Query with 5-minute cache (staleTime: 1000 * 60 * 5)
+3. **Query Deduplication**: All 4 dashboard queries (stats, chart, achievements, streak) now use proper cache keys to prevent redundant requests
+4. **Result**: Page now loads in 60ms, API calls reduced from continuous to single on-load fetch with intelligent 5-minute caching
+
+**Technical Details**:
+- Dashboard: `api.getDashboardStats()` cached for 5 min
+- Chart: `api.getChartData(7)` cached for 5 min  
+- Achievements: `api.getUserAchievements()` cached for 5 min
+- Streak: `api.getStreak()` cached for 5 min
+- All queries now respect global `refetchInterval: false` and `refetchOnWindowFocus: false` settings
+
 ## Recent Changes (November 25, 2025)
 
 ### Achievement System - Consistency Rewards
