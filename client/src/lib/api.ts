@@ -299,4 +299,86 @@ export const api = {
     const headers = getAuthHeader();
     return fetch(`${API_BASE}/api/plagiarism/${articleId}/latest`, { headers }).then((r) => r.json());
   },
+
+  // Feedback
+  submitFeedback: (feedback: any) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(feedback),
+    }).then((r) => r.json());
+  },
+
+  getFeedback: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/feedback`, { headers }).then((r) => r.json());
+  },
+
+  // Bookmarks
+  getBookmarks: (collection?: string) => {
+    const headers = getAuthHeader();
+    const url = collection ? `${API_BASE}/api/bookmarks?collection=${collection}` : `${API_BASE}/api/bookmarks`;
+    return fetch(url, { headers }).then((r) => r.json());
+  },
+
+  addBookmark: (bookmarkData: any) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/bookmarks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(bookmarkData),
+    }).then((r) => r.json());
+  },
+
+  removeBookmark: (bookmarkId: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/bookmarks/${bookmarkId}`, {
+      method: "DELETE",
+      headers,
+    }).then((r) => r.json());
+  },
+
+  // Notifications
+  getNotifications: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/notifications`, { headers }).then((r) => r.json());
+  },
+
+  getNotificationPreferences: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/notification-preferences`, { headers }).then((r) => r.json());
+  },
+
+  updateNotificationPreferences: (preferences: any) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/notification-preferences`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(preferences),
+    }).then((r) => r.json());
+  },
+
+  // Learning Path
+  getLearningProgress: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/learning/progress`, { headers }).then((r) => r.json());
+  },
+
+  initLearning: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/learning/init`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+    }).then((r) => r.json());
+  },
+
+  completeLesson: (lessonId: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/learning/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ lessonId }),
+    }).then((r) => r.json());
+  },
 };
