@@ -8,30 +8,39 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 25, 2025)
 
-### My Articles & Dashboard Enhancements
-1. **Quick Edit Button** - Added on each article card:
-   - Inline modal for editing title and tags
-   - No need to go to full editor for minor changes
-   - Data-testid: `button-quick-edit-{articleId}`
+### Advanced UI Enhancements & AI Features
 
-2. **Reading Challenge Widget** - New dashboard component:
-   - Weekly and monthly reading goal tracking
-   - Visual progress bar with percentage
-   - Challenge selector (weekly/monthly toggle)
-   - Stats overview showing articles read vs goal
-   - Motivational messages based on progress
-   - Auto-calculates remaining articles needed
+#### 1. Published Articles Page (Complete Redesign)
+- Modern card and list view layouts with smooth transitions
+- Advanced stats section (total articles, views, avg read time)
+- Grid/List view toggle with instant animations
+- Staggered card load animations
+- Gradient accents and professional styling
+- Enhanced metadata display on each card
+- Optimized hover effects with scale and shadow
 
-3. **QuickEditModal Component** - Reusable modal for quick edits:
-   - Edit article title inline
-   - Add/remove tags with visual badges
-   - Tag management with Enter key support
-   - Uses updateArticle API endpoint
+#### 2. My Articles Page Parallax Effect
+- Animated background elements with different parallax speeds
+- Three layered background circles moving at different rates
+- Creates depth and visual interest during scrolling
+- Smooth continuous animations (20s, 25s, 30s cycles)
+- Maintains responsive design without affecting interaction
 
-### Dark Mode Enhancement (Previous)
-- DarkModeToggle component with multiple variants
-- Enhanced ThemeSettings page with dedicated dark mode section
-- Landing page navbar integration with dropdown theme selector
+#### 3. AI-Generated Tags Feature
+- "Generate Tags" button on each article card (magic wand icon)
+- Uses OpenRouter API to analyze article content
+- Generates 8-10 relevant, searchable tags automatically
+- SEO-optimized keywords (long-tail, broad, industry-specific terms)
+- Tags ordered by relevance
+- Updates article immediately after generation
+- Fallback to demo tags if API unavailable
+
+#### 4. My Articles & Dashboard Enhancements (Previous)
+- Quick Edit Button for rapid title/tag changes
+- Reading Challenge Widget with weekly/monthly goals
+- Progress tracking and motivational messages
+- Dark Mode Toggle with system preference support
+- Enhanced theme settings page
 
 ## System Architecture
 

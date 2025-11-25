@@ -28,7 +28,9 @@ import {
   MoreVertical,
   ArrowRight,
   Sparkles,
-  Pencil
+  Pencil,
+  Wand2,
+  Loader
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -216,9 +218,71 @@ export default function MyArticles() {
           50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
         }
 
+        @keyframes parallax-bg-1 {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(40px); }
+        }
+
+        @keyframes parallax-bg-2 {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(-30px); }
+        }
+
+        @keyframes parallax-bg-3 {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(50px); }
+        }
+
+        .parallax-container {
+          overflow: hidden;
+          position: relative;
+        }
+
+        .parallax-element-1 {
+          position: fixed;
+          top: 10%;
+          left: 5%;
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+          border-radius: 50%;
+          blur: 40px;
+          animation: parallax-bg-1 20s ease-in-out infinite;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .parallax-element-2 {
+          position: fixed;
+          bottom: 15%;
+          right: 5%;
+          width: 250px;
+          height: 250px;
+          background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, transparent 70%);
+          border-radius: 50%;
+          animation: parallax-bg-2 25s ease-in-out infinite;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .parallax-element-3 {
+          position: fixed;
+          top: 50%;
+          right: 10%;
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%);
+          border-radius: 50%;
+          animation: parallax-bg-3 30s ease-in-out infinite;
+          pointer-events: none;
+          z-index: 1;
+        }
+
         .article-card {
           animation: slideInUp 0.5s ease-out forwards;
           opacity: 0;
+          position: relative;
+          z-index: 10;
         }
 
         .article-card:nth-child(1) { animation-delay: 0.05s; }
@@ -263,6 +327,11 @@ export default function MyArticles() {
           background-clip: text;
         }
       `}</style>
+
+      {/* Parallax Background Elements */}
+      <div className="parallax-element-1" />
+      <div className="parallax-element-2" />
+      <div className="parallax-element-3" />
 
       <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
         {/* Header */}
@@ -505,8 +574,40 @@ function EmptyState({ activeTab }: { activeTab: string }) {
 
 function ArticleCard({ article, setLocation, onRefresh }: any) {
   const [quickEditOpen, setQuickEditOpen] = useState(false);
+  const [generatingTags, setGeneratingTags] = useState(false);
   const readingTime = calculateReadingTime(article.content || "");
   const wordCount = (article.content || "").split(/\s+/).filter((w: string) => w.length > 0).length;
+
+  const handleGenerateTags = async () => {
+    if (!article.content) {
+      toast.error("Article has no content to analyze");
+      return;
+    }
+
+    setGeneratingTags(true);
+    try {
+      const response = await api.generateBlogContent(article.content, "tags");
+      const tagsText = response.text || "";
+      const newTags = tagsText
+        .split(/[,\n]/)
+        .map((tag: string) => tag.trim().replace(/^#/, "").toLowerCase())
+        .filter((tag: string) => tag.length > 0)
+        .slice(0, 8);
+
+      if (newTags.length > 0) {
+        await api.updateArticle(article.id, { tags: newTags });
+        toast.success(`Generated ${newTags.length} tags!`);
+        onRefresh();
+      } else {
+        toast.error("No tags generated");
+      }
+    } catch (error) {
+      console.error("Failed to generate tags:", error);
+      toast.error("Failed to generate tags");
+    } finally {
+      setGeneratingTags(false);
+    }
+  };
 
   const statusConfig = {
     published: { 
@@ -613,6 +714,21 @@ function ArticleCard({ article, setLocation, onRefresh }: any) {
             >
               <Edit2 className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
               Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 group/btn border-border/50 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all"
+              onClick={handleGenerateTags}
+              disabled={generatingTags}
+              data-testid={`button-generate-tags-${article.id}`}
+              title="Generate AI tags"
+            >
+              {generatingTags ? (
+                <Loader className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4 group-hover/btn:text-purple-600 transition-colors" />
+              )}
             </Button>
             <Button
               variant="outline"
