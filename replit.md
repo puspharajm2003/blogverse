@@ -8,7 +8,42 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 25, 2025)
 
-### Advanced UI Enhancements & AI Features
+### Four Major Features Implemented
+
+#### 1. User Feedback System
+- Dedicated feedback form at `/feedback` with rich input options
+- Categories: bug report, feature request, improvement, other
+- Priority levels: low, normal, high, urgent
+- Star rating system (1-5 stars) for user satisfaction
+- Database persistence and admin review capability
+- API endpoints: POST/GET `/api/feedback`
+
+#### 2. Read-It-Later Bookmarking
+- Save articles for later at `/bookmarks`
+- Organized into collections (default: "reading-list")
+- Personal notes on bookmarked articles
+- Device synchronization across all user devices
+- Quick bookmark status check with API `/api/bookmarks/check/:articleId`
+- API endpoints: POST/DELETE/GET `/api/bookmarks`
+
+#### 3. Notification System
+- Configurable notification preferences at `/notifications`
+- Types: new comments, article updates, achievements unlocked
+- Delivery methods: email, push notifications
+- Mark notifications as read individually or bulk
+- Unread notification filtering
+- Persistent notification history
+- API endpoints: GET/PATCH/DELETE `/api/notifications`, GET/PATCH `/api/notification-preferences`
+
+#### 4. Gamified Learning Path
+- Onboarding learning path at `/learning` for new users
+- 5 guided lessons: welcome, create blog, write article, use AI, track analytics
+- Progress tracking with visual progress bar (0-100%)
+- Lesson completion tracking and timestamps
+- Auto-completion detection when all lessons done
+- API endpoints: POST/GET `/api/learning/*` for initialization, progress, status, and completion
+
+### Advanced UI Enhancements & AI Features (Previous)
 
 #### 1. Published Articles Page (Complete Redesign)
 - Modern card and list view layouts with smooth transitions
@@ -57,7 +92,7 @@ Preferred communication style: Simple, everyday language.
 ### Database & ORM
 - **Database**: PostgreSQL via Neon serverless.
 - **ORM**: Drizzle ORM for type-safe queries and schema migrations.
-- **Schema**: Includes Users (authentication, plans, admin), Blogs (multi-tenant, themes), Articles (content, states, SEO), Analytics Events, Chat Messages, and Achievements.
+- **Schema**: Includes Users (authentication, plans, admin), Blogs (multi-tenant, themes), Articles (content, states, SEO), Analytics Events, Chat Messages, Achievements, Feedback, Bookmarks, Notifications, and Learning Progress.
 
 ### Authentication & Authorization
 - **Authentication**: Custom JWT-based system with email/password login and demo account generation.
