@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Palette, Layout, Type, Image as ImageIcon, User, Building, CreditCard, Globe, Lock, Bell, Crown, Moon, Sun, Monitor, Eye } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -33,6 +34,28 @@ export default function Settings() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userAvatar, setUserAvatar] = useState("");
   const [selectedHeadingFont, setSelectedHeadingFont] = useState("playfair");
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+
+  const avatarStyles = [
+    { id: "avataaars", name: "Avataaars", seed: "avataaars" },
+    { id: "pixel-art", name: "Pixel Art", seed: "pixelart" },
+    { id: "adventurer", name: "Adventurer", seed: "adventurer" },
+    { id: "avataaars-neutral", name: "Neutral", seed: "avataaars" },
+    { id: "big-smile", name: "Big Smile", seed: "smile" },
+    { id: "fun-emoji", name: "Fun Emoji", seed: "emoji" },
+  ];
+
+  const handleAvatarSelect = async (style: string) => {
+    const newAvatar = `https://api.dicebear.com/7.x/${style.split('-')[0]}/svg?seed=${Math.random().toString(36).substring(7)}`;
+    setUserAvatar(newAvatar);
+    try {
+      await api.updateProfile({ avatar: newAvatar });
+      toast.success("Avatar updated!");
+      setShowAvatarSelector(false);
+    } catch (error) {
+      toast.error("Failed to update avatar");
+    }
+  };
 
   const fontOptions = [
     { id: "playfair", name: "Playfair Display", class: "font-serif" },
@@ -149,7 +172,7 @@ export default function Settings() {
                     <AvatarImage src={userAvatar || "https://api.dicebear.com/7.x/avataaars/svg"} onError={(e) => (e.currentTarget as HTMLImageElement).style.display = 'none'} />
                     <AvatarFallback>{displayName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
-                  <Button variant="outline">Change Avatar</Button>
+                  <Button variant="outline" onClick={() => setShowAvatarSelector(true)}>Change Avatar</Button>
                 </div>
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
@@ -269,6 +292,50 @@ export default function Settings() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Avatar Selector Modal */}
+        <Dialog open={showAvatarSelector} onOpenChange={setShowAvatarSelector}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Choose Your Avatar</DialogTitle>
+              <DialogDescription>Select from our collection of pre-designed avatars</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {avatarStyles.map((style) => (
+                <button
+                  key={style.id}
+                  onClick={() => handleAvatarSelect(style.seed)}
+                  className="p-4 border-2 border-border rounded-lg hover:border-primary transition-all space-y-2 group"
+                  data-testid={`avatar-style-${style.id}`}
+                >
+                  <img
+                    src={`https://api.dicebear.com/7.x/${style.seed.split('-')[0]}/svg?seed=${style.seed}`}
+                    alt={style.name}
+                    className="w-16 h-16 rounded-lg mx-auto group-hover:scale-110 transition-transform"
+                  />
+                  <p className="text-sm font-medium text-center">{style.name}</p>
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <button
+                  key={`random-${i}`}
+                  onClick={() => handleAvatarSelect(`avataaars-${Math.random()}`)}
+                  className="p-4 border-2 border-dashed border-border rounded-lg hover:border-primary transition-all"
+                  data-testid={`avatar-random-${i}`}
+                >
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=random${Math.random()}`}
+                    alt={`Random ${i}`}
+                    className="w-16 h-16 rounded-lg mx-auto"
+                  />
+                  <p className="text-xs text-center text-muted-foreground mt-2">Random</p>
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </SidebarLayout>
   );
