@@ -71,6 +71,13 @@ export default function Settings() {
     setUserAvatar(avatarUrl);
     try {
       await api.updateProfile({ avatar: avatarUrl });
+      // Update localStorage to persist avatar change
+      const savedUser = localStorage.getItem("stack_user");
+      if (savedUser) {
+        const userObj = JSON.parse(savedUser);
+        userObj.avatar = avatarUrl;
+        localStorage.setItem("stack_user", JSON.stringify(userObj));
+      }
       toast.success("Avatar updated!");
       setShowAvatarSelector(false);
     } catch (error) {
@@ -98,6 +105,13 @@ export default function Settings() {
       setUserAvatar(dataUrl);
       try {
         await api.updateProfile({ avatar: dataUrl });
+        // Update localStorage to persist avatar change
+        const savedUser = localStorage.getItem("stack_user");
+        if (savedUser) {
+          const userObj = JSON.parse(savedUser);
+          userObj.avatar = dataUrl;
+          localStorage.setItem("stack_user", JSON.stringify(userObj));
+        }
         toast.success("Photo uploaded successfully!");
         setShowAvatarSelector(false);
       } catch (error) {
@@ -115,12 +129,18 @@ export default function Settings() {
   const handleInitialsAvatar = () => {
     const initials = getInitials(displayName || "U");
     const bgColor = getColorFromName(displayName || "");
-    setUserAvatar(`data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23FF6B6B" width="200" height="200"/><text x="50%" y="50%" font-size="80" font-weight="bold" fill="white" text-anchor="middle" dy=".3em">${initials}</text></svg>`.replace("#FF6B6B", bgColor === "bg-red-500" ? "#EF4444" : bgColor === "bg-blue-500" ? "#3B82F6" : bgColor === "bg-green-500" ? "#10B981" : bgColor === "bg-yellow-500" ? "#FBBF24" : bgColor === "bg-purple-500" ? "#A855F7" : bgColor === "bg-pink-500" ? "#EC4899" : "#6366F1"));
     try {
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23${getColorCode(bgColor)}" width="200" height="200"/><text x="50%" y="50%" font-size="80" font-weight="bold" fill="white" text-anchor="middle" dy=".3em">${initials}</text></svg>`;
       const dataUrl = `data:image/svg+xml,${encodeURIComponent(svg)}`;
       setUserAvatar(dataUrl);
       api.updateProfile({ avatar: dataUrl });
+      // Update localStorage to persist avatar change
+      const savedUser = localStorage.getItem("stack_user");
+      if (savedUser) {
+        const userObj = JSON.parse(savedUser);
+        userObj.avatar = dataUrl;
+        localStorage.setItem("stack_user", JSON.stringify(userObj));
+      }
       toast.success("Initials avatar created!");
       setShowAvatarSelector(false);
     } catch (error) {
