@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -34,7 +34,6 @@ const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
 const LearningPath = lazy(() => import("@/pages/LearningPath"));
 const Import = lazy(() => import("@/pages/Import"));
 const ContentCalendar = lazy(() => import("@/pages/ContentCalendar"));
-const { GuidedTour } = require("@/components/GuidedTour");
 
 function Router() {
   const [location] = useLocation();
@@ -80,7 +79,6 @@ export default function App() {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
-            <GuidedTour />
             <Router />
           </TooltipProvider>
         </AuthProvider>

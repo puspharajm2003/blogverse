@@ -1124,33 +1124,3 @@ export class PostgresStorage implements IStorage {
 }
 
 export const storage = new PostgresStorage();
-
-  async getCalendarEvents(userId: string): Promise<any[]> {
-    const result = await db.select().from(contentCalendar).where(eq(contentCalendar.userId, userId));
-    return result;
-  }
-
-  async addCalendarEvent(userId: string, event: any): Promise<any> {
-    const result = await db.insert(contentCalendar).values({
-      ...event,
-
-  async getCalendarEvents(userId: string): Promise<any[]> {
-    const result = await db.select().from(contentCalendar).where(eq(contentCalendar.userId, userId));
-    return result;
-  }
-
-  async addCalendarEvent(userId: string, event: any): Promise<any> {
-    const result = await db.insert(contentCalendar).values({
-      ...event,
-      userId,
-      scheduledDate: new Date(event.scheduledDate),
-    }).returning();
-    return result[0];
-  }
-
-  async deleteCalendarEvent(id: string, userId: string): Promise<void> {
-    await db.delete(contentCalendar).where(and(eq(contentCalendar.id, id), eq(contentCalendar.userId, userId)));
-  }
-}
-
-export const storage = new PostgresStorage();
