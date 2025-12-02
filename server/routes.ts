@@ -481,6 +481,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Articles Routes
+  // Trending Articles Routes (must come BEFORE :id route)
+  app.get("/api/articles/trending", async (req: any, res) => {
+    try {
+      const days = parseInt(req.query.days || "7");
+      const trending = await storage.getTrendingArticles(days);
+      res.json(trending);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch trending articles" });
+    }
+  });
+
   app.get("/api/articles/:id", async (req, res) => {
     try {
       const article = await storage.getArticle(req.params.id);
@@ -1364,17 +1375,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(article);
     } catch (error) {
       res.status(500).json({ error: "Failed to schedule article" });
-    }
-  });
-
-  // Trending Articles Routes
-  app.get("/api/articles/trending", async (req: any, res) => {
-    try {
-      const days = parseInt(req.query.days || "7");
-      const trending = await storage.getTrendingArticles(days);
-      res.json(trending);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch trending articles" });
     }
   });
 
