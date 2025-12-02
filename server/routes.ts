@@ -1341,6 +1341,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Article Scheduling Routes
+  app.get("/api/articles/scheduled", authenticateToken, async (req: any, res) => {
+    try {
+      const blogs = await storage.getBlogsByUser(req.userId);
+      const blogIds = blogs.map((b) => b.id);
+      const scheduled = await storage.getScheduledArticles(blogIds);
+      res.json(scheduled);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scheduled articles" });
+    }
+  });
+
+  app.patch("/api/articles/:articleId/schedule", authenticateToken, async (req: any, res) => {
+    try {
+      const { scheduledPublishAt, status } = req.body;
+      if (!scheduledPublishAt) return res.status(400).json({ error: "Schedule date required" });
+      const article = await storage.updateArticle(req.params.articleId, {
+        scheduledPublishAt: new Date(scheduledPublishAt),
+        status: status || "scheduled",
+      });
+      res.json(article);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to schedule article" });
+    }
+  });
+
+  // Trending Articles Routes
+  app.get("/api/articles/trending", async (req: any, res) => {
+    try {
+      const days = parseInt(req.query.days || "7");
+      const trending = await storage.getTrendingArticles(days);
+      res.json(trending);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch trending articles" });
+    }
+  });
+
+  // Email Notification Routes
+  app.post("/api/notifications/send-email", authenticateToken, async (req: any, res) => {
+    try {
+      const { articleId, authorName, type } = req.body;
+      if (!articleId || !authorName) return res.status(400).json({ error: "Missing required fields" });
+      
+      const user = await storage.getUser(req.userId);
+      if (!user) return res.status(401).json({ error: "User not found" });
+
+      // Create in-app notification
+      const notification = await storage.createNotification({
+        userId: req.userId,
+        type: type || "comment_new",
+        title: `New ${type === "comment_new" ? "Comment" : "Update"}`,
+        message: `${authorName} commented on your article`,
+        relatedArticleId: articleId,
+      });
+
+      // Log for email service (would integrate with SendGrid/Resend here)
+      console.log(`Email notification queued for ${user.email}: ${type}`);
+
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to send notification" });
+    }
+  });
+
+  app.post("/api/notifications/send-mention", authenticateToken, async (req: any, res) => {
+    try {
+      const { userId, articleId, mentionerName } = req.body;
+      if (!userId || !articleId) return res.status(400).json({ error: "Missing required fields" });
+
+      const notification = await storage.createNotification({
+        userId,
+        type: "mention",
+        title: "You were mentioned",
+        message: `${mentionerName} mentioned you in an article`,
+        relatedArticleId: articleId,
+      });
+
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to send mention notification" });
+    }
+  });
+
+  // Enhanced Bookmarks Route
+  app.patch("/api/bookmarks/:bookmarkId", authenticateToken, async (req: any, res) => {
+    try {
+      const { notes } = req.body;
+      const bookmark = await storage.updateBookmark(req.params.bookmarkId, { notes });
+      res.json(bookmark);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update bookmark" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

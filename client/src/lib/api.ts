@@ -381,4 +381,53 @@ export const api = {
       body: JSON.stringify({ lessonId }),
     }).then((r) => r.json());
   },
+
+  // Article Scheduling
+  scheduleArticle: (articleId: string, scheduledPublishAt: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/articles/${articleId}/schedule`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ scheduledPublishAt, status: "scheduled" }),
+    }).then((r) => r.json());
+  },
+
+  getScheduledArticles: () => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/articles/scheduled`, { headers }).then((r) => r.json());
+  },
+
+  // Trending Articles
+  getTrendingArticles: (days: number = 7) => {
+    return fetch(`${API_BASE}/api/articles/trending?days=${days}`).then((r) => r.json());
+  },
+
+  // Enhanced Bookmarks
+  updateBookmark: (bookmarkId: string, notes: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/bookmarks/${bookmarkId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ notes }),
+    }).then((r) => r.json());
+  },
+
+  // Email Notifications
+  sendCommentNotification: (commentId: string, articleId: string, authorName: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/notifications/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ commentId, articleId, authorName, type: "new_comment" }),
+    }).then((r) => r.json());
+  },
+
+  sendMentionNotification: (userId: string, articleId: string, mentionerName: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}/api/notifications/send-mention`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ userId, articleId, mentionerName }),
+    }).then((r) => r.json());
+  },
 };

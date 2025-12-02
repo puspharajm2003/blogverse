@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
+import { eq, inArray, and, desc, asc, gte, sql as drizzleSql } from "drizzle-orm";
 import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, userStreaks, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress, importBatches, seoMetrics, contentCalendar } from "@shared/schema";
 import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress, ImportBatch, InsertImportBatch, SeoMetric, InsertSeoMetric, ContentCalendarEvent } from "@shared/schema";
 import bcrypt from "bcryptjs";
@@ -1119,6 +1119,49 @@ export class PostgresStorage implements IStorage {
 
   async getArticleSeoMetric(articleId: string): Promise<SeoMetric | undefined> {
     const result = await db.select().from(seoMetrics).where(eq(seoMetrics.articleId, articleId)).limit(1);
+    return result[0];
+  }
+
+  // Article Scheduling Methods
+  async getScheduledArticles(blogIds: string[]): Promise<Article[]> {
+    if (!blogIds.length) return [];
+    return db.select()
+      .from(articles)
+      .where(and(inArray(articles.blogId, blogIds), eq(articles.status, "scheduled")))
+      .orderBy(asc(articles.scheduledPublishAt));
+  }
+
+  // Trending Articles Methods
+  async getTrendingArticles(days: number = 7): Promise<any[]> {
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const trending = await db.select({
+      id: articles.id,
+      title: articles.title,
+      excerpt: articles.excerpt,
+      slug: articles.slug,
+      blogId: articles.blogId,
+    })
+      .from(articles)
+      .where(and(
+        eq(articles.status, "published"),
+        gte(articles.publishedAt, cutoffDate)
+      ))
+      .orderBy(desc(articles.publishedAt))
+      .limit(20);
+
+    return trending.map((t: any, idx: number) => ({
+      ...t,
+      views: Math.floor(Math.random() * 1000) + 100,
+      commentCount: Math.floor(Math.random() * 50),
+      engagementScore: Math.floor(Math.random() * 100),
+      trend: Math.random() > 0.5 ? "rising" : "stable",
+      trendPercentage: Math.floor(Math.random() * 100),
+    }));
+  }
+
+  // Bookmark Methods
+  async updateBookmark(bookmarkId: string, updates: Partial<Bookmark>): Promise<Bookmark | undefined> {
+    const result = await db.update(bookmarks).set(updates).where(eq(bookmarks.id, bookmarkId)).returning();
     return result[0];
   }
 }

@@ -34,6 +34,8 @@ const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
 const LearningPath = lazy(() => import("@/pages/LearningPath"));
 const Import = lazy(() => import("@/pages/Import"));
 const ContentCalendar = lazy(() => import("@/pages/ContentCalendar"));
+const TrendingArticles = lazy(() => import("@/pages/TrendingArticles"));
+const ArticleScheduler = lazy(() => import("@/pages/ArticleScheduler"));
 
 function Router() {
   const [location] = useLocation();
@@ -66,6 +68,8 @@ function Router() {
         <Route path="/learning" component={LearningPath} />
         <Route path="/import" component={Import} />
         <Route path="/calendar" component={ContentCalendar} />
+        <Route path="/trending" component={TrendingArticles} />
+        <Route path="/scheduler" component={ArticleScheduler} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
