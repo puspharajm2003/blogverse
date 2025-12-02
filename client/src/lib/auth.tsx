@@ -32,12 +32,36 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage or API
-    const savedUser = localStorage.getItem("stack_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Load user from localStorage
+    const loadUser = () => {
+      const savedUser = localStorage.getItem("stack_user");
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    };
+
+    loadUser();
     setIsLoading(false);
+
+    // Listen for storage changes from other tabs/windows or localStorage updates
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "stack_user") {
+        loadUser();
+      }
+    };
+
+    // Also listen for custom events when localStorage is updated in the same tab
+    const handleLocalStorageUpdate = () => {
+      loadUser();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageUpdated", handleLocalStorageUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageUpdated", handleLocalStorageUpdate);
+    };
   }, []);
 
   const signOut = async () => {

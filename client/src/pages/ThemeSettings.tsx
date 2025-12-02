@@ -77,6 +77,8 @@ export default function Settings() {
         const userObj = JSON.parse(savedUser);
         userObj.avatar = avatarUrl;
         localStorage.setItem("stack_user", JSON.stringify(userObj));
+        // Dispatch event to notify auth context of changes
+        window.dispatchEvent(new Event("localStorageUpdated"));
       }
       toast.success("Avatar updated!");
       setShowAvatarSelector(false);
@@ -111,6 +113,8 @@ export default function Settings() {
           const userObj = JSON.parse(savedUser);
           userObj.avatar = dataUrl;
           localStorage.setItem("stack_user", JSON.stringify(userObj));
+          // Dispatch event to notify auth context of changes
+          window.dispatchEvent(new Event("localStorageUpdated"));
         }
         toast.success("Photo uploaded successfully!");
         setShowAvatarSelector(false);
@@ -140,6 +144,8 @@ export default function Settings() {
         const userObj = JSON.parse(savedUser);
         userObj.avatar = dataUrl;
         localStorage.setItem("stack_user", JSON.stringify(userObj));
+        // Dispatch event to notify auth context of changes
+        window.dispatchEvent(new Event("localStorageUpdated"));
       }
       toast.success("Initials avatar created!");
       setShowAvatarSelector(false);
