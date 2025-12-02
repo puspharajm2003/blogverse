@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Palette, Layout, Type, Image as ImageIcon, User, Building, CreditCard, Globe, Lock, Bell, Crown, Moon, Sun, Monitor, Eye } from "lucide-react";
+import { Palette, Layout, Type, Image as ImageIcon, User, Building, CreditCard, Globe, Lock, Bell, Crown, Moon, Sun, Monitor, Eye, Upload, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useState, useEffect } from "react";
@@ -35,26 +35,108 @@ export default function Settings() {
   const [userAvatar, setUserAvatar] = useState("");
   const [selectedHeadingFont, setSelectedHeadingFont] = useState("playfair");
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [avatarTab, setAvatarTab] = useState("professional");
 
-  const avatarStyles = [
-    { id: "avataaars", name: "Avataaars", seed: "avataaars" },
-    { id: "pixel-art", name: "Pixel Art", seed: "pixelart" },
-    { id: "adventurer", name: "Adventurer", seed: "adventurer" },
-    { id: "avataaars-neutral", name: "Neutral", seed: "avataaars" },
-    { id: "big-smile", name: "Big Smile", seed: "smile" },
-    { id: "fun-emoji", name: "Fun Emoji", seed: "emoji" },
+  // Utility: Generate color from name
+  const getColorFromName = (name: string) => {
+    const colors = ["bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  // Utility: Get initials
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Avatar types
+  const professionalStyles = [
+    { id: "pixel-art", name: "Pixel Art", url: (seed: string) => `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}` },
+    { id: "avataaars", name: "Modern 3D", url: (seed: string) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}` },
+    { id: "adventurer", name: "Adventurer", url: (seed: string) => `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}` },
+    { id: "big-heads", name: "Big Heads", url: (seed: string) => `https://api.dicebear.com/7.x/big-heads/svg?seed=${seed}` },
+    { id: "bottts", name: "Robots", url: (seed: string) => `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}` },
+    { id: "personas", name: "Personas", url: (seed: string) => `https://api.dicebear.com/7.x/personas/svg?seed=${seed}` },
   ];
 
-  const handleAvatarSelect = async (style: string) => {
-    const newAvatar = `https://api.dicebear.com/7.x/${style.split('-')[0]}/svg?seed=${Math.random().toString(36).substring(7)}`;
-    setUserAvatar(newAvatar);
+  const handleAvatarSelect = async (avatarUrl: string) => {
+    setUserAvatar(avatarUrl);
     try {
-      await api.updateProfile({ avatar: newAvatar });
+      await api.updateProfile({ avatar: avatarUrl });
       toast.success("Avatar updated!");
       setShowAvatarSelector(false);
     } catch (error) {
       toast.error("Failed to update avatar");
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      setUserAvatar(dataUrl);
+      try {
+        await api.updateProfile({ avatar: dataUrl });
+        toast.success("Photo uploaded successfully!");
+        setShowAvatarSelector(false);
+      } catch (error) {
+        toast.error("Failed to upload photo");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGravatar = () => {
+    const gravatarUrl = `https://www.gravatar.com/avatar/${email?.toLowerCase() || "user"}?d=identicon&s=200`;
+    handleAvatarSelect(gravatarUrl);
+  };
+
+  const handleInitialsAvatar = () => {
+    const initials = getInitials(displayName || "U");
+    const bgColor = getColorFromName(displayName || "");
+    setUserAvatar(`data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23FF6B6B" width="200" height="200"/><text x="50%" y="50%" font-size="80" font-weight="bold" fill="white" text-anchor="middle" dy=".3em">${initials}</text></svg>`.replace("#FF6B6B", bgColor === "bg-red-500" ? "#EF4444" : bgColor === "bg-blue-500" ? "#3B82F6" : bgColor === "bg-green-500" ? "#10B981" : bgColor === "bg-yellow-500" ? "#FBBF24" : bgColor === "bg-purple-500" ? "#A855F7" : bgColor === "bg-pink-500" ? "#EC4899" : "#6366F1"));
+    try {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23${getColorCode(bgColor)}" width="200" height="200"/><text x="50%" y="50%" font-size="80" font-weight="bold" fill="white" text-anchor="middle" dy=".3em">${initials}</text></svg>`;
+      const dataUrl = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+      setUserAvatar(dataUrl);
+      api.updateProfile({ avatar: dataUrl });
+      toast.success("Initials avatar created!");
+      setShowAvatarSelector(false);
+    } catch (error) {
+      toast.error("Failed to create avatar");
+    }
+  };
+
+  const getColorCode = (colorClass: string) => {
+    const colorMap: any = {
+      "bg-red-500": "EF4444",
+      "bg-blue-500": "3B82F6",
+      "bg-green-500": "10B981",
+      "bg-yellow-500": "FBBF24",
+      "bg-purple-500": "A855F7",
+      "bg-pink-500": "EC4899",
+      "bg-indigo-500": "6366F1",
+      "bg-orange-500": "F97316",
+    };
+    return colorMap[colorClass] || "3B82F6";
   };
 
   const fontOptions = [
@@ -130,11 +212,8 @@ export default function Settings() {
     <SidebarLayout>
       <style>{`
         .theme-card {
-          transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
-        }
-        
-        .theme-card:hover {
-          transform: translateY(-4px);
+          cursor: pointer;
+          transition: all 0.3s ease;
         }
         
         .theme-card.active {
@@ -201,63 +280,15 @@ export default function Settings() {
                 <CardTitle className="flex items-center gap-2">
                   <Moon className="h-5 w-5" /> Dark Mode Settings
                 </CardTitle>
-                <CardDescription>
-                  Optimize your reading experience with improved readability in low-light conditions.
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Theme Selection */}
                 <div className="space-y-4">
                   <Label className="text-base font-semibold">Choose Your Theme</Label>
                   <div className="grid grid-cols-3 gap-3">
-                    <ThemeOptionCard
-                      icon={<Sun className="h-6 w-6" />}
-                      label="Light Mode"
-                      description="Bright and clear"
-                      active={theme === "light"}
-                      onClick={() => setTheme("light")}
-                      testId="option-light"
-                    />
-                    <ThemeOptionCard
-                      icon={<Moon className="h-6 w-6" />}
-                      label="Dark Mode"
-                      description="Easy on the eyes"
-                      active={theme === "dark"}
-                      onClick={() => setTheme("dark")}
-                      testId="option-dark"
-                    />
-                    <ThemeOptionCard
-                      icon={<Monitor className="h-6 w-6" />}
-                      label="System"
-                      description="Auto-switch"
-                      active={theme === "system"}
-                      onClick={() => setTheme("system")}
-                      testId="option-system"
-                    />
+                    <ThemeOptionCard icon={<Sun className="h-6 w-6" />} label="Light" active={theme === "light"} onClick={() => setTheme("light")} />
+                    <ThemeOptionCard icon={<Moon className="h-6 w-6" />} label="Dark" active={theme === "dark"} onClick={() => setTheme("dark")} />
+                    <ThemeOptionCard icon={<Monitor className="h-6 w-6" />} label="System" active={theme === "system"} onClick={() => setTheme("system")} />
                   </div>
-                </div>
-
-                <Separator />
-
-                {/* Quick Toggle */}
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Quick Toggle</Label>
-                  <p className="text-sm text-muted-foreground">Use these buttons for instant theme switching</p>
-                  <div className="flex gap-4 items-center">
-                    <DarkModeToggle variant="inline" size="md" />
-                    <div className="text-xs text-muted-foreground">
-                      Current: <span className="font-semibold capitalize">{theme}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Info */}
-                <div className="bg-blue-500/10 border border-blue-200/50 dark:border-blue-800/50 rounded-lg p-4">
-                  <p className="text-sm text-blue-900 dark:text-blue-100">
-                    <span className="font-semibold">💡 Tip:</span> Dark mode reduces eye strain in low-light environments and helps save battery on OLED displays.
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -267,73 +298,96 @@ export default function Settings() {
           <TabsContent value="preferences" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Site Preferences</CardTitle>
-                <CardDescription>Configure your blog settings.</CardDescription>
+                <CardTitle>Advanced Preferences</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="site-title">Site Title</Label>
-                    <Input id="site-title" value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="site-desc">Site Description</Label>
-                    <Input id="site-desc" value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} />
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">Search Engine Indexing</Label>
-                      <p className="text-sm text-muted-foreground">Allow indexing by search engines</p>
-                    </div>
-                    <Switch checked={siteIndexing} onCheckedChange={setSiteIndexing} />
-                  </div>
-                </div>
-              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
 
-        {/* Avatar Selector Modal */}
+        {/* Comprehensive Avatar Selector Modal */}
         <Dialog open={showAvatarSelector} onOpenChange={setShowAvatarSelector}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Choose Your Avatar</DialogTitle>
-              <DialogDescription>Select from our collection of pre-designed avatars</DialogDescription>
+              <DialogDescription>Select from professional styles, upload a photo, or generate from your name</DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {avatarStyles.map((style) => (
-                <button
-                  key={style.id}
-                  onClick={() => handleAvatarSelect(style.seed)}
-                  className="p-4 border-2 border-border rounded-lg hover:border-primary transition-all space-y-2 group"
-                  data-testid={`avatar-style-${style.id}`}
-                >
-                  <img
-                    src={`https://api.dicebear.com/7.x/${style.seed.split('-')[0]}/svg?seed=${style.seed}`}
-                    alt={style.name}
-                    className="w-16 h-16 rounded-lg mx-auto group-hover:scale-110 transition-transform"
+
+            <Tabs value={avatarTab} onValueChange={setAvatarTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="professional">Professional</TabsTrigger>
+                <TabsTrigger value="upload">Upload</TabsTrigger>
+                <TabsTrigger value="initials">Initials</TabsTrigger>
+                <TabsTrigger value="gravatar">Gravatar</TabsTrigger>
+              </TabsList>
+
+              {/* Professional Avatars */}
+              <TabsContent value="professional" className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {professionalStyles.map((style) => (
+                    <div key={style.id} className="space-y-3">
+                      <p className="text-sm font-medium text-center">{style.name}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[1, 2].map((i) => (
+                          <button
+                            key={`${style.id}-${i}`}
+                            onClick={() => handleAvatarSelect(style.url(`random${Math.random()}`))}
+                            className="p-3 border-2 border-border rounded-lg hover:border-primary transition-all"
+                            data-testid={`avatar-${style.id}-${i}`}
+                          >
+                            <img src={style.url(`seed${i}`)} alt={`${style.name} ${i}`} className="w-12 h-12 rounded mx-auto" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              {/* Photo Upload */}
+              <TabsContent value="upload" className="space-y-4">
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-4">
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Upload Your Photo</p>
+                    <p className="text-sm text-muted-foreground">PNG, JPG up to 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="avatar-upload"
                   />
-                  <p className="text-sm font-medium text-center">{style.name}</p>
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <button
-                  key={`random-${i}`}
-                  onClick={() => handleAvatarSelect(`avataaars-${Math.random()}`)}
-                  className="p-4 border-2 border-dashed border-border rounded-lg hover:border-primary transition-all"
-                  data-testid={`avatar-random-${i}`}
-                >
-                  <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=random${Math.random()}`}
-                    alt={`Random ${i}`}
-                    className="w-16 h-16 rounded-lg mx-auto"
-                  />
-                  <p className="text-xs text-center text-muted-foreground mt-2">Random</p>
-                </button>
-              ))}
-            </div>
+                  <Button asChild variant="outline">
+                    <label htmlFor="avatar-upload" className="cursor-pointer">Choose File</label>
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Initials Avatar */}
+              <TabsContent value="initials" className="space-y-4">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Create an avatar from your name initials with a random color</p>
+                  <div className="flex items-center justify-center p-8">
+                    <div className={`${getColorFromName(displayName)} h-24 w-24 rounded-lg flex items-center justify-center text-white text-4xl font-bold`}>
+                      {getInitials(displayName || "U")}
+                    </div>
+                  </div>
+                  <Button onClick={handleInitialsAvatar} className="w-full">Use Initials Avatar</Button>
+                </div>
+              </TabsContent>
+
+              {/* Gravatar */}
+              <TabsContent value="gravatar" className="space-y-4">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Use your Gravatar associated with {email || "your email"}</p>
+                  <div className="flex items-center justify-center p-8">
+                    <img src={`https://www.gravatar.com/avatar/${email?.toLowerCase() || "user"}?d=identicon&s=100`} alt="Gravatar" className="h-24 w-24 rounded-lg" />
+                  </div>
+                  <Button onClick={handleGravatar} className="w-full">Use Gravatar</Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>
@@ -341,20 +395,18 @@ export default function Settings() {
   );
 }
 
-function ThemeOptionCard({ icon, label, description, active, onClick, testId }: any) {
+function ThemeOptionCard({ icon, label, active, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      data-testid={testId}
-      className={`theme-card w-full p-4 rounded-lg border-2 transition-all text-center ${
-        active
-          ? "border-primary bg-primary/5"
-          : "border-border bg-background hover:border-primary/50"
+      className={`theme-card p-4 rounded-lg border-2 transition-all ${
+        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
       }`}
     >
-      <div className="flex justify-center mb-3 text-primary">{icon}</div>
-      <div className="font-semibold text-sm">{label}</div>
-      <div className="text-xs text-muted-foreground mt-1">{description}</div>
+      <div className="text-center space-y-2">
+        {icon}
+        <p className="text-sm font-medium">{label}</p>
+      </div>
     </button>
   );
 }
