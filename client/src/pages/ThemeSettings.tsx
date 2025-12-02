@@ -146,7 +146,7 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-6">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={userAvatar || "https://github.com/shadcn.png"} />
+                    <AvatarImage src={userAvatar || "https://api.dicebear.com/7.x/avataaars/svg"} onError={(e) => (e.currentTarget as HTMLImageElement).style.display = 'none'} />
                     <AvatarFallback>{displayName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   <Button variant="outline">Change Avatar</Button>

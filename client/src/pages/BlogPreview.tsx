@@ -139,7 +139,7 @@ export default function BlogPreview() {
                   {/* Author Info */}
                   <div className="flex items-center gap-4 pt-4">
                     <Avatar className="h-14 w-14 border-2 border-primary/20 ring-4 ring-primary/10">
-                      <AvatarImage src={blog?.author?.avatar} />
+                      <AvatarImage src={blog?.author?.avatar || "https://api.dicebear.com/7.x/avataaars/svg"} onError={(e) => (e.currentTarget as HTMLImageElement).style.display = 'none'} />
                       <AvatarFallback className="font-bold">{defaultAvatar}</AvatarFallback>
                     </Avatar>
                     <div>

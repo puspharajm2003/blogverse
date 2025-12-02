@@ -126,7 +126,7 @@ export function SidebarLayout({ children }: SidebarProps) {
               <Button variant="ghost" className={cn("w-full justify-start px-0", collapsed && "justify-center")}>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
+                    <AvatarImage src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg"} onError={(e) => (e.currentTarget as HTMLImageElement).style.display = 'none'} />
                     <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   {!collapsed && (
