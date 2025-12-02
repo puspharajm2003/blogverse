@@ -23,8 +23,8 @@ export default function Achievements() {
     try {
       setLoading(true);
       const [all, userAch] = await Promise.all([
-        api.get("/api/achievements"),
-        api.get("/api/achievements/user"),
+        api.getAllAchievements(),
+        api.getUserAchievements?.() || [],
       ]);
       
       setAllAchievements(all || []);

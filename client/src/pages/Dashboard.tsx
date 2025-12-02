@@ -48,6 +48,8 @@ export default function Dashboard() {
     queryFn: () => api.getUserAchievements?.() || [],
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const { data: streakResponse } = useQuery({
@@ -55,6 +57,8 @@ export default function Dashboard() {
     queryFn: () => api.getStreak?.() || { currentStreak: 0, longestStreak: 0, lastPublishDate: null },
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // Memoize computed values

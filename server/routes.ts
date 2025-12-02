@@ -550,12 +550,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updated = await storage.updateArticle(req.params.id, updates);
       
-      // Check for achievement unlocks when article is published
+      // Check for achievement unlocks and update streak when article is published
       if (updated && updated.status === "published" && (!article.status || article.status !== "published")) {
         try {
-          await storage.checkAndUnlockAchievements(req.userId);
+          await Promise.all([
+            storage.checkAndUnlockAchievements(req.userId),
+            storage.updateStreak(req.userId)
+          ]);
         } catch (error) {
-          console.error("[WARNING] Failed to check achievements:", error);
+          console.error("[WARNING] Failed to check achievements or update streak:", error);
         }
       }
       
