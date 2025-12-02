@@ -20,7 +20,7 @@ export default function Login() {
     if (savedUser) {
       setLocation("/dashboard");
     }
-  }, [setLocation]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
