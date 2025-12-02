@@ -119,13 +119,6 @@ export default function MyBlogs() {
 
   useEffect(() => {
     loadBlogs();
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadBlogs();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const loadBlogs = async () => {

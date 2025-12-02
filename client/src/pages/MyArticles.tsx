@@ -92,24 +92,21 @@ export default function MyArticles() {
       const blogsArray = Array.isArray(blogsData) ? blogsData : [];
       setBlogs(blogsArray);
 
-      let allArticlesData: Article[] = [];
-      if (Array.isArray(blogsArray)) {
-        for (const blog of blogsArray) {
-          try {
-            const data = await api.getArticlesByBlogAdmin(blog.id);
-            const activeArticles = Array.isArray(data) ? data.filter((a: any) => a.status !== "deleted") : [];
-            allArticlesData = [
-              ...allArticlesData,
-              ...activeArticles.map((a: any) => ({
-                ...a,
-                blogTitle: blog.title,
-              })),
-            ];
-          } catch (err) {
-            console.warn(`Failed to load articles for blog ${blog.id}:`, err);
-          }
-        }
-      }
+      // Fetch all articles in parallel for speed
+      const articlesPromises = blogsArray.map(blog => 
+        api.getArticlesByBlogAdmin(blog.id).then(data => ({
+          blog,
+          data: Array.isArray(data) ? data.filter((a: any) => a.status !== "deleted") : []
+        }))
+      );
+      
+      const allResults = await Promise.all(articlesPromises);
+      const allArticlesData: Article[] = allResults.flatMap(result =>
+        result.data.map((a: any) => ({
+          ...a,
+          blogTitle: result.blog.title,
+        }))
+      );
 
       setAllArticles(allArticlesData);
       filterAndSortArticles(allArticlesData, searchQuery, activeTab, blogFilter, sortBy);

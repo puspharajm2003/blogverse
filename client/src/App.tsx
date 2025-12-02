@@ -37,16 +37,6 @@ const Import = lazy(() => import("@/pages/Import"));
 function Router() {
   const [location] = useLocation();
 
-  // Prefetch common route data for faster navigation
-  useEffect(() => {
-    if (location === '/dashboard') {
-      queryClient.prefetchQuery({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.prefetchQuery({ queryKey: ['/api/user/blogs'] });
-    } else if (location === '/my-blogs' || location === '/my-articles') {
-      queryClient.prefetchQuery({ queryKey: ['/api/user/blogs'] });
-    }
-  }, [location]);
-
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Switch>
