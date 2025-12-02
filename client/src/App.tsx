@@ -33,6 +33,8 @@ const Bookmarks = lazy(() => import("@/pages/Bookmarks"));
 const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
 const LearningPath = lazy(() => import("@/pages/LearningPath"));
 const Import = lazy(() => import("@/pages/Import"));
+const ContentCalendar = lazy(() => import("@/pages/ContentCalendar"));
+const { GuidedTour } = require("@/components/GuidedTour");
 
 function Router() {
   const [location] = useLocation();
@@ -64,6 +66,7 @@ function Router() {
         <Route path="/notifications" component={NotificationSettings} />
         <Route path="/learning" component={LearningPath} />
         <Route path="/import" component={Import} />
+        <Route path="/calendar" component={ContentCalendar} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
@@ -77,6 +80,7 @@ export default function App() {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
+            <GuidedTour />
             <Router />
           </TooltipProvider>
         </AuthProvider>

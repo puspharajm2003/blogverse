@@ -1383,12 +1383,26 @@ function generateDemoBrainstormIdeas(niche: string): any[] {
       category: "Problem Solving",
       keywords: ["mistakes", "errors", "troubleshooting", niche.toLowerCase()],
     },
-    {
-      id: "6",
-      title: `${niche} Tools and Resources: The Complete Toolkit`,
-      description: `A curated list of the best tools, software, and resources available for ${niche} professionals.`,
-      category: "Resources",
-      keywords: ["tools", "resources", "software", "guides", niche.toLowerCase()],
-    },
-  ];
-}
+      res.json(events || []);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+  });
+
+  app.post("/api/calendar", authenticateToken, async (req: any, res) => {
+    try {
+      const event = await storage.addCalendarEvent(req.userId, req.body);
+      res.status(201).json(event);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add calendar event" });
+    }
+  });
+
+  app.delete("/api/calendar/:id", authenticateToken, async (req: any, res) => {
+    try {
+      await storage.deleteCalendarEvent(req.params.id, req.userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete calendar event" });
+    }
+  });

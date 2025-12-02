@@ -381,4 +381,27 @@ export const api = {
       body: JSON.stringify({ lessonId }),
     }).then((r) => r.json());
   },
+
+  // Content Calendar
+  post: (url: string, data: any) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}${url}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(data),
+    }).then((r) => r.json());
+  },
+
+  get: (url: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}${url}`, { headers }).then((r) => r.json());
+  },
+
+  delete: (url: string) => {
+    const headers = getAuthHeader();
+    return fetch(`${API_BASE}${url}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...headers },
+    }).then((r) => r.json());
+  },
 };

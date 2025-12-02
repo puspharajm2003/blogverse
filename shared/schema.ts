@@ -448,3 +448,85 @@ export const insertSeoMetricSchema = createInsertSchema(seoMetrics).omit({
   updatedAt: true,
 });
 export type InsertSeoMetric = z.infer<typeof insertSeoMetricSchema>;
+
+// User theme preferences with accent colors and auto-switch
+export const themePreferences = pgTable("theme_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  accentColor: varchar("accent_color").default("blue"), // blue, purple, green, orange, red, pink
+  darkMode: varchar("dark_mode").default("system"), // light, dark, system
+  autoSwitchEnabled: boolean("auto_switch_enabled").default(false),
+  autoSwitchTime: varchar("auto_switch_time"), // HH:MM format for switching
+  customAccent: text("custom_accent"), // Custom hex color
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Content calendar for scheduling articles
+export const contentCalendar = pgTable("content_calendar", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  articleId: varchar("article_id").references(() => articles.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  status: varchar("status").notNull().default("planned"), // planned, writing, review, scheduled, published
+  priority: varchar("priority").default("normal"), // low, normal, high
+  category: varchar("category"),
+  tags: text("tags").array(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Tour progress for guided tour tracking
+export const tourProgress = pgTable("tour_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  completedSteps: text("completed_steps").array().default(sql`ARRAY[]::text[]`),
+  currentStep: varchar("current_step"),
+  tourCompleted: boolean("tour_completed").default(false),
+  tourStartedAt: timestamp("tour_started_at"),
+  tourCompletedAt: timestamp("tour_completed_at"),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Collaborative editing sessions
+export const editingSessions = pgTable("editing_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  articleId: varchar("article_id").notNull().references(() => articles.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content"),
+  cursorPosition: integer("cursor_position"),
+  isActive: boolean("is_active").default(true),
+  lastActivity: timestamp("last_activity").notNull().default(sql`now()`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export type ThemePreference = typeof themePreferences.$inferSelect;
+export const insertThemePreferenceSchema = createInsertSchema(themePreferences).omit({
+  id: true,
+  updatedAt: true,
+});
+export type InsertThemePreference = z.infer<typeof insertThemePreferenceSchema>;
+
+export type ContentCalendarEvent = typeof contentCalendar.$inferSelect;
+export const insertContentCalendarSchema = createInsertSchema(contentCalendar).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertContentCalendarEvent = z.infer<typeof insertContentCalendarSchema>;
+
+export type TourProgress = typeof tourProgress.$inferSelect;
+export const insertTourProgressSchema = createInsertSchema(tourProgress).omit({
+  id: true,
+  updatedAt: true,
+});
+export type InsertTourProgress = z.infer<typeof insertTourProgressSchema>;
+
+export type EditingSession = typeof editingSessions.$inferSelect;
+export const insertEditingSessionSchema = createInsertSchema(editingSessions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertEditingSession = z.infer<typeof insertEditingSessionSchema>;

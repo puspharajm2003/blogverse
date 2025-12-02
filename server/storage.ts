@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray, and, desc, sql as drizzleSql } from "drizzle-orm";
-import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, userStreaks, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress, importBatches, seoMetrics } from "@shared/schema";
-import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress, ImportBatch, InsertImportBatch, SeoMetric, InsertSeoMetric } from "@shared/schema";
+import { users, blogs, articles, analyticsEvents, chatMessages, comments, readingHistory, userPreferences, achievements, userAchievements, userStreaks, plagiarismChecks, feedback, bookmarks, notifications, notificationPreferences, learningProgress, importBatches, seoMetrics, contentCalendar } from "@shared/schema";
+import type { User, InsertUser, Blog, InsertBlog, Article, InsertArticle, AnalyticsEvent, InsertAnalyticsEvent, ChatMessage, InsertChatMessage, ReadingHistory, UserPreferences, Achievement, InsertAchievement, UserAchievement, InsertUserAchievement, PlagiarismCheck, InsertPlagiarismCheck, Feedback, InsertFeedback, Bookmark, InsertBookmark, Notification, InsertNotification, NotificationPreference, InsertNotificationPreference, LearningProgress, InsertLearningProgress, ImportBatch, InsertImportBatch, SeoMetric, InsertSeoMetric, ContentCalendarEvent } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -1120,6 +1120,36 @@ export class PostgresStorage implements IStorage {
   async getArticleSeoMetric(articleId: string): Promise<SeoMetric | undefined> {
     const result = await db.select().from(seoMetrics).where(eq(seoMetrics.articleId, articleId)).limit(1);
     return result[0];
+  }
+}
+
+export const storage = new PostgresStorage();
+
+  async getCalendarEvents(userId: string): Promise<any[]> {
+    const result = await db.select().from(contentCalendar).where(eq(contentCalendar.userId, userId));
+    return result;
+  }
+
+  async addCalendarEvent(userId: string, event: any): Promise<any> {
+    const result = await db.insert(contentCalendar).values({
+      ...event,
+
+  async getCalendarEvents(userId: string): Promise<any[]> {
+    const result = await db.select().from(contentCalendar).where(eq(contentCalendar.userId, userId));
+    return result;
+  }
+
+  async addCalendarEvent(userId: string, event: any): Promise<any> {
+    const result = await db.insert(contentCalendar).values({
+      ...event,
+      userId,
+      scheduledDate: new Date(event.scheduledDate),
+    }).returning();
+    return result[0];
+  }
+
+  async deleteCalendarEvent(id: string, userId: string): Promise<void> {
+    await db.delete(contentCalendar).where(and(eq(contentCalendar.id, id), eq(contentCalendar.userId, userId)));
   }
 }
 

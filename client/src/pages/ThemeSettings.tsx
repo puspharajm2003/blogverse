@@ -36,6 +36,9 @@ export default function Settings() {
   const [selectedHeadingFont, setSelectedHeadingFont] = useState("playfair");
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [avatarTab, setAvatarTab] = useState("professional");
+  const [accentColor, setAccentColor] = useState("blue");
+  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(false);
+  const [autoSwitchTime, setAutoSwitchTime] = useState("22:00");
 
   // Utility: Generate color from name
   const getColorFromName = (name: string) => {
@@ -289,6 +292,47 @@ export default function Settings() {
                     <ThemeOptionCard icon={<Moon className="h-6 w-6" />} label="Dark" active={theme === "dark"} onClick={() => setTheme("dark")} />
                     <ThemeOptionCard icon={<Monitor className="h-6 w-6" />} label="System" active={theme === "system"} onClick={() => setTheme("system")} />
                   </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Accent Color</Label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {["blue", "purple", "green", "orange", "red", "pink"].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setAccentColor(color)}
+                        className={`h-12 rounded-lg border-2 transition-all capitalize font-medium text-sm ${
+                          accentColor === color ? "border-foreground" : "border-border"
+                        }`}
+                        style={{
+                          backgroundColor: color === "blue" ? "#3B82F6" : color === "purple" ? "#A855F7" : color === "green" ? "#10B981" : color === "orange" ? "#F97316" : color === "red" ? "#EF4444" : "#EC4899",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Auto-Switch Theme</Label>
+                    <Switch checked={autoSwitchEnabled} onCheckedChange={setAutoSwitchEnabled} />
+                  </div>
+                  {autoSwitchEnabled && (
+                    <div>
+                      <Label>Switch to Dark Mode at:</Label>
+                      <Input
+                        type="time"
+                        value={autoSwitchTime}
+                        onChange={(e) => setAutoSwitchTime(e.target.value)}
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">Light mode will switch to dark at this time each evening</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
